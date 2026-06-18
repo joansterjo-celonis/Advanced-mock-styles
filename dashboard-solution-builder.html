@@ -72,10 +72,16 @@
 
   [data-density="compact"] { --gap:6px; --pad:10px; --row-metric:268px; --row-tall:150px; --row-mid:120px; }
   [data-density="dense"] { --gap:4px; --pad:8px; --row-metric:226px; --row-tall:128px; --row-mid:104px; }
-  /* Dense also tightens every table's rows */
-  [data-density="dense"] .ptable th, [data-density="dense"] .ptable td { padding:3px 8px; }
+  /* Compact tightens tables to a mid level (between Spacious and Dense) */
+  [data-density="compact"] .ptable th, [data-density="compact"] .ptable td,
+  [data-density="compact"] .rq-table thead th, [data-density="compact"] .rq-table tbody td { padding:6px 10px; }
+  [data-density="compact"] .data-table thead th, [data-density="compact"] .data-table tbody td { padding:6px 12px; }
+  [data-density="compact"] .ptable, [data-density="compact"] .data-table, [data-density="compact"] .rq-table { font-size:12.5px; }
+  /* Dense tightens every table's rows further */
+  [data-density="dense"] .ptable th, [data-density="dense"] .ptable td,
+  [data-density="dense"] .rq-table thead th, [data-density="dense"] .rq-table tbody td { padding:3px 8px; }
   [data-density="dense"] .data-table thead th, [data-density="dense"] .data-table tbody td { padding:4px 10px; }
-  [data-density="dense"] .ptable, [data-density="dense"] .data-table { font-size:12px; }
+  [data-density="dense"] .ptable, [data-density="dense"] .data-table, [data-density="dense"] .rq-table { font-size:12px; }
   [data-density="dense"] .otd-pill { height:20px; padding:0 9px; font-size:10.5px; }
   [data-density="dense"] .feed .row { padding:5px 8px; }
   [data-density="dense"] .plist .row { padding:5px 9px; }
@@ -145,6 +151,12 @@
   [data-mode="light"] .data-table thead th { background:#f6f7f9; }
   [data-mode="light"] .data-table tbody tr:hover { background: rgba(0,0,0,0.03); }
   [data-mode="light"] .proto { background:#fff; border-color: rgba(0,0,0,0.12); box-shadow: 0 24px 60px -20px rgba(0,0,0,0.3); color:#1b1c20; }
+  /* the controls panel + context menu are their own light surfaces — re-assert light-on-chrome vars so the Contrast shell's inverted vars don't bleed into them */
+  [data-mode="light"] .proto, [data-mode="light"] .ctxmenu {
+    --chrome-text:#1b1c20; --chrome-dim:rgba(27,28,32,0.62); --chrome-faint:rgba(27,28,32,0.42);
+    --chrome-border:rgba(0,0,0,0.10); --chrome-border-soft:rgba(0,0,0,0.06);
+    --chrome-hover:rgba(0,0,0,0.05); --chrome-active:rgba(0,0,0,0.075);
+  }
   [data-mode="light"] .fab { background:#17181c; color:#fff; }
 
   /* ====== APP SHELL ====== */
@@ -366,8 +378,11 @@
   /* floating settings */
   .fab { position:fixed; right:26px; bottom:26px; width:48px; height:48px; border-radius:14px; background:#17181c; color:#fff; border:0; cursor:pointer; display:grid; place-items:center; box-shadow:0 14px 30px -10px rgba(0,0,0,0.6); z-index:50; transition:transform .15s; }
   .fab:hover { transform:translateY(-2px); }
-  .proto { position:fixed; right:26px; bottom:86px; width:324px; background:#121317; border:1px solid rgba(255,255,255,0.12); border-radius:16px; padding:16px; z-index:50; box-shadow:0 30px 70px -20px rgba(0,0,0,0.7); display:none; }
+  .proto { position:fixed; right:26px; bottom:86px; width:324px; max-height:calc(100vh - 120px); overflow-y:auto; overscroll-behavior:contain; background:#121317; border:1px solid rgba(255,255,255,0.12); border-radius:16px; padding:16px; z-index:50; box-shadow:0 30px 70px -20px rgba(0,0,0,0.7); display:none; }
   .proto.open { display:block; }
+  .proto::-webkit-scrollbar { width:9px; } .proto::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.16); border-radius:8px; } .proto::-webkit-scrollbar-track { background:transparent; }
+  [data-mode="light"] .proto::-webkit-scrollbar-thumb { background:rgba(0,0,0,0.18); }
+  .proto h4 { position:sticky; top:-16px; margin:-16px -16px 4px; padding:16px 16px 8px; background:inherit; z-index:1; }
   .proto h4 { font-size:12px; text-transform:uppercase; letter-spacing:.08em; color:var(--chrome-faint); margin-bottom:4px; }
   .proto .grp { margin-top:14px; }
   .proto .grp:first-of-type { margin-top:8px; }
@@ -803,14 +818,152 @@
 
   .rq-placeholder { display:flex; align-items:center; justify-content:center; min-height:420px; color:var(--text-faint); font-size:14px; border:1px dashed var(--border); border-radius:var(--r-surface); }
 
-  /* ===== 3D cube tab transition ===== */
-  .content.fx-scene { overflow:hidden !important; perspective:1700px; perspective-origin:50% 44%; }
-  .fx-cube { position:absolute; top:0; left:0; transform-style:preserve-3d; z-index:30; }
-  /* Default: faces match the content surface seamlessly (no card chrome) */
-  .view.fx-face { position:absolute !important; top:0; left:0; overflow:hidden !important; backface-visibility:hidden; background:var(--chrome-0); }
+  /* ===== Slide-fade tab transition ===== */
+  .content.fx-scene { overflow:hidden !important; }
+  /* both views overlap and slide; faces are positioned to the content padding box by JS */
+  .view.fx-face { position:absolute !important; overflow:hidden !important; background:var(--chrome-0); will-change:transform,opacity; z-index:2; }
   /* Flowy: faces emulate the elevated rounded card the view already is */
   [data-layout="flowy"] .view.fx-face { background:#08090b; border:1px solid var(--border); border-radius:calc(var(--r-surface) + 8px); box-shadow:0 40px 90px -40px rgba(0,0,0,0.55); }
   [data-mode="light"][data-layout="flowy"] .view.fx-face { background:#fff; border-color:rgba(0,0,0,0.07); box-shadow:0 30px 64px -34px rgba(0,0,0,0.22); }
+
+  /* ============================================================
+     DIRECTION KNOBS (A–G) — leadership review follow-up
+     (placed last so they win the cascade over theme/mode rules)
+     ============================================================ */
+  .proto-sec { font-size:10.5px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--chrome-faint); margin:16px 4px 2px; padding-top:12px; border-top:1px solid var(--chrome-border-soft); }
+  .proto .label .hint-i { font-weight:400; text-transform:none; letter-spacing:0; color:var(--chrome-faint); font-size:11px; margin-left:6px; }
+  .proto-hint { font-size:11px; color:var(--chrome-faint); line-height:1.5; padding:6px 4px 2px; }
+  .toggle.is-disabled { opacity:.4; pointer-events:none; }
+  /* presets */
+  .preset-sel { width:100%; height:36px; border-radius:var(--r-interactive); background:var(--chrome-hover); border:1px solid var(--chrome-border); color:var(--chrome-text); font:inherit; font-size:13px; font-weight:500; padding:0 10px; cursor:pointer; appearance:none;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2.4'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 10px center; }
+  .preset-actions { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+  .preset-actions button { flex:1 1 auto; height:30px; border-radius:var(--r-interactive); border:1px solid var(--chrome-border); background:transparent; color:var(--chrome-text); font:inherit; font-size:12px; cursor:pointer; padding:0 10px; transition:background .15s,border-color .15s,color .15s; }
+  .preset-actions button:hover { background:var(--chrome-hover); border-color:var(--chrome-text); }
+  .preset-actions button#preset-del:hover { color:#e5484d; border-color:#e5484d; background:transparent; }
+
+  /* ---- Intensity (Calm / Strategic / Expressive) ---- dials the overall visual energy: colour reach + shadow + gloss/light effects */
+
+  /* ===== CALM — flat & matte: strip shadows/gloss/rim/sheen; rely on a single light hairline border (no doubled outline) ===== */
+  [data-coloruse="calm"] .card { box-shadow:none !important; --card-glow:0 !important; border-color:rgba(255,255,255,0.05); }
+  [data-mode="light"][data-coloruse="calm"] .card { border-color:rgba(0,0,0,0.06); }
+  [data-coloruse="calm"] .card:hover { box-shadow:none !important; border-color:var(--border-strong); }
+  [data-coloruse="calm"] .card.is-active { box-shadow:none !important; border-color:var(--border-strong); }
+  [data-coloruse="calm"] .card .gloss, [data-coloruse="calm"] .card .rim, [data-coloruse="calm"] .card .sheen { display:none !important; }
+  [data-coloruse="calm"] .content { background-image:none; }      /* drop the ambient light wash */
+  /* quiet chrome — neutral status pills / chips / legend swatches; colour reserved for genuine alerts */
+  [data-coloruse="calm"] .otd-pill { background:var(--card-strong) !important; color:var(--text-dim) !important; }
+  [data-coloruse="calm"] .otd-pill.late { background:#b4232b !important; color:#fff !important; }
+  [data-coloruse="calm"] .gchip { background:var(--card-strong) !important; color:var(--text-dim) !important; }
+  [data-coloruse="calm"] .hc-status::before { background:var(--text-faint) !important; }
+  [data-coloruse="calm"] .donut-legend .sw, [data-coloruse="calm"] .rq-act .dot { filter:grayscale(1) brightness(.9); }
+
+  /* ===== STRATEGIC — balanced: soft, smaller shadow (clearly less than Expressive); no moving gloss / hover-glow; faint rim ===== */
+  [data-coloruse="strategic"] .card { --card-glow:0 !important; box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), 0 8px 20px -18px rgba(0,0,0,0.7) !important; }
+  [data-coloruse="strategic"] .card:hover { box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 12px 26px -18px rgba(0,0,0,0.78) !important; border-color:var(--border-strong); }
+  [data-mode="light"][data-coloruse="strategic"] .card { box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 6px 16px -14px rgba(0,0,0,0.13) !important; }
+  [data-mode="light"][data-coloruse="strategic"] .card:hover { box-shadow: 0 2px 5px rgba(0,0,0,0.06), 0 12px 26px -16px rgba(0,0,0,0.18) !important; }
+  [data-coloruse="strategic"] .card .gloss { display:none !important; }
+  [data-coloruse="strategic"] .card .sheen { opacity:.5; }
+  [data-coloruse="strategic"] .card .rim { opacity:.16 !important; }
+  [data-coloruse="strategic"] .card:hover .rim { opacity:.32 !important; }
+
+  /* ===== EXPRESSIVE — the full rich treatment (gloss, rim, sheen, hover glow = base) + colour-tinted chips ===== */
+  [data-coloruse="expressive"] .hc-status { background:var(--accent-glow); color:var(--text); }
+
+  /* ---- B · Shell separation ---- */
+  /* Seamless: shell surfaces match the workspace (low distinction) */
+  [data-shell="seamless"] { --chrome-rail:var(--chrome-0); --chrome-side:var(--chrome-0); }
+  [data-shell="seamless"] .rail, [data-shell="seamless"] .sidebar { border-color:transparent; }
+  [data-shell="seamless"] .topbar, [data-shell="seamless"] .tabbar { border-color:var(--chrome-border-soft); }
+  /* Contrast: strong surface contrast — dark shell against the light workspace (and deeper black in dark mode) */
+  [data-mode="light"][data-shell="contrast"] {
+    --chrome-rail:#15161a; --chrome-side:#1b1d22; --chrome-panel:#15161a;
+    --chrome-text:#e9eaee; --chrome-dim:rgba(233,234,238,0.62); --chrome-faint:rgba(233,234,238,0.40);
+    --chrome-border:rgba(255,255,255,0.08); --chrome-border-soft:rgba(255,255,255,0.05);
+    --chrome-hover:rgba(255,255,255,0.06); --chrome-active:rgba(255,255,255,0.10);
+  }
+  [data-shell="contrast"]:not([data-mode="light"]) { --chrome-rail:#000; --chrome-side:#050507; --chrome-panel:#000; --chrome-border:rgba(255,255,255,0.10); }
+  /* make the whole shell chrome cohesive (rail + top bar + tab bar) and lift the workspace as a distinct surface */
+  [data-shell="contrast"] .topbar, [data-shell="contrast"] .tabbar { background:var(--chrome-panel); }
+  [data-mode="light"][data-shell="contrast"] .main { background:#15161a; }
+  [data-mode="light"][data-shell="contrast"] .content { background:#eef0f3; border-top-left-radius:14px; }
+  /* shell pop-overs (header "more" menu, L0 flyout) live IN the dark shell — give them a dark surface so the (light) chrome text stays legible */
+  [data-mode="light"][data-shell="contrast"] .hmore-menu,
+  [data-mode="light"][data-shell="contrast"] .l0-panel {
+    background: rgba(21,22,26,0.94); border-color: rgba(255,255,255,0.12);
+    box-shadow: 0 28px 60px -20px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.10);
+    -webkit-backdrop-filter: blur(22px) saturate(1.4); backdrop-filter: blur(22px) saturate(1.4);
+  }
+
+  /* ---- D · Composition ---- (scoped to .bento so custom-grid views stay intact) */
+  [data-composition="uniform"] .view.active .bento > .card:not(.kpi-strip):not(.span-12) { grid-column: span 6; }
+  [data-composition="hero"] .view.active .bento > .card[data-hero] { grid-column: span 8; }
+  [data-composition="hero"] .view.active .bento > .card:not([data-hero]):not(.kpi-strip):not(.span-12) { grid-column: span 4; }
+  /* hero emphasis — the "few high-contrast cards" of a bento (elevation, not colour) */
+  [data-composition="bento"] .view.active .card[data-hero],
+  [data-composition="hero"] .view.active .card[data-hero] {
+    border-color: var(--border-strong);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.10), 0 30px 60px -26px rgba(0,0,0,0.6), 0 0 0 1px var(--border-strong);
+  }
+
+  /* ---- KPI numerals (weight + font family knobs) ---- */
+  :root { --kpi-weight:600; --kpi-font:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; }
+  .metric-val, .kpi .v, [data-counter] {
+    font-weight:var(--kpi-weight) !important;
+    font-family:var(--kpi-font);
+    letter-spacing:-0.02em; font-variant-numeric:tabular-nums;
+  }
+
+  /* ---- F · Tab model ---- */
+  /* Segmented: sub-tabs become a compact segmented control, clearly a second level */
+  [data-tabmodel="seg"] .subtabs { display:inline-flex; align-self:flex-start; gap:3px; padding:4px; border:1px solid var(--border); background:var(--track); border-radius:11px; }
+  [data-tabmodel="seg"] .subtab { height:28px; border-radius:8px; color:var(--text-dim); }
+  [data-tabmodel="seg"] .subtab:hover { background:var(--card-strong); }
+  [data-tabmodel="seg"] .subtab.on { background:var(--bg-1); color:var(--text); font-weight:600; box-shadow:0 1px 3px rgba(0,0,0,0.18), 0 0 0 1px var(--border); }
+  [data-tabmodel="seg"] .subtab.on::after { display:none; }
+  [data-tabmodel="seg"] .subtab .x, [data-tabmodel="seg"] .subtab .dots { display:none !important; }
+  [data-tabmodel="seg"] .subtab-add { display:none; }
+  /* Flattened: de-chrome the top tabs so the nesting reads as a single calm level */
+  [data-tabmodel="flat"] .tabstrip .tab { background:transparent !important; color:var(--chrome-dim); font-weight:500; }
+  [data-tabmodel="flat"] .tabstrip .tab.active { background:transparent !important; color:var(--chrome-text); font-weight:700; }
+  [data-tabmodel="flat"] .tabstrip .tab.active::after { display:none; }
+  [data-tabmodel="flat"] .subtabs { border-bottom:1px solid var(--border); }
+
+  /* ---- Tables ---- (row TREATMENT only; spacing is owned by the Density knob) */
+  /* Lined: zebra striping for scannability */
+  [data-tables="lined"] .ptable tbody tr:nth-child(even) td,
+  [data-tables="lined"] .rq-table tbody tr:nth-child(even) td,
+  [data-tables="lined"] .data-table tbody tr:nth-child(even) td { background:var(--card); }
+  [data-tables="lined"] .ptable td, [data-tables="lined"] .rq-table tbody td { border-bottom:1px solid var(--border); }
+
+  /* ---- Right-click context menu (per-chart style + per-card invert) ---- */
+  .ctxmenu { position:fixed; z-index:90; min-width:190px; padding:6px; border-radius:12px; display:none;
+    background:rgba(17,19,23,0.72); -webkit-backdrop-filter:blur(22px) saturate(1.5); backdrop-filter:blur(22px) saturate(1.5);
+    border:1px solid rgba(255,255,255,0.12); box-shadow:0 28px 60px -20px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.12); color:var(--chrome-text); }
+  [data-mode="light"] .ctxmenu { background:rgba(255,255,255,0.74); border-color:rgba(0,0,0,0.08); box-shadow:0 28px 60px -20px rgba(0,0,0,0.24), inset 0 1px 0 rgba(255,255,255,0.7); color:#1b1c20; }
+  .ctxmenu.open { display:block; animation:ctxIn .14s ease both; }
+  @keyframes ctxIn { from { opacity:0; transform:translateY(-4px) scale(.98); } to { opacity:1; transform:none; } }
+  .ctxmenu .ctx-h { font-size:10.5px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--chrome-faint); padding:7px 10px 4px; }
+  .ctxmenu .ctx-i { display:flex; align-items:center; gap:9px; height:32px; padding:0 10px; border-radius:8px; font-size:13px; cursor:pointer; color:inherit; }
+  .ctxmenu .ctx-i svg.ico { width:15px; height:15px; opacity:.7; }
+  .ctxmenu .ctx-i:hover { background:var(--chrome-hover); }
+  .ctxmenu .ctx-i .ck { margin-left:auto; width:14px; height:14px; opacity:0; }
+  .ctxmenu .ctx-i.on .ck { opacity:1; }
+  .ctxmenu .ctx-sep { height:1px; background:var(--chrome-border-soft); margin:5px 4px; }
+
+  /* ---- Inverted component (right-click → Invert): flips the local surface + text for hierarchy ---- */
+  .card[data-inverted] {  /* default app is dark → an inverted card becomes a light surface */
+    --text:#15161a; --text-dim:rgba(27,28,32,0.64); --text-faint:rgba(27,28,32,0.44);
+    --bg-1:#ffffff; --card:rgba(0,0,0,0.02); --card-strong:rgba(0,0,0,0.05); --border:rgba(0,0,0,0.10); --border-strong:rgba(0,0,0,0.20); --track:rgba(0,0,0,0.07);
+    background:#ffffff; color:#15161a; border-color:rgba(0,0,0,0.10);
+    box-shadow:0 26px 54px -22px rgba(0,0,0,0.6), 0 0 0 1px rgba(0,0,0,0.06); }
+  [data-mode="light"] .card[data-inverted] {  /* light app → inverted card becomes a dark surface */
+    --text:#ffffff; --text-dim:rgba(255,255,255,0.64); --text-faint:rgba(255,255,255,0.40);
+    --bg-1:#15161a; --card:rgba(255,255,255,0.05); --card-strong:rgba(255,255,255,0.09); --border:rgba(255,255,255,0.12); --border-strong:rgba(255,255,255,0.26); --track:rgba(255,255,255,0.09);
+    background:#15161a; color:#ffffff; border-color:rgba(255,255,255,0.12);
+    box-shadow:0 26px 54px -22px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.08); }
+  .card[data-inverted] .gloss, .card[data-inverted] .sheen, .card[data-inverted] .rim { display:none; }
 </style>
 </head>
 <body>
@@ -4533,17 +4686,48 @@
   <button class="fab" id="fab" title="Prototype controls"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h10M18 6h2M4 12h2M10 12h10M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="8" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg></button>
   <div class="proto" id="proto">
     <h4>Prototype controls</h4>
+
+    <div class="proto-sec" style="border-top:0;padding-top:0;margin-top:4px">Presets</div>
+    <div class="grp">
+      <select id="preset-select" class="preset-sel" title="Apply a saved preset"></select>
+      <div class="preset-actions">
+        <button id="preset-save" title="Update the selected preset with the current settings">Save</button>
+        <button id="preset-new" title="Save current settings as a new preset">New</button>
+        <button id="preset-dup" title="Duplicate the selected preset">Duplicate</button>
+        <button id="preset-rename" title="Rename the selected preset">Rename</button>
+        <button id="preset-del" title="Delete the selected preset">Delete</button>
+      </div>
+    </div>
+
+    <div class="proto-sec">Mode &amp; color</div>
     <div class="grp"><div class="label">Appearance</div><div class="toggle"><button id="mode-dark">Dark</button><button id="mode-light" class="on">Light</button></div></div>
-    <div class="grp"><div class="label">Theme</div><div class="toggle"><button id="theme-mono" class="on"><span class="sw lime"></span>Mono</button><button id="theme-color"><span class="sw"></span>Color</button><button id="theme-vivid"><span class="sw vivid"></span>Vivid</button></div><div class="huecolor-row"><input type="color" id="theme-hue-input" value="#6366f1"><span class="tcl">Single hue</span><button id="theme-hue-reset" class="hue-reset">Reset</button></div></div>
-    <div class="grp"><div class="label">Density</div><div class="toggle"><button id="density-spacious" class="on">Spacious</button><button id="density-compact">Compact</button><button id="density-dense">Dense</button></div></div>
-    <div class="grp"><div class="label">Layout</div><div class="toggle"><button id="layout-default" class="on">Default</button><button id="layout-flowy">Flowy Layers</button></div></div>
-    <div class="grp"><div class="label">Tab transition</div><div class="toggle"><button id="tabfx-flat" class="on">Default</button><button id="tabfx-cube">3D Cube</button></div></div>
-    <div class="grp"><div class="label">Charts look</div><div class="toggle"><button id="c3d-default" class="on">Default</button><button id="c3d-iso">Isometric</button><button id="c3d-glass">Glass</button></div></div>
+    <div class="grp"><div class="label">Palette <span class="hint-i">chart hues</span></div><div class="toggle"><button id="theme-mono" class="on"><span class="sw lime"></span>Mono</button><button id="theme-color"><span class="sw"></span>Color</button><button id="theme-vivid"><span class="sw vivid"></span>Vivid</button></div><div class="huecolor-row"><input type="color" id="theme-hue-input" value="#6366f1"><span class="tcl">Single hue</span><button id="theme-hue-reset" class="hue-reset">Reset</button></div></div>
+    <div class="grp"><div class="label">Intensity <span class="hint-i">colour · shadow · gloss</span></div><div class="toggle"><button id="color-calm">Calm</button><button id="color-strategic" class="on">Strategic</button><button id="color-expressive">Expressive</button></div></div>
+
+    <div class="proto-sec">Shell &amp; surfaces</div>
+    <div class="grp" id="shell-sep-grp"><div class="label">Shell separation</div><div class="toggle"><button id="shell-seamless">Seamless</button><button id="shell-tinted" class="on">Tinted</button><button id="shell-contrast">Contrast</button></div></div>
+    <div class="grp"><div class="label">Layers</div><div class="toggle"><button id="layout-default" class="on">Default</button><button id="layout-flowy">Flowy</button></div></div>
+    <div class="grp"><div class="label">Nav rail</div><div class="toggle"><button id="l0-match" class="on">Match view</button><button id="l0-invert">Inverted</button></div></div>
     <div class="grp"><div class="label">Right panel</div><div class="toggle"><button id="rp-panel" class="on">Side panel</button><button id="rp-header">In header</button></div></div>
-    <div class="grp"><div class="label">L0 appearance</div><div class="toggle"><button id="l0-match" class="on">Match view</button><button id="l0-invert">Inverted</button></div></div>
-    <div class="grp"><div class="label">Tab style</div><div class="toggle wrap"><button id="tabs-underline">Underline</button><button id="tabs-filled" class="on">Filled</button><button id="tabs-color">Color</button><button id="tabs-uline">Underline color</button></div><div class="tabcolor-row"><input type="color" id="tab-color-input" value="#6366f1"><span class="tcl">Active tab color</span></div></div>
     <div class="grp"><div class="label">Surface radius <span class="val" id="rs-val">12px</span></div><input type="range" id="r-surface" class="slider" min="0" max="28" value="12"></div>
     <div class="grp"><div class="label">Control radius <span class="val" id="ri-val">9px</span></div><input type="range" id="r-interactive" class="slider" min="0" max="20" value="9"></div>
+
+    <div class="proto-sec">Tabs</div>
+    <div class="grp"><div class="label">Structure</div><div class="toggle"><button id="tabm-nested" class="on">Nested</button><button id="tabm-flat">Flattened</button><button id="tabm-seg">Segmented</button></div></div>
+    <div class="grp"><div class="label">Style</div><div class="toggle wrap"><button id="tabs-underline">Underline</button><button id="tabs-filled" class="on">Filled</button><button id="tabs-color">Color</button><button id="tabs-uline">Underline color</button></div><div class="tabcolor-row"><input type="color" id="tab-color-input" value="#6366f1"><span class="tcl">Active tab color</span></div></div>
+    <div class="grp"><div class="label">Transition</div><div class="toggle"><button id="tabfx-flat" class="on">Default</button><button id="tabfx-slide">Slide</button></div></div>
+
+    <div class="proto-sec">Content &amp; layout</div>
+    <div class="grp"><div class="label">Composition</div><div class="toggle"><button id="comp-uniform">Uniform</button><button id="comp-bento" class="on">Bento</button><button id="comp-hero">Hero</button></div></div>
+    <div class="grp"><div class="label">Density <span class="hint-i">spacing</span></div><div class="toggle"><button id="density-spacious" class="on">Spacious</button><button id="density-compact">Compact</button><button id="density-dense">Dense</button></div></div>
+    <div class="grp"><div class="label">Numeral weight <span class="val" id="kw-val">600</span></div><input type="range" id="kpi-weight" class="slider" min="100" max="800" step="100" value="600"></div>
+    <div class="grp"><div class="label">Numeral font</div><div class="toggle"><button id="kf-sans" class="on">Sans</button><button id="kf-mono">Mono</button><button id="kf-serif">Serif</button></div></div>
+    <div class="grp"><div class="label">Tables <span class="hint-i">row treatment</span></div><div class="toggle"><button id="tbl-comfortable" class="on">Plain</button><button id="tbl-lined">Lined</button></div></div>
+
+    <div class="proto-sec">Data visualization</div>
+    <div class="grp"><div class="label">3D charts</div><div class="toggle"><button id="c3d-default" class="on">Flat</button><button id="c3d-iso">Isometric</button><button id="c3d-glass">Glass</button></div></div>
+    <div class="grp"><div class="label">Applies to</div><div class="toggle is-disabled" id="d3-extent-grp"><button id="d3-accent" class="on">Hero only</button><button id="d3-full">All charts</button></div></div>
+    <div class="proto-hint">Right-click a chart to set its own style · right-click a card to invert it.</div>
   </div>
 
   <script>
@@ -4578,7 +4762,18 @@
          Reads the live theme colours (CSS vars) so Mono/Color/Vivid/hue all apply.
          mode: null (flat) | 'iso' (isometric extrusion) | 'glass' (frosted low-relief)
          ============================================================ */
-      function chartMode(){ return document.documentElement.getAttribute('data-charts3d'); } // null|'iso'|'glass'
+      function chartMode(wrap){ // returns 'iso'|'glass'|null
+        // per-chart override (right-click menu) wins over the global knobs
+        const ov = wrap && wrap.getAttribute ? wrap.getAttribute('data-chart-look') : null;
+        if(ov==='flat') return null;
+        if(ov==='iso' || ov==='glass') return ov;
+        // otherwise follow the global Charts-look + 3D-scope knobs
+        const look = document.documentElement.getAttribute('data-charts3d'); if(!look) return null;
+        const scope = document.documentElement.getAttribute('data-3dscope') || 'full';
+        if(scope==='off') return null;
+        if(scope==='accent') return (wrap && wrap.closest && wrap.closest('[data-hero]')) ? look : null;
+        return look; // 'full'
+      }
       function cssVar(name){ return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
       const _ccx = (function(){ try { return document.createElement('canvas').getContext('2d'); } catch(e){ return null; } })();
       function toRGB(c){ // resolve any CSS colour string -> {r,g,b}
@@ -4695,7 +4890,7 @@
         defs.appendChild(g); svg.appendChild(defs);
         [0,0.5,1].forEach(f=>{ const y=padT+innerH*f; svg.appendChild(E('line',{x1:padL,x2:padL+innerW,y1:y,y2:y,stroke:'rgba(128,128,128,0.18)','stroke-dasharray':'2 4'})); });
         const step=innerW/N, bw=step*0.6;
-        const m3=chartMode(), barCol = tint || cssVar('--cstop-1a');
+        const m3=chartMode(wrap), barCol = tint || cssVar('--cstop-1a');
         bars.forEach((v,i)=>{ const h=Math.max(2,(v/barMax)*innerH); const x=padL+step*i+(step-bw)/2; const y=padT+innerH-h;
           if(m3){ bar3dV(svg,x,y,bw,h,barCol,m3); }
           else svg.appendChild(E('rect',{x:x.toFixed(1),y:y.toFixed(1),width:bw.toFixed(1),height:h.toFixed(1),rx:1.5,fill:`url(#cb_${key})`})); });
@@ -4713,7 +4908,7 @@
       function donut(wrap){
         const segs=[{p:48.39,c:'var(--legend-4)'},{p:41.94,c:'var(--legend-3)'},{p:3.23,c:'var(--legend-2)'},{p:3.23,c:'var(--legend-2)'},{p:3.23,c:'var(--legend-1)'}];
         const W=120,H=120,r=42,cx=60,cy=60,sw=22, C=2*Math.PI*r;
-        const m3=chartMode();
+        const m3=chartMode(wrap);
         const svg=E('svg',{viewBox:`0 0 ${W} ${H}`});
         function ring(target, cyy, shadeAmt, op){ let off=0; segs.forEach(s=>{ const len=C*s.p/100;
           const cir=E('circle',{cx:cx,cy:cyy,r:r,fill:'none','stroke-width':sw,'stroke-dasharray':`${len.toFixed(2)} ${(C-len).toFixed(2)}`,'stroke-dashoffset':(-off).toFixed(2),transform:`rotate(-90 ${cx} ${cyy})`});
@@ -4749,7 +4944,7 @@
         [0,0.5,1].forEach(f=>{ const y=padT+innerH*f; svg.appendChild(E('line',{x1:padL,x2:padL+innerW,y1:y,y2:y,stroke:'rgba(128,128,128,0.16)','stroke-dasharray':'2 4'})); });
         const step=innerW/(pts.length-1); let d='';
         pts.forEach((v,i)=>{ const x=padL+step*i, y=padT+innerH-(v/mx)*innerH; d+=(i?'L':'M')+x.toFixed(1)+','+y.toFixed(1); });
-        const m3=chartMode(), glassCol = tint || cssVar('--cstop-1a');
+        const m3=chartMode(wrap), glassCol = tint || cssVar('--cstop-1a');
         if(m3){
           // frosted fill in the chart primary colour
           const fg=svg.querySelector('#ar_'+key); if(fg){ fg.innerHTML=''; fg.appendChild(E('stop',{offset:'0%','stop-color':rgbaC(glassCol,0.55)})); fg.appendChild(E('stop',{offset:'100%','stop-color':rgbaC(glassCol,0.05)})); }
@@ -4781,7 +4976,7 @@
         const svg=E('svg',{viewBox:`0 0 ${W} ${H}`,preserveAspectRatio:'none'});
         [0,0.5,1].forEach(f=>{ const y=padT+innerH*f; svg.appendChild(E('line',{x1:padL,x2:padL+innerW,y1:y,y2:y,stroke:'rgba(128,128,128,0.22)','stroke-dasharray':'1 4'})); });
         const step=innerW/n;
-        const m3=chartMode(), hiCol = tint || cssVar('--cstop-1a');
+        const m3=chartMode(wrap), hiCol = tint || cssVar('--cstop-1a');
         vals.forEach((v,i)=>{ const x=+(padL+step*i+step/2).toFixed(1); const y=+(padT+innerH-(v/mx)*innerH).toFixed(1); const rad=i===6?4:2.6;
           if(m3){ sphere(svg,x,y, i===6?4.6:2.9, i===6?hiCol:'rgb(150,150,156)'); }
           else { const c=E('circle',{cx:x,cy:y,r:rad}); c.style.fill = i===6?hi:'rgba(128,128,128,0.7)'; svg.appendChild(c); } });
@@ -4800,7 +4995,7 @@
         const mx=80, svg=E('svg',{viewBox:`0 0 ${W} ${H}`,preserveAspectRatio:'none'});
         [0,0.25,0.5,0.75,1].forEach(f=>{ const y=padT+innerH*(1-f); svg.appendChild(E('line',{x1:padL,x2:padL+innerW,y1:y,y2:y,stroke:'rgba(128,128,128,0.16)','stroke-dasharray':'2 4'})); svg.appendChild(svgText(E,padL-4,y+3,(f*80)+'K','end')); });
         const step=innerW/vals.length, bw=step*0.6;
-        const m3p=chartMode(), colp=cssVar('--cstop-1a');
+        const m3p=chartMode(wrap), colp=cssVar('--cstop-1a');
         vals.forEach((v,i)=>{ const h=(v/mx)*innerH, x=padL+step*i+(step-bw)/2, y=padT+innerH-h;
           if(m3p){ bar3dV(svg,x,y,bw,Math.max(1,h),colp,m3p); }
           else { const r=E('rect',{x:x.toFixed(1),y:y.toFixed(1),width:bw.toFixed(1),height:Math.max(1,h).toFixed(1),rx:1.5}); r.style.fill='var(--cstop-1a)'; svg.appendChild(r); } });
@@ -4814,7 +5009,7 @@
         const rows=[{l:'Early',v:12000,c:'var(--cstop-1a)'},{l:'On Time',v:295000,c:'var(--cstop-1a)'},{l:'Late',v:312000,c:'var(--cstop-1b)'},{l:'No Goods Issue',v:290000,c:'var(--cstop-3a)'},{l:'No Confirmation',v:2000,c:'var(--cstop-1a)'}];
         const mx=320000, rh=innerH/rows.length, svg=E('svg',{viewBox:`0 0 ${W} ${H}`,preserveAspectRatio:'none'});
         [0,100000,200000,300000].forEach(g=>{ const x=padL+(g/mx)*innerW; svg.appendChild(E('line',{x1:x,x2:x,y1:padT,y2:padT+innerH,stroke:'rgba(128,128,128,0.16)','stroke-dasharray':'2 4'})); svg.appendChild(svgText(E,x,padT+innerH+14,(g/1000)+'K','middle')); });
-        const m3c=chartMode();
+        const m3c=chartMode(wrap);
         rows.forEach((r,i)=>{ const cy=padT+rh*i+rh/2, bw=(r.v/mx)*innerW, bh=Math.min(40,rh*0.5);
           if(m3c){ bar3dH(svg,padL,(cy-bh/2),Math.max(2,bw),bh,resolveColor(r.c),m3c); }
           else { const rect=E('rect',{x:padL,y:(cy-bh/2).toFixed(1),width:Math.max(2,bw).toFixed(1),height:bh.toFixed(1),rx:3}); rect.style.fill=r.c; svg.appendChild(rect); }
@@ -4829,7 +5024,7 @@
         const mx=250000, svg=E('svg',{viewBox:`0 0 ${W} ${H}`,preserveAspectRatio:'none'});
         [0,50000,100000,150000,200000].forEach(g=>{ const y=padT+innerH-(g/mx)*innerH; svg.appendChild(E('line',{x1:padL,x2:padL+innerW,y1:y,y2:y,stroke:'rgba(128,128,128,0.16)','stroke-dasharray':'2 4'})); svg.appendChild(svgText(E,padL-4,y+3,String(g),'end')); });
         const step=innerW/bars.length, bw=step*0.72;
-        const m3h=chartMode();
+        const m3h=chartMode(wrap);
         bars.forEach((b,i)=>{ const h=(b[1]/mx)*innerH, x=padL+step*i+(step-bw)/2, y=padT+innerH-h;
           const cvar = b[2]==='l'?'--cstop-1a':b[2]==='d'?'--cstop-1b':'--cstop-3a';
           if(m3h){ bar3dV(svg,x,y,bw,Math.max(1,h),cssVar(cvar),m3h); }
@@ -4844,7 +5039,7 @@
         const svg=E('svg',{viewBox:`0 0 ${W} ${H}`,preserveAspectRatio:'none'});
         [0,0.25,0.5,0.75,1].forEach(f=>{ const y=padT+innerH*(1-f); svg.appendChild(E('line',{x1:padL,x2:padL+innerW,y1:y,y2:y,stroke:'rgba(128,128,128,0.16)','stroke-dasharray':'2 4'})); svg.appendChild(svgText(E,padL-4,y+3,(f*800)+(f>0?'K':''),'end')); svg.appendChild(svgText(E,W-padR+4,y+3,(f*50)+'%','start')); });
         const bx=padL+innerW*0.18, bw=innerW*0.64, bh=innerH*0.95, by=padT+innerH-bh;
-        const m3d=chartMode();
+        const m3d=chartMode(wrap);
         if(m3d){ bar3dV(svg,bx,by,bw,bh,cssVar('--cstop-1a'),m3d); }
         else { const rect=E('rect',{x:bx.toFixed(1),y:by.toFixed(1),width:bw.toFixed(1),height:bh.toFixed(1),rx:3}); rect.style.fill='var(--cstop-1a)'; rect.style.opacity='0.9'; svg.appendChild(rect); }
         const c=E('circle',{cx:(bx+bw/2).toFixed(1),cy:(by+5).toFixed(1),r:3}); c.style.fill='var(--bg-1)'; c.style.stroke='var(--cstop-1b)'; c.style.strokeWidth='1.5'; svg.appendChild(c);
@@ -4883,58 +5078,42 @@
         if(fxAnimating) return;
         const current=document.querySelector('.view.active');
         const next=document.querySelector('.view[data-view="'+v+'"]');
-        const cube=root.getAttribute('data-tabfx')==='cube';
-        if(!next || next===current || !cube){
+        const slide=root.getAttribute('data-tabfx')==='slide';
+        if(!next || next===current || !slide){
           document.querySelectorAll('.view').forEach(s=>s.classList.toggle('active', s.dataset.view===v));
           setNavTabActive(v);
           renderChartsIn(next); runCounters(next);
           return;
         }
         setNavTabActive(v);           // tab + sidebar update immediately
-        cubeTransition(current, next);
+        slideTransition(current, next);
       }
 
-      /* 3D cube rotation between two views with content cross-fade */
-      function cubeTransition(oldView, newView){
+      /* Slide + fade between two views, directional by tab order
+         (new tab to the right of the old → content enters from the right, and vice-versa) */
+      function slideTransition(oldView, newView){
         fxAnimating=true;
         const content=document.getElementById('content');
         const cs=getComputedStyle(content);
         const padL=parseFloat(cs.paddingLeft)||0, padT=parseFloat(cs.paddingTop)||0,
               padR=parseFloat(cs.paddingRight)||0, padB=parseFloat(cs.paddingBottom)||0;
-        const w=content.clientWidth-padL-padR, h=content.clientHeight-padT-padB, dz=w/2;
+        const w=content.clientWidth-padL-padR, h=content.clientHeight-padT-padB;
         const oi=TAB_ORDER.indexOf(oldView.dataset.view), ni=TAB_ORDER.indexOf(newView.dataset.view);
-        const dir=(oi<0||ni<0)?1:(ni>oi?1:-1);
+        const dir=(oi<0||ni<0)?1:(ni>oi?1:-1);   // +1 = new is to the right, enters from the right
+        const dist=Math.min(64, Math.round(w*0.07));
 
         content.scrollTop=0;
         content.classList.add('fx-scene');
-        const cube=document.createElement('div');
-        cube.className='fx-cube';
-        cube.style.cssText=`width:${w}px;height:${h}px;top:${padT}px;left:${padL}px;`;
-        content.appendChild(cube);
-        cube.appendChild(oldView); cube.appendChild(newView);
-
+        [oldView,newView].forEach(f=>{ f.classList.add('fx-face'); f.style.left=padL+'px'; f.style.top=padT+'px'; f.style.width=w+'px'; f.style.height=h+'px'; });
         newView.classList.add('active');
-        [oldView,newView].forEach(f=>{ f.classList.add('fx-face'); f.style.width=w+'px'; f.style.height=h+'px'; });
-        oldView.style.transform=`rotateY(0deg) translateZ(${dz}px)`;
-        newView.style.transform=`rotateY(${dir*90}deg) translateZ(${dz}px)`;
-
         renderChartsIn(newView); runCounters(newView);
 
-        const dur=470, ease='cubic-bezier(.5,.02,.16,1)';
-        const pull=Math.min(220, w*0.22);   // depth the cube recedes mid-spin
-        const spin=cube.animate(
-          [{transform:`translateZ(${-dz}px) rotateY(0deg)`,               offset:0},
-           {transform:`translateZ(${-dz-pull}px) rotateY(${-dir*46}deg)`, offset:0.5},
-           {transform:`translateZ(${-dz}px) rotateY(${-dir*90}deg)`,      offset:1}],
-          {duration:dur, easing:ease});
-        // overlapping cross-fade — no blank frame mid-spin
-        oldView.animate([{opacity:1},{opacity:0,offset:0.58},{opacity:0}], {duration:dur, easing:'cubic-bezier(.4,0,.8,.3)'});
-        newView.animate([{opacity:0},{opacity:0,offset:0.28},{opacity:1,offset:0.9},{opacity:1}], {duration:dur, easing:'cubic-bezier(.25,.6,.3,1)'});
+        const dur=380, ease='cubic-bezier(.33,0,.2,1)';
+        oldView.animate([{transform:'translateX(0)',opacity:1},{transform:`translateX(${-dir*dist}px)`,opacity:0}], {duration:dur, easing:ease, fill:'forwards'});
+        const enter=newView.animate([{transform:`translateX(${dir*dist}px)`,opacity:0},{transform:'translateX(0)',opacity:1}], {duration:dur, easing:ease, fill:'forwards'});
 
-        spin.onfinish=()=>{
-          content.appendChild(oldView); content.appendChild(newView);
-          cube.remove();
-          [oldView,newView].forEach(f=>{ f.classList.remove('fx-face'); f.style.transform=''; f.style.width=''; f.style.height=''; f.style.opacity=''; });
+        enter.onfinish=()=>{
+          [oldView,newView].forEach(f=>{ f.classList.remove('fx-face'); f.style.left=''; f.style.top=''; f.style.width=''; f.style.height=''; f.style.transform=''; f.style.opacity=''; });
           oldView.classList.remove('active');
           newView.classList.add('active');
           content.classList.remove('fx-scene');
@@ -5055,14 +5234,22 @@
       const bLayDef=document.getElementById('layout-default'), bLayFlow=document.getElementById('layout-flowy');
       function setLayout(m){ if(m==='flowy')root.setAttribute('data-layout','flowy'); else root.removeAttribute('data-layout');
         bLayDef.classList.toggle('on',m!=='flowy'); bLayFlow.classList.toggle('on',m==='flowy');
+        // Flowy is its own complete surface treatment — Shell separation conflicts with it, so hide it and reset to default
+        const sg=document.getElementById('shell-sep-grp');
+        if(m==='flowy'){
+          root.removeAttribute('data-shell');
+          ['shell-seamless','shell-contrast'].forEach(id=>document.getElementById(id)&&document.getElementById(id).classList.remove('on'));
+          const st=document.getElementById('shell-tinted'); if(st) st.classList.add('on');
+          if(sg) sg.style.display='none';
+        } else if(sg){ sg.style.display=''; }
         renderChartsIn(document.querySelector('.view.active')); }
       bLayDef.onclick=()=>setLayout('default'); bLayFlow.onclick=()=>setLayout('flowy');
 
-      /* tab transition: flat vs 3D cube */
-      const bFxFlat=document.getElementById('tabfx-flat'), bFxCube=document.getElementById('tabfx-cube');
-      function setTabFx(m){ if(m==='cube')root.setAttribute('data-tabfx','cube'); else root.removeAttribute('data-tabfx');
-        bFxFlat.classList.toggle('on',m!=='cube'); bFxCube.classList.toggle('on',m==='cube'); }
-      bFxFlat.onclick=()=>setTabFx('flat'); bFxCube.onclick=()=>setTabFx('cube');
+      /* tab transition: default vs slide-fade */
+      const bFxFlat=document.getElementById('tabfx-flat'), bFxSlide=document.getElementById('tabfx-slide');
+      function setTabFx(m){ if(m==='slide')root.setAttribute('data-tabfx','slide'); else root.removeAttribute('data-tabfx');
+        bFxFlat.classList.toggle('on',m!=='slide'); bFxSlide.classList.toggle('on',m==='slide'); }
+      bFxFlat.onclick=()=>setTabFx('flat'); bFxSlide.onclick=()=>setTabFx('slide');
 
       /* charts look: default vs isometric vs glass */
       const bC3dDef=document.getElementById('c3d-default'), bC3dIso=document.getElementById('c3d-iso'), bC3dGlass=document.getElementById('c3d-glass');
@@ -5072,9 +5259,37 @@
         else root.removeAttribute('data-charts3d');
         bC3dDef.classList.toggle('on',m!=='iso'&&m!=='glass');
         bC3dIso.classList.toggle('on',m==='iso'); bC3dGlass.classList.toggle('on',m==='glass');
+        const ext=document.getElementById('d3-extent-grp'); if(ext) ext.classList.toggle('is-disabled', m!=='iso'&&m!=='glass');  // extent only relevant when a 3D style is on
         renderChartsIn(document.querySelector('.view.active'));
       }
       bC3dDef.onclick=()=>setCharts3d('default'); bC3dIso.onclick=()=>setCharts3d('iso'); bC3dGlass.onclick=()=>setCharts3d('glass');
+
+      /* ===== Direction knobs (A–G) ===== */
+      // mark one focal "hero" chart card per view (used by 3D-scope=Accent and Composition=Hero)
+      document.querySelectorAll('.view').forEach(v=>{ const w=v.querySelector('[data-chart]'); const card=w&&w.closest('.card'); if(card) card.setAttribute('data-hero',''); });
+      // generic knob wiring: buttons set/remove a root attribute; null = default (no attribute)
+      function wireKnob(attr, buttons, rerender){
+        buttons.forEach(b=>{ b.el=document.getElementById(b.id); });
+        buttons.forEach(b=>{ if(!b.el) return; b.el.addEventListener('click',()=>{
+          if(b.val===null) root.removeAttribute(attr); else root.setAttribute(attr,b.val);
+          buttons.forEach(x=>{ if(x.el) x.el.classList.toggle('on', x===b); });
+          if(rerender) renderChartsIn(document.querySelector('.view.active'));
+        }); });
+      }
+      wireKnob('data-coloruse',   [{id:'color-calm',val:'calm'},{id:'color-strategic',val:'strategic'},{id:'color-expressive',val:'expressive'}], false);
+      wireKnob('data-shell',      [{id:'shell-seamless',val:'seamless'},{id:'shell-tinted',val:null},{id:'shell-contrast',val:'contrast'}], false);
+      wireKnob('data-3dscope',    [{id:'d3-accent',val:'accent'},{id:'d3-full',val:'full'}], true);
+      wireKnob('data-composition',[{id:'comp-uniform',val:'uniform'},{id:'comp-bento',val:null},{id:'comp-hero',val:'hero'}], true);
+      /* KPI numerals: weight slider + font-family toggle */
+      const kpiW=document.getElementById('kpi-weight'), kwVal=document.getElementById('kw-val');
+      if(kpiW) kpiW.addEventListener('input',()=>{ root.style.setProperty('--kpi-weight',kpiW.value); kwVal.textContent=kpiW.value; });
+      const KF={ sans:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif", mono:"ui-monospace,'SF Mono',Menlo,Consolas,monospace", serif:"'Iowan Old Style','Palatino Linotype',Georgia,'Times New Roman',serif" };
+      function setKpiFont(f){ root.style.setProperty('--kpi-font',KF[f]); ['sans','mono','serif'].forEach(x=>{ const b=document.getElementById('kf-'+x); if(b) b.classList.toggle('on',x===f); }); }
+      ['sans','mono','serif'].forEach(f=>{ const b=document.getElementById('kf-'+f); if(b) b.onclick=()=>setKpiFont(f); });
+      wireKnob('data-tabmodel',   [{id:'tabm-nested',val:null},{id:'tabm-flat',val:'flat'},{id:'tabm-seg',val:'seg'}], false);
+      wireKnob('data-tables',     [{id:'tbl-comfortable',val:null},{id:'tbl-lined',val:'lined'}], false);
+      root.setAttribute('data-3dscope','accent');   // default: reserve 3D for the hero card
+      root.setAttribute('data-coloruse','strategic'); // default intensity: balanced in-between
 
       /* right panel: side panel vs in-header */
       const bRpPanel=document.getElementById('rp-panel'), bRpHeader=document.getElementById('rp-header');
@@ -5154,7 +5369,7 @@
         // x gridlines + ticks at 0,20,40
         [0,20,40].forEach(g=>{ const x=labelW+(g/mx)*innerW; svg.appendChild(E('line',{x1:x,x2:x,y1:padT,y2:padT+RQ_BARS.length*rowH,stroke:'rgba(128,128,128,0.16)','stroke-dasharray':'2 4'}));
           const t=svgText(E,x,H-7,String(g),'middle'); t.setAttribute('class','rq-axis'); svg.appendChild(t); });
-        const m3=chartMode(), barCol=cssVar('--cstop-1a');
+        const m3=chartMode(wrap), barCol=cssVar('--cstop-1a');
         RQ_BARS.forEach((row,i)=>{ const cy=padT+rowH*i+rowH/2;
           const lt=svgText(E,labelW-8,cy+4,row[0],'end'); lt.setAttribute('class','rq-bar-label'); svg.appendChild(lt);
           const bw=Math.max(2,(row[1]/mx)*innerW); const bh=rowH*0.62;
@@ -5175,7 +5390,7 @@
         const W=440, H=460, cx=W/2, cy=H*0.5, r=Math.min(W,H)*0.30;
         // distinct categorical colours per slice from the theme chart ramp (differs across Mono/Color/Vivid + hue)
         const sliceColors=['var(--cstop-1a)','var(--cstop-2a)','var(--cstop-3a)','var(--cstop-4a)'];
-        const m3=chartMode();
+        const m3=chartMode(wrap);
         const yS = m3==='iso'?0.62 : m3==='glass'?0.92 : 1;    // vertical squash for the tilt
         const depth = m3==='iso'?22 : m3==='glass'?5 : 0;       // extrusion thickness
         const svg=E('svg',{viewBox:`0 0 ${W} ${H}`,preserveAspectRatio:'xMidYMid meet'});
@@ -5290,6 +5505,106 @@
       if (document.querySelector('.view[data-view="rework-quality"].active')) {
         renderChartsIn(document.querySelector('.view[data-view="rework-quality"]'));
       }
+
+      /* ===== Right-click context menu: per-chart 3D style + per-card invert ===== */
+      (function(){
+        const menu=document.createElement('div'); menu.className='ctxmenu'; document.body.appendChild(menu);
+        const CK='<svg class="ck" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M5 12l5 5L20 7"/></svg>';
+        function hide(){ menu.classList.remove('open'); }
+        function header(t){ const h=document.createElement('div'); h.className='ctx-h'; h.textContent=t; return h; }
+        function sep(){ const s=document.createElement('div'); s.className='ctx-sep'; return s; }
+        function item(label, on, onClick, icon){ const d=document.createElement('div'); d.className='ctx-i'+(on?' on':'');
+          d.innerHTML=(icon||'')+'<span>'+label+'</span>'+CK; d.addEventListener('click',()=>{ onClick(); hide(); }); return d; }
+
+        document.addEventListener('contextmenu', e=>{
+          if(!e.target.closest('#content')) return;            // only inside the working view
+          const wrap=e.target.closest('[data-chart]');
+          const card=e.target.closest('.card');
+          if(!wrap && !card) return;
+          e.preventDefault();
+          menu.innerHTML='';
+          if(wrap){
+            menu.appendChild(header('Chart style'));
+            const cur=wrap.getAttribute('data-chart-look')||'global';
+            [['global','Follow global'],['flat','Flat (2D)'],['iso','Isometric'],['glass','Glass']].forEach(([val,lab])=>{
+              menu.appendChild(item(lab, cur===val, ()=>{
+                if(val==='global') wrap.removeAttribute('data-chart-look'); else wrap.setAttribute('data-chart-look',val);
+                buildChart(wrap);
+              }));
+            });
+          }
+          if(card){
+            if(wrap) menu.appendChild(sep());
+            const inv=card.hasAttribute('data-inverted');
+            menu.appendChild(item(inv?'Reset surface':'Invert surface', inv, ()=>{
+              if(inv) card.removeAttribute('data-inverted'); else card.setAttribute('data-inverted','');
+            }));
+          }
+          menu.classList.add('open');
+          const mw=menu.offsetWidth, mh=menu.offsetHeight;
+          let x=e.clientX, y=e.clientY;
+          if(x+mw>window.innerWidth-8) x=window.innerWidth-mw-8;
+          if(y+mh>window.innerHeight-8) y=window.innerHeight-mh-8;
+          menu.style.left=Math.max(8,x)+'px'; menu.style.top=Math.max(8,y)+'px';
+        });
+        document.addEventListener('click', e=>{ if(!e.target.closest('.ctxmenu')) hide(); });
+        document.addEventListener('keydown', e=>{ if(e.key==='Escape') hide(); });
+        document.addEventListener('scroll', hide, true);
+      })();
+
+      /* ===== Presets (saved locally) ===== */
+      (function(){
+        const LS='sb-presets-v1';
+        const sel=document.getElementById('preset-select'); if(!sel) return;
+        const $=id=>document.getElementById(id);
+        const DEFAULTS=[
+          { id:'preset-enterprise-calm', name:'Enterprise Calm',
+            state:{ buttons:['mode-light','theme-mono','color-calm','shell-contrast','layout-default','l0-match','rp-panel','tabm-seg','tabs-filled','tabfx-flat','comp-bento','density-spacious','kf-sans','c3d-default','d3-accent'],
+              sliders:{'r-surface':'10','r-interactive':'8','kpi-weight':'300'}, hue:'#6366f1', hueActive:false, tab:'#6366f1' } },
+          { id:'preset-bento-bold', name:'Bento Bold',
+            state:{ buttons:['mode-light','theme-mono','color-strategic','shell-tinted','layout-default','l0-match','rp-panel','tabm-seg','tabs-filled','tabfx-flat','comp-hero','density-spacious','kf-sans','c3d-iso','d3-accent'],
+              sliders:{'r-surface':'14','r-interactive':'9','kpi-weight':'200'}, hue:'#6366f1', hueActive:false, tab:'#6366f1' } },
+          { id:'preset-exec-dark', name:'Executive Dark',
+            state:{ buttons:['mode-dark','theme-color','color-strategic','shell-contrast','layout-default','l0-match','rp-panel','tabm-seg','tabs-filled','tabfx-slide','comp-bento','density-compact','kf-sans','c3d-glass','d3-accent'],
+              sliders:{'r-surface':'12','r-interactive':'9','kpi-weight':'300'}, hue:'#6366f1', hueActive:false, tab:'#6366f1' } }
+        ];
+        function load(){ try{ const r=JSON.parse(localStorage.getItem(LS)); if(r&&Array.isArray(r.presets)) return r; }catch(e){} return { presets: JSON.parse(JSON.stringify(DEFAULTS)), selected:'' }; }
+        function persist(){ try{ localStorage.setItem(LS, JSON.stringify(store)); }catch(e){} }
+        function uid(){ return 'p'+Date.now().toString(36)+'-'+Math.floor(Math.random()*1e6).toString(36); }
+        let store=load();
+
+        function captureState(){
+          return {
+            buttons:[...document.querySelectorAll('.proto .toggle button.on')].map(b=>b.id).filter(Boolean),
+            sliders:{ 'r-surface':$('r-surface').value, 'r-interactive':$('r-interactive').value, 'kpi-weight':$('kpi-weight').value },
+            hue: hueInput.value, hueActive: customHue!=null, tab: tabColorInput.value
+          };
+        }
+        function applyState(st){
+          if(!st) return;
+          (st.buttons||[]).forEach(id=>{ const b=$(id); if(b) b.click(); });
+          if(st.sliders) for(const id in st.sliders){ const el=$(id); if(el){ el.value=st.sliders[id]; el.dispatchEvent(new Event('input')); } }
+          if(tabColorInput && st.tab){ tabColorInput.value=st.tab; tabColorInput.dispatchEvent(new Event('input')); }
+          if(hueInput){ if(st.hue) hueInput.value=st.hue; if(st.hueActive){ hueInput.dispatchEvent(new Event('input')); } else if(hueReset){ hueReset.click(); } }
+        }
+        function render(){
+          sel.innerHTML='';
+          const ph=document.createElement('option'); ph.value=''; ph.textContent='— Custom —'; sel.appendChild(ph);
+          store.presets.forEach(p=>{ const o=document.createElement('option'); o.value=p.id; o.textContent=p.name; sel.appendChild(o); });
+          sel.value=store.selected||'';
+        }
+        function current(){ return store.presets.find(p=>p.id===sel.value); }
+
+        sel.addEventListener('change', ()=>{ store.selected=sel.value; persist(); const p=current(); if(p) applyState(p.state); });
+        $('preset-save').onclick=()=>{ const p=current(); if(p){ p.state=captureState(); persist(); } else { $('preset-new').click(); } };
+        $('preset-new').onclick=()=>{ const name=prompt('Preset name:','My preset'); if(!name) return; const p={id:uid(),name:name.trim(),state:captureState()}; store.presets.push(p); store.selected=p.id; persist(); render(); };
+        $('preset-dup').onclick=()=>{ const p=current(); if(!p){ $('preset-new').click(); return; } const c={id:uid(),name:p.name+' copy',state:JSON.parse(JSON.stringify(p.state))}; store.presets.push(c); store.selected=c.id; persist(); render(); };
+        $('preset-rename').onclick=()=>{ const p=current(); if(!p) return; const name=prompt('Rename preset:',p.name); if(name&&name.trim()){ p.name=name.trim(); persist(); render(); } };
+        $('preset-del').onclick=()=>{ const p=current(); if(!p) return; if(!confirm('Delete preset "'+p.name+'"?')) return; store.presets=store.presets.filter(x=>x.id!==p.id); store.selected=''; persist(); render(); };
+
+        render();
+        if(store.selected){ const p=current(); if(p) applyState(p.state); }   // restore last-applied preset
+      })();
     })();
   </script>
 </body>
