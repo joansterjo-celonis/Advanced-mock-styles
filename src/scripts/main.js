@@ -14,6 +14,8 @@ import './shell.js';
 import './views.js';
 // Shared glass tooltip (delegated; any [data-tip] element opts in).
 import './tooltip.js';
+// Functional chart tooltips (delegated; charts tag data slots with [data-ctip]).
+import './chart-tips.js';
 
 import { initFeedback } from './feedback.js';
 initFeedback();

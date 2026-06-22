@@ -1,7 +1,11 @@
 import { PALETTE, rng, series, N, RQ_BARS, RQ_PIE, RQ_CASES, RQ_ACTIVITIES } from '../data/data.js';
 import { E, svgText, chartMode, cssVar, toRGB, shadeC, rgbaC, resolveColor, ensureSoftShadow, sheenGrad, sphere, bar3dV, bar3dH, nextGid } from './effects.js';
+import { icons, hydrateIcons } from './icons.js';
 
       const root = document.documentElement;
+      // Swap static [data-icon] placeholders for real <svg> before anything reads
+      // or clones them (tab cloning, view indexing). Single source = src/icons.js.
+      hydrateIcons();
 
       /* ===== TUNABLE LAYOUT CONFIG — edit these numbers to taste ===== */
       const CONFIG = {
@@ -13,6 +17,21 @@ import { E, svgText, chartMode, cssVar, toRGB, shadeC, rgbaC, resolveColor, ensu
 
       function vividTint(key){ return document.documentElement.getAttribute('data-theme')==='vivid' ? (PALETTE[key]||'#6366f1') : null; }
       function shade(hex,p){ const n=parseInt(hex.slice(1),16); let r=(n>>16)&255,g=(n>>8)&255,b=n&255; const t=p<0?0:255,a=Math.abs(p); r=Math.round((t-r)*a)+r; g=Math.round((t-g)*a)+g; b=Math.round((t-b)*a)+b; return '#'+(0x1000000+(r<<16)+(g<<8)+b).toString(16).slice(1); }
+
+      /* ===== chart tooltips: tag data slots so chart-tips.js can show value-on-hover =====
+         setTip writes the title + (label\u001fvalue) rows joined by \u001e; hitRect/hitPath add
+         an invisible, always-hittable overlay so the tooltip works for thin lines and 3D bars too. */
+      function fmt(n){ const a=Math.abs(n);
+        if(a>=1e9) return (n/1e9).toFixed(a>=1e10?0:2).replace(/\.?0+$/,'')+'B';
+        if(a>=1e6) return (n/1e6).toFixed(a>=1e7?0:2).replace(/\.?0+$/,'')+'M';
+        if(a>=1e3) return (n/1e3).toFixed(a>=1e4?0:1).replace(/\.?0+$/,'')+'K';
+        return String(Math.round(n)); }
+      function monthLabel(i){ const d=new Date(2022,i,1); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); }
+      function setTip(el,title,rows){ if(title!=null) el.setAttribute('data-ctip',String(title));
+        if(rows&&rows.length) el.setAttribute('data-ctip-rows', rows.map(r=>r[0]+'\u001f'+r[1]).join('\u001e'));
+        try{ el.style.cursor='default'; }catch(e){} return el; }
+      function hitRect(svg,x,y,w,h,title,rows){ const r=E('rect',{x:(+x).toFixed(1),y:(+y).toFixed(1),width:Math.max(0.5,w).toFixed(1),height:Math.max(0.5,h).toFixed(1),fill:'transparent','pointer-events':'all'}); setTip(r,title,rows); svg.appendChild(r); return r; }
+      function hitPath(svg,d,title,rows){ const p=E('path',{d:d,fill:'transparent','pointer-events':'all'}); setTip(p,title,rows); svg.appendChild(p); return p; }
 
       /* ---- COMBO chart (bars + line, dual axis) — size-aware ---- */
       function combo(wrap){
@@ -44,12 +63,13 @@ import { E, svgText, chartMode, cssVar, toRGB, shadeC, rgbaC, resolveColor, ensu
         if(leftLabel){ svg.appendChild(T(padL-4,padT+7,leftLabel,'end')); svg.appendChild(T(padL-4,padT+innerH,'0','end')); }
         svg.appendChild(T(W-padR+4,padT+7,rightMax+'%','start')); svg.appendChild(T(W-padR+4,padT+innerH,'0%','start'));
         svg.appendChild(T(padL,H-5,'2022-01','start')); svg.appendChild(T(padL+innerW/2,H-5,'2023-01','middle')); svg.appendChild(T(padL+innerW,H-5,'2024-01','end'));
+        for(let i=0;i<bars.length;i++){ hitRect(svg,padL+step*i,padT,step,innerH,monthLabel(i),[[leftLabel||'Value',fmt(bars[i])],['Rate',line[i].toFixed(1)+'%']]); }
         wrap.appendChild(svg);
       }
 
       /* ---- DONUT (flat / iso-tilted cylinder / glass) ---- */
       function donut(wrap){
-        const segs=[{p:48.39,c:'var(--legend-4)'},{p:41.94,c:'var(--legend-3)'},{p:3.23,c:'var(--legend-2)'},{p:3.23,c:'var(--legend-2)'},{p:3.23,c:'var(--legend-1)'}];
+        const segs=[{p:48.39,c:'var(--legend-4)',l:'UK test'},{p:41.94,c:'var(--legend-3)',l:'Others (13)'},{p:3.23,c:'var(--legend-2)',l:'BE test'},{p:3.23,c:'var(--legend-2)',l:'AU test'},{p:3.23,c:'var(--legend-1)',l:'AE test'}];
         const W=120,H=120,r=42,cx=60,cy=60,sw=22, C=2*Math.PI*r;
         const m3=chartMode(wrap);
         const svg=E('svg',{viewBox:`0 0 ${W} ${H}`});
@@ -68,6 +88,9 @@ import { E, svgText, chartMode, cssVar, toRGB, shadeC, rgbaC, resolveColor, ensu
         } else {
           ring(svg, cy, null);
         }
+        { let off=0; segs.forEach(s=>{ const len=C*s.p/100;
+            const hit=E('circle',{cx:cx,cy:cy,r:r,fill:'none',stroke:'transparent','stroke-width':sw+6,'stroke-dasharray':`${len.toFixed(2)} ${(C-len).toFixed(2)}`,'stroke-dashoffset':(-off).toFixed(2),transform:`rotate(-90 ${cx} ${cy})`,'pointer-events':'stroke'});
+            setTip(hit,s.l,[['Share',s.p.toFixed(2)+'%']]); svg.appendChild(hit); off+=len; }); }
         wrap.appendChild(svg);
       }
 
@@ -107,6 +130,7 @@ import { E, svgText, chartMode, cssVar, toRGB, shadeC, rgbaC, resolveColor, ensu
         const T=(x,y,s,a)=>svgText(E,x,y,s,a);
         svg.appendChild(T(padL,padT+7,'50K','end'));
         svg.appendChild(T(padL,H-5,'2022-01','start')); svg.appendChild(T(padL+innerW,H-5,'2024-01','end'));
+        for(let i=0;i<pts.length;i++){ const cxp=padL+step*i, x0=Math.max(padL,cxp-step/2), x1=Math.min(padL+innerW,cxp+step/2); hitRect(svg,x0,padT,x1-x0,innerH,monthLabel(i),[['Value',fmt(pts[i])]]); }
         wrap.appendChild(svg);
       }
 
@@ -126,6 +150,7 @@ import { E, svgText, chartMode, cssVar, toRGB, shadeC, rgbaC, resolveColor, ensu
         const T=(x,y,s,a)=>svgText(E,x,y,s,a);
         svg.appendChild(T(padL-4,padT+7,'20000','end')); svg.appendChild(T(padL-4,padT+innerH*0.5,'10000','end')); svg.appendChild(T(padL-4,padT+innerH,'0','end'));
         svg.appendChild(T(padL+innerW,H-5,'Country →','end'));
+        for(let i=0;i<vals.length;i++){ hitRect(svg,padL+step*i,padT,step,innerH,'Country '+(i+1),[['Value',fmt(vals[i])]]); }
         wrap.appendChild(svg);
       }
 
@@ -143,6 +168,7 @@ import { E, svgText, chartMode, cssVar, toRGB, shadeC, rgbaC, resolveColor, ensu
           if(m3p){ bar3dV(svg,x,y,bw,Math.max(1,h),colp,m3p); }
           else { const r=E('rect',{x:x.toFixed(1),y:y.toFixed(1),width:bw.toFixed(1),height:Math.max(1,h).toFixed(1),rx:1.5}); r.style.fill='var(--cstop-1a)'; svg.appendChild(r); } });
         months.forEach((mo,i)=>{ const x=padL+step*i+step/2; const t=svgText(E,x,padT+innerH+10,mo,'end'); t.setAttribute('transform',`rotate(-55 ${x} ${padT+innerH+10})`); t.setAttribute('font-size','7.5'); svg.appendChild(t); });
+        for(let i=0;i<vals.length;i++){ hitRect(svg,padL+step*i,padT,step,innerH,months[i],[['Value',vals[i]+'K']]); }
         wrap.appendChild(svg);
       }
       /* ---- OTD classification (horizontal) ---- */
@@ -157,6 +183,7 @@ import { E, svgText, chartMode, cssVar, toRGB, shadeC, rgbaC, resolveColor, ensu
           if(m3c){ bar3dH(svg,padL,(cy-bh/2),Math.max(2,bw),bh,resolveColor(r.c),m3c); }
           else { const rect=E('rect',{x:padL,y:(cy-bh/2).toFixed(1),width:Math.max(2,bw).toFixed(1),height:bh.toFixed(1),rx:3}); rect.style.fill=r.c; svg.appendChild(rect); }
           svg.appendChild(svgText(E,padL-8,cy+3,r.l,'end')); });
+        rows.forEach((r,i)=>{ hitRect(svg,0,padT+rh*i,padL+innerW,rh,r.l,[['Orders',fmt(r.v)]]); });
         wrap.appendChild(svg);
       }
       /* ---- OTD distribution histogram ---- */
@@ -173,6 +200,7 @@ import { E, svgText, chartMode, cssVar, toRGB, shadeC, rgbaC, resolveColor, ensu
           if(m3h){ bar3dV(svg,x,y,bw,Math.max(1,h),cssVar(cvar),m3h); }
           else { const r=E('rect',{x:x.toFixed(1),y:y.toFixed(1),width:bw.toFixed(1),height:Math.max(1,h).toFixed(1),rx:1}); r.style.fill='var('+cvar+')'; svg.appendChild(r); }
           if(b[0]%2===0) svg.appendChild(svgText(E,x+bw/2,padT+innerH+12,String(b[0]),'middle')); });
+        bars.forEach((b,i)=>{ hitRect(svg,padL+step*i,padT,step,innerH,'Deviation '+b[0]+(Math.abs(b[0])===1?' day':' days'),[['Count',fmt(b[1])]]); });
         wrap.appendChild(svg);
       }
       /* ---- OTD development over time (placeholder block) ---- */
@@ -187,6 +215,7 @@ import { E, svgText, chartMode, cssVar, toRGB, shadeC, rgbaC, resolveColor, ensu
         else { const rect=E('rect',{x:bx.toFixed(1),y:by.toFixed(1),width:bw.toFixed(1),height:bh.toFixed(1),rx:3}); rect.style.fill='var(--cstop-1a)'; rect.style.opacity='0.9'; svg.appendChild(rect); }
         const c=E('circle',{cx:(bx+bw/2).toFixed(1),cy:(by+5).toFixed(1),r:3}); c.style.fill='var(--bg-1)'; c.style.stroke='var(--cstop-1b)'; c.style.strokeWidth='1.5'; svg.appendChild(c);
         svg.appendChild(svgText(E,bx+bw/2,padT+innerH+12,'1970-01','middle'));
+        hitRect(svg,bx,by,bw,bh,'1970-01',[['On-Time','760K'],['Rate','47.5%']]);
         wrap.appendChild(svg);
       }
       let _rzt; window.addEventListener('resize',()=>{ clearTimeout(_rzt); _rzt=setTimeout(()=>renderChartsIn(document.querySelector('.view.active')),160); });
@@ -210,13 +239,15 @@ import { E, svgText, chartMode, cssVar, toRGB, shadeC, rgbaC, resolveColor, ensu
       const ocb=document.getElementById('otd-cases-body');
       if(ocb) cases.forEach(r=>{ const tr=document.createElement('tr'); tr.innerHTML='<td>00-2be40edf7ad4</td><td>'+r[0]+'</td><td>'+r[1]+'</td><td>SCCUT24</td><td>'+r[2]+'</td><td>2024-01-01</td><td><span class="otd-pill '+r[3]+'">'+r[4]+'</span></td>'; ocb.appendChild(tr); });
 
-      /* ---- view switching (sidebar + top tabs synced) ---- */
-      let TAB_ORDER=[...document.querySelectorAll('.tabstrip .tab[data-view]')].map(t=>t.dataset.view);
-      function refreshTabOrder(){ TAB_ORDER=[...document.querySelectorAll('.tabstrip .tab[data-view]')].map(t=>t.dataset.view); }
+      /* ---- view switching (top tabs synced) ---- */
+      // Live editor-tab order, read from the real top tabs in DOM order. This is
+      // what makes the Slide transition directional, and it stays correct as tabs
+      // open/close/reorder (no stale cached array to refresh).
+      function tabOrder(){ return [...document.querySelectorAll('.tabbar .tabs .ia-tab[data-view]')].map(t=>t.dataset.view); }
       let fxAnimating=false;
+      // keep the editor top tabs' active state in sync with the shown view
       function setNavTabActive(v){
-        document.querySelectorAll('.nav-leaf[data-view]').forEach(l=>l.classList.toggle('active', l.dataset.view===v));
-        document.querySelectorAll('.tab[data-view]').forEach(t=>t.classList.toggle('active', t.dataset.view===v));
+        document.querySelectorAll('.tabbar .tabs .ia-tab[data-view]').forEach(t=>t.classList.toggle('active', t.dataset.view===v));
       }
       function selectView(v){
         if(fxAnimating) return;
@@ -242,8 +273,8 @@ import { E, svgText, chartMode, cssVar, toRGB, shadeC, rgbaC, resolveColor, ensu
         const padL=parseFloat(cs.paddingLeft)||0, padT=parseFloat(cs.paddingTop)||0,
               padR=parseFloat(cs.paddingRight)||0, padB=parseFloat(cs.paddingBottom)||0;
         const w=content.clientWidth-padL-padR, h=content.clientHeight-padT-padB;
-        const oi=TAB_ORDER.indexOf(oldView.dataset.view), ni=TAB_ORDER.indexOf(newView.dataset.view);
-        const dir=(oi<0||ni<0)?1:(ni>oi?1:-1);   // +1 = new is to the right, enters from the right
+        const order=tabOrder(), oi=order.indexOf(oldView.dataset.view), ni=order.indexOf(newView.dataset.view);
+        const dir=(oi<0||ni<0)?1:(ni>oi?1:-1);   // +1 = new tab is to the right → enters from the right; -1 = from the left
         const dist=Math.min(64, Math.round(w*0.07));
 
         content.scrollTop=0;
@@ -264,10 +295,10 @@ import { E, svgText, chartMode, cssVar, toRGB, shadeC, rgbaC, resolveColor, ensu
           fxAnimating=false;
         };
       }
-      document.querySelectorAll('.nav-leaf[data-view]').forEach(l=>l.addEventListener('click',()=>selectView(l.dataset.view)));
+      // Live editor-tab + L1-leaf view switching is owned by the source↔asset bridge
+      // in shell.js (delegated on .tabbar .tabs / .l1-leaf). The legacy .nav-leaf/.tab
+      // click handlers were removed as dead code — those elements don't exist in this shell.
       window.IA={selectView:selectView,renderChartsIn:renderChartsIn,runCounters:runCounters};
-      document.querySelectorAll('.tab[data-view]').forEach(t=>t.addEventListener('click',e=>{ if(e.target.closest('.x')||e.target.closest('.dots'))return; selectView(t.dataset.view); }));
-      document.querySelectorAll('.nav-leaf:not([data-view])').forEach(l=>l.addEventListener('click',()=>{ document.querySelectorAll('.nav-leaf').forEach(x=>x.classList.remove('active')); l.classList.add('active'); }));
 
       /* ===== Data-driven view registry =====
          Single source of truth for the context-area views. Adding a view is additive:
@@ -298,7 +329,7 @@ import { E, svgText, chartMode, cssVar, toRGB, shadeC, rgbaC, resolveColor, ensu
         if(def.addTab!==false && tabs && !tabs.querySelector('.ia-tab[data-view="'+id+'"]')){
           const tab=document.createElement('div');
           tab.className='ia-tab'; tab.setAttribute('data-view',id);
-          tab.innerHTML=(def.icon||'')+(def.label||id)+'<span class="ia-x" title="Close" aria-label="Close tab"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 6l12 12M18 6 6 18"/></svg></span>';
+          tab.innerHTML=(def.icon||'')+(def.label||id)+'<span class="ia-x" title="Close" aria-label="Close tab"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4">'+icons.close+'</svg></span>';
           const addBtn=tabs.querySelector('.ia-tab-add');
           tabs.insertBefore(tab, addBtn||null);
           tab.addEventListener('click',(e)=>{
@@ -311,7 +342,6 @@ import { E, svgText, chartMode, cssVar, toRGB, shadeC, rgbaC, resolveColor, ensu
         viewEl.querySelectorAll('[data-card]').forEach(card=>{
           card.addEventListener('mousemove',e=>{ const r=card.getBoundingClientRect(); card.style.setProperty('--mx',(e.clientX-r.left)+'px'); card.style.setProperty('--my',(e.clientY-r.top)+'px'); });
         });
-        refreshTabOrder();
         if(!VIEWS.some(x=>x.id===id)) VIEWS.push({ id:id, label:def.label||id, source:'registered', el:viewEl });
         if(typeof def.render==='function'){ try{ def.render(viewEl); }catch(e){ console.error('[views] render failed for '+id,e); } }
         return viewEl;
@@ -351,8 +381,8 @@ import { E, svgText, chartMode, cssVar, toRGB, shadeC, rgbaC, resolveColor, ensu
       /* Edit mode + Components panel */
       const COMP={'KPIs':['KPI Card','KPI IList'],'Process Visualizations':['BPM Model','Business Rule','Case Explorer','Network Explorer','Process Explorer'],'Tables':['Table'],'Category Charts':['Bar Chart','Grouped Bar Chart','Bubble chart','Pie Chart','Columns & Line Ch…','Columns Chart','Grouped Columns…','Line Chart']};
       function buildEditPanel(){ const a=document.createElement('aside'); a.className='edit-panel';
-        let h='<div class="ep-head"><div class="ep-tabs"><button class="ep-tab on">Components</button><button class="ep-tab">Settings</button></div><button class="ep-close" title="Close edit"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>'+
-          '<div class="ep-search"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>Search components</div>';
+        let h='<div class="ep-head"><div class="ep-tabs"><button class="ep-tab on">Components</button><button class="ep-tab">Settings</button></div><button class="ep-close" title="Close edit"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">'+icons.close+'</svg></button></div>'+
+          '<div class="ep-search"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">'+icons.search+'</svg>Search components</div>';
         let idx=0; for(const sec in COMP){ h+='<div class="ep-sec">'+sec+'</div><div class="ep-grid">'; COMP[sec].forEach(n=>{ h+='<div class="ep-card" draggable="true" style="--i:'+(idx++)+'"><span class="ep-ic"></span>'+n+'</div>'; }); h+='</div>'; }
         a.innerHTML=h; return a; }
       document.querySelectorAll('.view').forEach(v=>v.appendChild(buildEditPanel()));
@@ -375,6 +405,11 @@ import { E, svgText, chartMode, cssVar, toRGB, shadeC, rgbaC, resolveColor, ensu
         renderChartsIn(document.querySelector('.view.active'));
         if(subContents[sub]) runCounters(subContents[sub]);
       }));
+
+      /* sticky asset header: flag the scroll container once content slides under the
+         pinned header so it gains a separating shadow (CSS: .ctx-canvas.is-scrolled). */
+      const ctxCanvasEl=document.querySelector('.ctx-canvas');
+      if(ctxCanvasEl) ctxCanvasEl.addEventListener('scroll',()=>{ ctxCanvasEl.classList.toggle('is-scrolled', ctxCanvasEl.scrollTop>2); }, {passive:true});
 
       /* ---- prototype controls ---- */
       const proto=document.getElementById('proto');
@@ -506,10 +541,12 @@ import { E, svgText, chartMode, cssVar, toRGB, shadeC, rgbaC, resolveColor, ensu
       bRpPanel.onclick=()=>setRightPanel('panel'); bRpHeader.onclick=()=>setRightPanel('header');
 
       /* tab style: underline vs filled */
-      const bTabU=document.getElementById('tabs-underline'), bTabF=document.getElementById('tabs-filled'), bTabC=document.getElementById('tabs-color'), bTabL=document.getElementById('tabs-uline');
-      function setTabStyle(m){ if(m==='underline')root.removeAttribute('data-tabs'); else root.setAttribute('data-tabs',m);
-        bTabU.classList.toggle('on',m==='underline'); bTabF.classList.toggle('on',m==='filled'); bTabC.classList.toggle('on',m==='color'); bTabL.classList.toggle('on',m==='ulinecolor'); }
-      bTabU.onclick=()=>setTabStyle('underline'); bTabF.onclick=()=>setTabStyle('filled'); bTabC.onclick=()=>setTabStyle('color'); bTabL.onclick=()=>setTabStyle('ulinecolor');
+      const bTabU=document.getElementById('tabs-underline'), bTabF=document.getElementById('tabs-filled'), bTabC=document.getElementById('tabs-color');
+      // Underline now owns the colour picker (the old "Underline color" is merged in):
+      // in this mode every interactive tab paints its active indicator with --tab-color.
+      function setTabStyle(m){ root.setAttribute('data-tabs',m);
+        bTabU.classList.toggle('on',m==='underline'); bTabF.classList.toggle('on',m==='filled'); bTabC.classList.toggle('on',m==='color'); }
+      bTabU.onclick=()=>setTabStyle('underline'); bTabF.onclick=()=>setTabStyle('filled'); bTabC.onclick=()=>setTabStyle('color');
       const tabColorInput=document.getElementById('tab-color-input');
       function tabLum(hex){ const n=parseInt(hex.slice(1),16), f=c=>{c/=255; return c<=0.03928?c/12.92:Math.pow((c+0.055)/1.055,2.4);}; return 0.2126*f(n>>16&255)+0.7152*f(n>>8&255)+0.0722*f(n&255); }
       function applyTabColor(){ const c=tabColorInput.value; root.style.setProperty('--tab-color',c); root.style.setProperty('--tab-text', tabLum(c)>0.5?'#15161a':'#ffffff'); }
@@ -525,7 +562,7 @@ import { E, svgText, chartMode, cssVar, toRGB, shadeC, rgbaC, resolveColor, ensu
         'c3d-default':()=>setCharts3d('default'), 'c3d-iso':()=>setCharts3d('iso'), 'c3d-glass':()=>setCharts3d('glass'),
         'kf-sans':()=>setKpiFont('sans'), 'kf-mono':()=>setKpiFont('mono'), 'kf-serif':()=>setKpiFont('serif'),
         'rp-panel':()=>setRightPanel('panel'), 'rp-header':()=>setRightPanel('header'),
-        'tabs-underline':()=>setTabStyle('underline'), 'tabs-filled':()=>setTabStyle('filled'), 'tabs-color':()=>setTabStyle('color'), 'tabs-uline':()=>setTabStyle('ulinecolor')
+        'tabs-underline':()=>setTabStyle('underline'), 'tabs-filled':()=>setTabStyle('filled'), 'tabs-color':()=>setTabStyle('color')
       };
       KNOB_GROUPS.forEach(g=>g.buttons.forEach(b=>{ BTN_ACTIONS[b.id]=()=>g.set(b.val); }));
 
@@ -551,10 +588,12 @@ import { E, svgText, chartMode, cssVar, toRGB, shadeC, rgbaC, resolveColor, ensu
           /* ---- glass audit (cleaning loop): every backdrop-filter must flow from the global --glass token,
              so new surfaces can't silently bypass the slider. backdrop-filter:none = reduced-transparency neutralizer. */
           const stray = [];
+          let glassSel = '';   // accumulated selectorText of every rule whose blur flows from --glass-blur
           const walk = rules => { for (const r of rules) {
             if (r.style && r.style.backdropFilter) {
               const bf = r.style.backdropFilter;
               if (bf !== 'none' && bf.indexOf('--glass-blur') === -1) stray.push(r.selectorText || '(anonymous rule)');
+              else if (bf.indexOf('--glass-blur') !== -1) glassSel += (r.selectorText || '') + ' , ';
             }
             if (r.cssRules) walk(Array.from(r.cssRules));   // recurse into @media / @supports
           } };
@@ -569,8 +608,15 @@ import { E, svgText, chartMode, cssVar, toRGB, shadeC, rgbaC, resolveColor, ensu
           if (!hasSlider) console.warn('[glass-audit] #r-glass slider control is missing.');
           if (glassTok === '') console.warn('[glass-audit] --glass token missing from :root.');
           if (!capturesGlass) console.warn('[glass-audit] r-glass is not wired into captureState().sliders (presets will not persist it).');
-          if (!stray.length && hasSlider && glassTok !== '' && capturesGlass)
-            console.info('[glass-audit] OK \u2014 global glass token + slider wired; all backdrop-filter surfaces flow from var(--glass-blur).');
+
+          /* positive sweep: every surface in the glass manifest must be covered by a
+             --glass-driven rule, so none silently ships opaque ("is X glass?" guarantee). */
+          const MANIFEST = ['.glass','.gsearch','.modal-card','.sb-pop','.wb-menu','.vh-menu','.ctxmenu','.glass-chrome'];
+          const uncovered = MANIFEST.filter(sel => glassSel.indexOf(sel) === -1);
+          if (uncovered.length) console.warn('[glass-audit] manifest surfaces with no --glass-driven rule:', uncovered);
+
+          if (!stray.length && hasSlider && glassTok !== '' && capturesGlass && !uncovered.length)
+            console.info('[glass-audit] OK \u2014 ' + MANIFEST.length + ' glass-manifest surfaces flow from var(--glass-blur); popovers/menus/modals/search all glassy.');
         };
         if (document.readyState === 'complete') setTimeout(runAudit, 0);
         else window.addEventListener('load', runAudit);
@@ -655,6 +701,7 @@ import { E, svgText, chartMode, cssVar, toRGB, shadeC, rgbaC, resolveColor, ensu
           else { const r=E('rect',{x:labelW,y:(cy-bh/2).toFixed(1),width:bw.toFixed(1),height:bh.toFixed(1),rx:2}); r.style.fill=fill; svg.appendChild(r); }
           const vt=svgText(E,labelW+bw+(m3==='iso'?12:5),cy+4,String(row[1]),'start'); vt.setAttribute('class','rq-bar-val'); vt.style.fill=barCol; svg.appendChild(vt);
         });
+        RQ_BARS.forEach((row,i)=>{ hitRect(svg,0,padT+rowH*i,W,rowH,row[0],[['Count',String(row[1])]]); });
         wrap.appendChild(svg);
       }
 
@@ -703,6 +750,7 @@ import { E, svgText, chartMode, cssVar, toRGB, shadeC, rgbaC, resolveColor, ensu
           const lead=E('polyline',{points:`${lx.toFixed(1)},${ly.toFixed(1)} ${ox.toFixed(1)},${oy.toFixed(1)} ${ex.toFixed(1)},${oy.toFixed(1)}`}); lead.setAttribute('class','rq-pie-lead'); svg.appendChild(lead);
           const lab=svgText(E,right?ex+3:ex-3,oy+3,(s.p.toFixed(2))+'% '+s.l,right?'start':'end'); lab.setAttribute('class','rq-pie-label'); svg.appendChild(lab);
         });
+        RQ_PIE.forEach((s,i)=>{ hitPath(svg,slicePath(arcs[i][0],arcs[i][1],cy),s.l,[['Share',s.p.toFixed(2)+'%']]); });
         wrap.appendChild(svg);
       }
 
@@ -774,7 +822,7 @@ import { E, svgText, chartMode, cssVar, toRGB, shadeC, rgbaC, resolveColor, ensu
       /* ===== Right-click context menu: per-chart 3D style + per-card invert ===== */
       (function(){
         const menu=document.createElement('div'); menu.className='ctxmenu glass'; document.body.appendChild(menu);
-        const CK='<svg class="ck" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M5 12l5 5L20 7"/></svg>';
+        const CK='<svg class="ck" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6">'+icons.check+'</svg>';
         function hide(){ menu.classList.remove('open'); }
         function header(t){ const h=document.createElement('div'); h.className='ctx-h'; h.textContent=t; return h; }
         function sep(){ const s=document.createElement('div'); s.className='ctx-sep'; return s; }

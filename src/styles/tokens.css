@@ -49,13 +49,17 @@
        One family powers every overlay (.glass) and a gentler shell tier (.glass-chrome). */
     --glass: 0;
     --glass-tint:#16181d; --glass-edge:255,255,255;
+    /* Chrome glass tints from the chrome palette (not the overlay tint), so the
+       shell tier follows light/dark/contrast automatically — e.g. contrast is a
+       light mode but has a dark --chrome-panel, which must NOT go white. */
+    --glass-tint-chrome: var(--chrome-panel);
     --glass-blur: calc(4px + var(--glass)*24px);
     --glass-saturate: calc(1.05 + var(--glass)*0.65);
     --glass-fill: clamp(0.5, calc(0.97 - var(--glass)*0.5), 0.97);
     --glass-fill-chrome: clamp(0.66, calc(0.99 - var(--glass)*0.3), 0.99);
     --glass-edge-alpha: calc(0.10 + var(--glass)*0.45);
     --glass-bg: color-mix(in srgb, var(--glass-tint) calc(var(--glass-fill)*100%), transparent);
-    --glass-bg-chrome: color-mix(in srgb, var(--glass-tint) calc(var(--glass-fill-chrome)*100%), transparent);
+    --glass-bg-chrome: color-mix(in srgb, var(--glass-tint-chrome) calc(var(--glass-fill-chrome)*100%), transparent);
     color-scheme: dark;
   }
 

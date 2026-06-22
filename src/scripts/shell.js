@@ -1,4 +1,5 @@
 import { selectView, renderChartsIn, runCounters } from './engine.js';
+import { icons } from './icons.js';
 
 (function(){
   const app = document.getElementById('app');
@@ -233,7 +234,7 @@ import { selectView, renderChartsIn, runCounters } from './engine.js';
 
   /* ===== bridge: source shell ↔ asset ===== */
   (function(){
-    var CLOSE_SVG='<span class="ia-x" title="Close" aria-label="Close tab"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 6l12 12M18 6 6 18"/></svg></span>';
+    var CLOSE_SVG='<span class="ia-x" title="Close" aria-label="Close tab"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4">'+icons.close+'</svg></span>';
     var content=document.getElementById('content');
     function tabsEl(){ return document.querySelector('.tabbar .tabs'); }
     function tabFor(v){ return document.querySelector('.tabbar .tabs .ia-tab[data-view="'+v+'"]'); }

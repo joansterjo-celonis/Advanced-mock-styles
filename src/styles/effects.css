@@ -6,16 +6,35 @@
    ============================================================ */
 
 /* ============================================================
-   Global glass system — ONE token-driven surface shared by every
-   overlay (menus, context menus, modals, tooltips, panels) plus a
-   gentler tier (.glass-chrome) for shell bars/sidebars. Everything is
-   driven by --glass (the "Global glass" slider): 0 = near-opaque
-   (current look), 1 = full liquid glass. Opt in by adding the class.
+   GLASS SURFACE MANIFEST
+   ------------------------------------------------------------
+   The single, authoritative list of every floating surface that
+   reads as glass. To make a NEW overlay glassy, add its selector to
+   the OVERLAY list below — that one line is the whole change. To
+   answer "is X glass?", read this list. Centralizing it here is what
+   stops a surface (e.g. the search modal) from silently shipping
+   opaque because someone forgot a per-element class="glass".
+
+   Two tiers, both driven by the "Global glass" slider (--glass:
+   0 = near-opaque current look, 1 = full liquid glass):
+     · OVERLAY  — full liquid glass: menus, popovers, modals, tooltips, search
+     · CHROME   — gentler shell tier: rails / bars / sidebars (.glass-chrome)
+
+   Surfaces may also carry class="glass" as a redundant, harmless alias
+   (kept for a few popovers); the MANIFEST is the source of truth.
    ============================================================ */
-/* isolation (not position) so we don't clobber position:fixed on .proto/.ctxmenu/.glass-tip;
-   it still gives the z-index:-1 pseudos a private stacking context. Glass elements are always
-   positioned (overlays are fixed/absolute; the static .modal-card gets position:relative). */
-.glass {
+
+/* ---------- OVERLAY tier ---------- */
+/* isolation (not position) gives the z-index:-1 sheen/diffraction pseudos a private
+   stacking context without clobbering position:fixed on .proto/.ctxmenu/.glass-tip.
+   isolation is NOT a backdrop root, so a nested overlay can still blur the page. */
+.glass,
+.gsearch,            /* global search modal */
+.modal-card,         /* deploy / spaces / history modals */
+.sb-pop,             /* status-bar popovers: package / branch / version */
+.wb-menu,            /* workbench switcher */
+.vh-menu,            /* version-history dropdown */
+.ctxmenu {           /* right-click context menus (chart style + package) */
   isolation: isolate;
   background: var(--glass-bg);
   -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
@@ -25,20 +44,43 @@
 /* Specular top sheen (::before) + iOS-style chromatic edge diffraction (::after),
    both scaled by --glass. z-index:-1 keeps them above the blur but below content,
    inside the element's own stacking context (isolation), so text stays crisp. */
-.glass::before, .glass::after {
+.glass::before, .glass::after,
+.gsearch::before, .gsearch::after,
+.modal-card::before, .modal-card::after,
+.sb-pop::before, .sb-pop::after,
+.wb-menu::before, .wb-menu::after,
+.vh-menu::before, .vh-menu::after,
+.ctxmenu::before, .ctxmenu::after {
   content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: -1;
 }
-.glass::before { background: linear-gradient(180deg, rgba(255,255,255, calc(var(--glass)*.22)), transparent 46%); }
-.glass::after {
+.glass::before, .gsearch::before, .modal-card::before, .sb-pop::before,
+.wb-menu::before, .vh-menu::before, .ctxmenu::before {
+  background: linear-gradient(180deg, rgba(255,255,255, calc(var(--glass)*.22)), transparent 46%);
+}
+.glass::after, .gsearch::after, .modal-card::after, .sb-pop::after,
+.wb-menu::after, .vh-menu::after, .ctxmenu::after {
   opacity: var(--glass); mix-blend-mode: screen;
   background: linear-gradient(135deg, rgba(120,170,255,.16), transparent 30%, transparent 70%, rgba(255,140,200,.14));
 }
-/* Gentler tier for the main shell chrome — stays legible at max glass.
-   The id-bumped selector lets the chrome glass win over #l1's base background;
-   the flowy-mode transparent .tabbar/.statusbar rules keep higher specificity, so they still win. */
+
+/* ---------- CHROME tier ---------- */
+/* Gentler glass for the shell chrome (#l1 rail, .tabbar, .statusbar). Crucially the
+   blur lives on a ::before LAYER, not on the element, so the chrome element does NOT
+   become a backdrop root — that lets overlays nested inside it (e.g. the .sb-pop
+   status-bar popovers) blur the PAGE just like the body-level modal does. We use
+   position+z-index (NOT isolation/backdrop-filter on the element) to contain the
+   layer without re-introducing a backdrop root. The id-bumped selector lets chrome
+   glass win over #l1's base background; flowy transparent overrides keep higher
+   specificity, so they still win. */
 .glass-chrome,
 #l1.glass-chrome {
+  position: relative;
+  z-index: 0;
   background: var(--glass-bg-chrome);
+}
+.glass-chrome::before,
+#l1.glass-chrome::before {
+  content: ""; position: absolute; inset: 0; z-index: -1; border-radius: inherit; pointer-events: none;
   -webkit-backdrop-filter: blur(calc(var(--glass-blur)*.6)) saturate(var(--glass-saturate));
   backdrop-filter: blur(calc(var(--glass-blur)*.6)) saturate(var(--glass-saturate));
 }
@@ -54,6 +96,22 @@
 }
 .glass-tip.below { transform: translateY(-2px); }
 .glass-tip.open { opacity: 1; transform: none; }
+
+/* Cursor-following chart tooltip (also a .glass surface). It is moved via
+   transform (set in chart-tips.js); opacity/scale animate the show/hide. */
+.chart-tip {
+  position: fixed; top: 0; left: 0; z-index: 340; min-width: 96px; max-width: 280px;
+  padding: 8px 11px; border-radius: 10px; color: var(--text);
+  box-shadow: var(--ia-shadow-pop, 0 18px 40px -18px rgba(0,0,0,.5));
+  opacity: 0; pointer-events: none; will-change: transform;
+  transition: opacity .12s ease;
+}
+.chart-tip.open { opacity: 1; }
+.chart-tip .ct-title { font-size: 12px; font-weight: 600; letter-spacing: .01em; margin-bottom: 4px; color: var(--text); }
+.chart-tip .ct-rows { display: flex; flex-direction: column; gap: 2px; }
+.chart-tip .ct-row { display: flex; align-items: baseline; justify-content: space-between; gap: 18px; font-size: 12px; line-height: 1.3; }
+.chart-tip .ct-l { color: var(--text-dim, var(--chrome-dim)); }
+.chart-tip .ct-v { font-weight: 600; font-variant-numeric: tabular-nums; }
 
 /* ============================================================
    Knob-driven surface finishes — toggled by the "Surface finish"
@@ -98,9 +156,15 @@
    the #l0 overlay (tokens) and the card finishes — no per-surface opt-out needed. */
 @media (prefers-reduced-transparency: reduce) {
   :root { --glass: 0; --glass-fill: 1; --glass-fill-chrome: 1; }
-  .glass, .glass-chrome, .glass-tip,
+  .glass, .gsearch, .modal-card, .sb-pop, .wb-menu, .vh-menu, .ctxmenu,
+  .glass-chrome, .glass-tip, .chart-tip,
   [data-surfacefx="frost"] .card,
   [data-surfacefx="aurora"] .card { -webkit-backdrop-filter: none; backdrop-filter: none; }
-  .glass::before, .glass::after { display: none; }
+  /* the manifest sheen/diffraction layers + the chrome blur layer */
+  .glass::before, .glass::after,
+  .gsearch::before, .gsearch::after, .modal-card::before, .modal-card::after,
+  .sb-pop::before, .sb-pop::after, .wb-menu::before, .wb-menu::after,
+  .vh-menu::before, .vh-menu::after, .ctxmenu::before, .ctxmenu::after,
+  .glass-chrome::before { display: none; }
   [data-surfacefx="aurora"] .card::after { opacity: .22; }
 }

@@ -4,10 +4,10 @@
 // renders the charts/counters on activation. Use it as the template for
 // adding more views.
 import { registerView } from '../engine.js';
+import { icon as iconFor } from '../icons.js';
 
-const icon =
-  '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9">' +
-  '<path d="M3 3v18h18"/><path d="M7 14l3-4 3 3 5-7"/></svg> ';
+// Same shared "view" glyph as every other context view (single source: src/icons.js).
+const icon = iconFor('view') + ' ';
 
 registerView({
   id: 'insights',

@@ -23,8 +23,10 @@
   #app.pinned .l0-spacer{width:var(--ia-l0-w);}
   #l0{position:fixed;top:0;left:0;bottom:0;width:var(--ia-l0-w);background:var(--chrome-rail);border-right:1px solid var(--ia-line);display:flex;flex-direction:column;z-index:60;transform-origin:top left;opacity:0;transform:translateY(-8px) scaleY(.985);pointer-events:none;transition:opacity .17s ease, transform .2s cubic-bezier(.32,.72,0,1), box-shadow .2s;}
   #app.l0-open:not(.pinned) #l0{opacity:1;transform:translateY(0) scaleY(1);pointer-events:auto;box-shadow:var(--ia-shadow-pop);}
-  /* Glassy L0 only while it floats OVER the content (overlay mode). When pinned it docks via .l0-spacer, so it stays solid. */
-  #app.l0-open:not(.pinned) #l0{background:var(--glass-bg-chrome);-webkit-backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-saturate));backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-saturate));border-right-color:rgba(var(--glass-edge),var(--glass-edge-alpha));}
+  /* Glassy L0 only while it floats OVER the content (overlay mode). Uses the full glass panel tier
+     (--glass-bg) so the Global-glass slider visibly drives its translucency. When pinned it docks via
+     .l0-spacer, so it stays solid (this selector simply doesn't match). */
+  #app.l0-open:not(.pinned) #l0{background:var(--glass-bg);-webkit-backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-saturate));backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-saturate));border-right-color:rgba(var(--glass-edge),var(--glass-edge-alpha));}
   @media (prefers-reduced-transparency: reduce){ #app.l0-open:not(.pinned) #l0{-webkit-backdrop-filter:none;backdrop-filter:none;background:var(--chrome-rail);} }
   #app.pinned #l0{opacity:1;transform:none;pointer-events:auto;box-shadow:none;transition:none;}
   .ia-l0-head{display:flex;align-items:center;gap:8px;padding:16px 14px 10px 16px;}
@@ -203,7 +205,10 @@
   .sb-pop-wrap{position:relative;display:flex;align-items:center;}
   .sb-item[data-pop]{transition:background .12s;}
   .sb-item.active-pop{background:var(--ia-active);}
-  .sb-pop{position:absolute;bottom:calc(100% + 10px);left:0;background:var(--ia-panel);border:1px solid var(--ia-line);border-radius:12px;box-shadow:var(--ia-shadow-pop);padding:8px;min-width:268px;display:none;z-index:120;}
+  /* selected/open state must recolour its icon + chevron (esp. dark mode, where the muted tone is too dim) */
+  .sb-item.active-pop .icon,.sb-item.active-pop .ia-chev{color:var(--ia-ink);}
+  /* surface (background/border/blur) comes from .glass; this keeps only structure */
+  .sb-pop{position:absolute;bottom:calc(100% + 10px);left:0;color:var(--ia-ink);border-radius:12px;box-shadow:var(--ia-shadow-pop);padding:8px;min-width:268px;display:none;z-index:120;}
   .sb-pop.open{display:block;animation:ia_popIn .14s ease;}
   @keyframes ia_popIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
   .pop-item{display:flex;align-items:flex-start;gap:13px;padding:10px 12px;border-radius:9px;width:100%;text-align:left;font-size:14px;color:var(--ia-ink);}
@@ -213,6 +218,7 @@
   .pop-item.disabled .icon{color:var(--ia-muted-2);}
   .pop-item.disabled:hover{background:none;}
   .pop-item.selected{background:var(--ia-active);}
+  .pop-item.selected .icon{color:var(--ia-ink);}
   .pop-item .twoline{display:flex;flex-direction:column;gap:2px;line-height:1.25;}
   .pop-item .twoline .ttl{font-weight:500;}
   .pop-item .twoline .sub{font-size:12.5px;color:var(--ia-muted);}
@@ -245,6 +251,8 @@
   .pkg-row:hover{background:var(--ia-hover);}
   .pkg-row.active{background:#cfe0fb;color:#1e3a8a;font-weight:500;}
   .pkg-row .pcube{color:var(--ia-navy);width:18px;height:18px;flex:none;}
+  /* active row has a fixed light-blue fill (#cfe0fb) + dark-blue text in every mode; pin the icon to match so it stays legible in dark mode (where --ia-navy is near-white) */
+  .pkg-row.active .pcube{color:#1e3a8a;}
   .pkg-row .more{margin-left:auto;color:var(--ia-muted);width:18px;height:18px;flex:none;opacity:0;transition:opacity .12s ease;}
   .pkg-row:hover .more{opacity:1;}
   .pkg-row.active .more{opacity:1;color:var(--ia-ink);}
@@ -253,7 +261,8 @@
   .gsearch-overlay{position:fixed;inset:0;background:rgba(18,26,44,.40);z-index:200;display:none;align-items:flex-start;justify-content:center;padding:8vh 20px 24px;}
   .gsearch-overlay.open{display:flex;animation:ia_gsFade .14s ease;}
   @keyframes ia_gsFade{from{opacity:0}to{opacity:1}}
-  .gsearch{width:min(780px,95vw);max-height:82vh;background:var(--ia-panel);border-radius:18px;box-shadow:0 28px 80px rgba(15,31,61,.40);display:flex;flex-direction:column;overflow:hidden;animation:ia_gsPop .17s cubic-bezier(.32,.72,0,1);}
+  /* surface (background/blur/border) comes from the glass manifest in effects.css */
+  .gsearch{width:min(780px,95vw);max-height:82vh;border-radius:18px;box-shadow:0 28px 80px rgba(15,31,61,.40);display:flex;flex-direction:column;overflow:hidden;animation:ia_gsPop .17s cubic-bezier(.32,.72,0,1);}
   @keyframes ia_gsPop{from{opacity:0;transform:translateY(-12px) scale(.99)}to{opacity:1;transform:none}}
   .gs-top{padding:18px 18px 0;flex:none;}
   .gs-inputwrap{display:flex;align-items:center;gap:11px;height:52px;border:2px solid var(--ia-blue);border-radius:12px;padding:0 14px;box-shadow:0 0 0 4px rgba(47,109,246,.10);}
@@ -292,7 +301,8 @@
   .wb-wrap{position:relative;flex:1;min-width:0;}
   .brand#wbSwitch{width:100%;text-align:left;cursor:pointer;border-radius:8px;padding:2px 6px;margin:-2px -6px;}
   .brand#wbSwitch:hover{background:var(--ia-hover);}
-  .wb-menu{position:absolute;top:calc(100% + 7px);left:0;min-width:214px;background:var(--ia-panel);border:1px solid var(--ia-line);border-radius:12px;box-shadow:var(--ia-shadow-pop);padding:6px;display:none;z-index:95;animation:ia_popIn .14s ease;}
+  /* surface (background/border/blur) comes from .glass; this keeps only structure */
+  .wb-menu{position:absolute;top:calc(100% + 7px);left:0;min-width:214px;color:var(--ia-ink);border-radius:12px;box-shadow:var(--ia-shadow-pop);padding:6px;display:none;z-index:95;animation:ia_popIn .14s ease;}
   .wb-menu.open{display:block;}
   .wb-item{display:flex;align-items:center;gap:11px;width:100%;padding:10px 11px;border-radius:8px;font-size:14px;color:var(--ia-ink);text-align:left;}
   .wb-item:hover{background:var(--ia-hover);}
@@ -338,7 +348,8 @@
   /* ===== Generic modal shell ===== */
   .modal-overlay{position:fixed;inset:0;background:rgba(18,26,44,.40);z-index:215;display:none;align-items:flex-start;justify-content:center;padding:7vh 20px 24px;}
   .modal-overlay.open{display:flex;animation:ia_gsFade .14s ease;}
-  .modal-card{position:relative;width:min(720px,95vw);max-height:82vh;background:var(--ia-panel);border-radius:16px;box-shadow:0 28px 80px rgba(15,31,61,.40);display:flex;flex-direction:column;overflow:hidden;animation:ia_gsPop .17s cubic-bezier(.32,.72,0,1);}
+  /* surface (background/blur/border) comes from the glass manifest in effects.css */
+  .modal-card{position:relative;width:min(720px,95vw);max-height:82vh;border-radius:16px;box-shadow:0 28px 80px rgba(15,31,61,.40);display:flex;flex-direction:column;overflow:hidden;animation:ia_gsPop .17s cubic-bezier(.32,.72,0,1);}
   .modal-head{display:flex;align-items:center;gap:13px;padding:18px 20px;border-bottom:1px solid var(--ia-line);flex:none;}
   .modal-head .hic{width:34px;height:34px;border-radius:9px;background:var(--ia-hover);display:flex;align-items:center;justify-content:center;color:var(--ia-navy);flex:none;}
   .modal-head .hic .icon{width:20px;height:20px;}
@@ -421,7 +432,9 @@
   .vh-item:hover .vh-kebab{opacity:1;}
   .vh-kebab:hover{background:var(--ia-active);color:var(--ia-ink);}
   .vh-kebab .icon{width:18px;height:18px;}
-  .vh-menu{position:absolute;right:14px;top:42px;background:var(--ia-panel);border:1px solid var(--ia-line);border-radius:11px;box-shadow:var(--ia-shadow-pop);padding:7px;min-width:194px;display:none;z-index:6;}
+  /* glass via tokens (not the .glass class): many per-row instances live inside the already-glass history modal, so we route the surface through the slider here to avoid per-instance markup */
+  /* surface (background/blur/border) comes from the glass manifest in effects.css */
+  .vh-menu{position:absolute;right:14px;top:42px;border-radius:11px;box-shadow:var(--ia-shadow-pop);padding:7px;min-width:194px;display:none;z-index:6;}
   .vh-menu.open{display:block;}
   .vh-mi{display:flex;align-items:center;gap:11px;padding:9px 11px;border-radius:8px;font-size:14px;color:var(--ia-ink);width:100%;text-align:left;}
   .vh-mi:hover{background:var(--ia-hover);}
@@ -542,20 +555,19 @@
 .ctx-canvas .rrail{display:none;}
 /* ===== Layers knob (Default / Flowy) → also treats the L0 + L1 shell ===== */
 [data-layout="flowy"] #main{background:var(--chrome-0);}
-[data-layout="flowy"] #l1{margin:10px 8px;border:1px solid var(--chrome-border);border-radius:16px;height:calc(100vh - 20px);box-shadow:0 22px 48px -26px rgba(0,0,0,.45);overflow:hidden;}
-[data-layout="flowy"] .ctx-canvas{margin:10px 10px 10px 0;}
-/* the inner .view card is the single frame (its radius follows the corner-radius knob); drop the redundant fixed outer frame and trim the content gap so the card fills the canvas */
-[data-layout="flowy"] .ctx-canvas #content{padding:8px;}
+/* Flowy: the rail terminates above the 40px statusbar (10px margins top+bottom + 40px bar = 60px)
+   so its rounded bottom corners and drop shadow read over the bottom bar instead of being clipped behind it. */
+[data-layout="flowy"] #l1{margin:10px 8px;border:1px solid var(--chrome-border);border-radius:16px;height:calc(100vh - 60px);box-shadow:0 22px 48px -26px rgba(0,0,0,.45);overflow:hidden;}
+/* Flowy: the canvas is a pure scroll viewport (no surface, no asymmetric margin) so #main's gray is the single backdrop behind the one floating .view card */
+[data-layout="flowy"] .ctx-canvas{background:transparent;margin:0;}
+/* the inner .view card is the single frame (its radius follows the corner-radius knob); a symmetric content gap floats it on the gray, with extra bottom room so its drop shadow isn't clipped by the scroll container */
+[data-layout="flowy"] .ctx-canvas #content{padding:12px 12px 22px;}
 [data-layout="flowy"] .tabbar{background:transparent;border-bottom-color:var(--chrome-border-soft);}
 [data-layout="flowy"].l0-open #l0,[data-layout="flowy"].pinned #l0{margin:10px;border-radius:18px;height:calc(100vh - 20px);border:1px solid var(--chrome-border);box-shadow:0 28px 70px -28px rgba(0,0,0,.55);}
 [data-layout="flowy"] .home-topbar{padding-top:8px;}
-/* Flowy: let the statusbar blend into the canvas gray instead of reading as a separate solid bar */
-[data-layout="flowy"] .statusbar{background:transparent;border-top:0;}
-/* ===== Tab style knob → the editor's top tabs (.ia-tab), mirroring the asset tab styles ===== */
-[data-tabs="filled"] #route-context .ia-tab.active{background:var(--chrome-active);border-radius:9px;}
-[data-tabs="filled"] #route-context .ia-tab.active::after{display:none;}
-[data-tabs="color"] #route-context .ia-tab.active{background:var(--tab-color);color:var(--tab-text);border-radius:9px;}
-[data-tabs="color"] #route-context .ia-tab.active::after{display:none;}
-[data-tabs="color"] #route-context .ia-tab.active .icon{color:var(--tab-text);}
-[data-tabs="ulinecolor"] #route-context .ia-tab.active::after{background:var(--tab-color);}
-[data-tabs="underline"] #route-context .ia-tab.active{background:transparent;}
+/* Flowy: the statusbar recedes into the canvas gray instead of reading as a glass pane on top — drop the chrome-glass blur so the floating card's shadow stays visible through it */
+[data-layout="flowy"] .statusbar{background:transparent;border-top:0;-webkit-backdrop-filter:none;backdrop-filter:none;box-shadow:none;}
+/* the chrome glass blur lives on ::before now — drop it too so the flowy bar fully recedes into the canvas */
+[data-layout="flowy"] .statusbar::before{display:none;}
+/* Tab style knob ([data-tabs]) for .ia-tab is unified with .subtab/.ep-tab in
+   shell.css ("Tab style knob — ONE place styling every interactive tab"). */
