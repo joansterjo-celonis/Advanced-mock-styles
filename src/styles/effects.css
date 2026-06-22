@@ -1,0 +1,84 @@
+/* ============================================================
+   Reusable glass / effects utilities (opt-in via class).
+   Pair these with the SVG iso/glass helpers in src/scripts/effects.js
+   so new glassy surfaces are drop-in. All classes are additive — they
+   only affect elements that explicitly use them.
+   ============================================================ */
+
+/* Frosted translucent surface — backdrop blur + a soft top-lit gloss */
+.fx-glass {
+  position: relative;
+  background: color-mix(in srgb, var(--bg-1, #ffffff) 72%, transparent);
+  -webkit-backdrop-filter: blur(14px) saturate(1.4);
+  backdrop-filter: blur(14px) saturate(1.4);
+  border: 1px solid color-mix(in srgb, var(--chrome-border, #dddddd) 70%, transparent);
+}
+.fx-glass::before {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+  background: linear-gradient(180deg, rgba(255,255,255,.22), rgba(255,255,255,0) 45%);
+}
+
+/* Lighter frost, no border — good for overlays/popovers */
+.fx-frost {
+  -webkit-backdrop-filter: blur(8px) saturate(1.2);
+  backdrop-filter: blur(8px) saturate(1.2);
+  background: color-mix(in srgb, var(--bg-1, #ffffff) 60%, transparent);
+}
+
+/* Moving specular gloss that tracks --mx/--my (set by the card cursor wiring) */
+.fx-gloss { position: relative; overflow: hidden; }
+.fx-gloss::after {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; opacity: .6;
+  background: radial-gradient(220px 160px at var(--mx, 50%) var(--my, 0%), rgba(255,255,255,.25), rgba(255,255,255,0) 60%);
+}
+
+/* Hairline rim-light for a subtle raised edge */
+.fx-rim {
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.5),
+    inset 0 0 0 1px color-mix(in srgb, var(--chrome-border, #dddddd) 60%, transparent);
+}
+
+/* ============================================================
+   Knob-driven surface finishes — toggled by the "Surface finish"
+   control via [data-surfacefx] on <html>. "flat" = no attribute.
+   These build card-level glass on top of the per-card .gloss/.sheen/.rim
+   spans and reuse the cursor-tracked --mx/--my already set in engine.js.
+   ============================================================ */
+
+/* Frosted: translucent cards that blur whatever sits behind them */
+[data-surfacefx="frost"] .card,
+[data-surfacefx="aurora"] .card {
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.01)),
+    color-mix(in srgb, var(--bg-1) 60%, transparent);
+  -webkit-backdrop-filter: blur(16px) saturate(1.4);
+  backdrop-filter: blur(16px) saturate(1.4);
+}
+[data-surfacefx="frost"] .card .sheen,
+[data-surfacefx="aurora"] .card .sheen { opacity: .85; }
+
+/* Aurora: a light-reactive holographic wash that follows the cursor.
+   Lives below content (z-index:1) and is brightest where the pointer is. */
+[data-surfacefx="aurora"] .card::after {
+  content: ""; position: absolute; inset: 0; border-radius: inherit;
+  pointer-events: none; z-index: 1; opacity: .35;
+  mix-blend-mode: screen; transition: opacity .26s ease;
+  background:
+    radial-gradient(420px circle at var(--mx, 50%) var(--my, 0%),
+      color-mix(in srgb, var(--cstop-1a, #6366f1) 70%, transparent), transparent 60%),
+    conic-gradient(from 120deg at var(--mx, 50%) var(--my, 0%),
+      color-mix(in srgb, var(--cstop-2a, #22d3ee) 60%, transparent),
+      color-mix(in srgb, var(--cstop-3a, #a855f7) 60%, transparent),
+      color-mix(in srgb, var(--cstop-4a, #f472b6) 60%, transparent),
+      color-mix(in srgb, var(--cstop-1a, #6366f1) 60%, transparent));
+}
+[data-surfacefx="aurora"] .card:hover::after { opacity: .6; }
+
+/* Respect reduced-motion / reduced-transparency preferences */
+@media (prefers-reduced-transparency: reduce) {
+  .fx-glass, .fx-frost,
+  [data-surfacefx="frost"] .card,
+  [data-surfacefx="aurora"] .card { -webkit-backdrop-filter: none; backdrop-filter: none; }
+  [data-surfacefx="aurora"] .card::after { opacity: .22; }
+}

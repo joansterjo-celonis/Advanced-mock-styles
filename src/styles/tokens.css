@@ -1,0 +1,157 @@
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+
+  :root {
+    --gap: 12px; --pad: 16px;
+    --r-surface: 12px; --r-interactive: 9px;            /* slider-driven */
+    --radius: var(--r-surface); --radius-inner: calc(var(--r-surface) - 3px);
+    --h-label: 12px; --transition-density: 360ms cubic-bezier(.22,.61,.36,1); --theme-fade: 420ms ease;
+    --row-metric: 330px; --row-tall: 200px; --row-mid: 150px;
+
+    /* chrome */
+    --chrome-0:#050506; --chrome-rail:#0c0d0f; --chrome-side:#0a0b0d; --chrome-panel:#0d0e11;
+    --chrome-border: rgba(255,255,255,0.075); --chrome-border-soft: rgba(255,255,255,0.045);
+    --chrome-text:#e9eaee; --chrome-dim: rgba(233,234,238,0.60); --chrome-faint: rgba(233,234,238,0.36);
+    --chrome-hover: rgba(255,255,255,0.05); --chrome-active: rgba(255,255,255,0.08);
+    --celo-green:#5cf55c; --celo-green-soft: rgba(92,245,92,0.16);
+
+    /* glassy iridescent selection shine (theme-independent) */
+    --shine: linear-gradient(100deg, #651C01 0%, #DF840E 20%, #BF7770 40%, #7392DF 60%, #0470D2 80%, #021153 100%);
+    --shine-glow: 0 0 14px rgba(4,112,210,0.45), 0 0 22px rgba(223,132,14,0.28);
+    --tab-color: #6366f1;   /* custom "Color" tab style */
+    --tab-text: #ffffff;    /* auto-contrast text on the picked colour */
+
+    /* ===== SURFACES (appearance-based — IDENTICAL across Color/Mono) ===== */
+    --bg-1:#0c0c0e; --card: rgba(255,255,255,0.022); --card-strong: rgba(255,255,255,0.05);
+    --border: rgba(255,255,255,0.08); --border-strong: rgba(255,255,255,0.20);
+    --text:#fff; --text-dim: rgba(255,255,255,0.62); --text-faint: rgba(255,255,255,0.36);
+    --track: rgba(255,255,255,0.05);
+    --ambient-1: rgba(255,255,255,0.05); --ambient-2: rgba(255,255,255,0.03); --ambient-3: rgba(255,255,255,0.035);
+
+    /* ===== VISUALIZATION TOKENS (theme-based — default Mono) ===== */
+    --grad-primary: linear-gradient(135deg,#fff,#c7c7c7);
+    /* brand/accent default: neutral ink (light in dark mode for legibility); the "Brand color" knob overrides this. --success stays green (semantic). */
+    --accent:#eef1f6; --accent-glow: rgba(255,255,255,0.22); --accent-text:#15161a; --success:#5cf55c; --danger:#ef4444;
+    /* --brand-fixed = the Celonis logo + active-tab icon ink; intentionally NOT affected by the Brand color knob */
+    --brand-fixed:#eef1f6;
+    --cstop-1a:#ffffff; --cstop-1b:#cfcfcf; --cstop-2a:#bdbdbd; --cstop-2b:#8f8f8f;
+    --cstop-3a:#7d7d7d; --cstop-3b:#5a5a5a; --cstop-4a:#454545; --cstop-4b:#2b2b2b;
+    --area-top: rgba(255,255,255,0.18); --area-mid: rgba(255,255,255,0);
+    --line-2:#5cf55c; --bar-1:#cfcfcf; --bar-2:#8f8f8f;
+    --legend-1:#ffffff; --legend-2:#bdbdbd; --legend-3:#7d7d7d; --legend-4:#454545; --legend-5:#5cf55c;
+    --ring-from:#7cff7c; --ring-to:#3ad94a; --pulse-color:#5cf55c;
+
+    --mx:50%; --my:50%; --gx:50%; --gy:30%;
+    color-scheme: dark;
+  }
+
+  /* COLOR theme: recolors ONLY charts/visualizations — surfaces stay identical */
+  [data-theme="color"] {
+    --grad-primary: linear-gradient(135deg,#a78bfa,#6366f1 45%,#3b82f6);
+    --accent:#8b8cf8; --accent-glow: rgba(139,140,248,0.55); --success:#34d399;
+    --cstop-1a:#a78bfa; --cstop-1b:#7c3aed; --cstop-2a:#6ee7b7; --cstop-2b:#10b981;
+    --cstop-3a:#fde68a; --cstop-3b:#f59e0b; --cstop-4a:#f9a8d4; --cstop-4b:#ec4899;
+    --area-top: rgba(139,140,248,0.5); --area-mid: rgba(139,140,248,0);
+    --line-2:#34d399; --bar-1:#8b8cf8; --bar-2:#6366f1;
+    --legend-1:#a78bfa; --legend-2:#34d399; --legend-3:#fbbf24; --legend-4:#f472b6; --legend-5:#22d3ee;
+    --ring-from:#a78bfa; --ring-to:#34d399; --pulse-color:#34d399;
+  }
+
+  /* VIVID theme: each chart gets its own colour (applied per-chart in JS); these drive the donut + ring */
+  [data-theme="vivid"] {
+    --legend-1:#6366f1; --legend-2:#10b981; --legend-3:#f59e0b; --legend-4:#ec4899; --legend-5:#06b6d4;
+    --cstop-1a:#6366f1; --cstop-1b:#4338ca; --cstop-2a:#10b981; --cstop-2b:#059669; --cstop-3a:#f59e0b; --cstop-3b:#d97706; --cstop-4a:#ec4899; --cstop-4b:#db2777;
+    --ring-from:#6366f1; --ring-to:#ec4899; --pulse-color:#10b981;
+    --grad-primary: linear-gradient(135deg,#6366f1,#a78bfa);
+  }
+
+  [data-density="compact"] { --gap:6px; --pad:10px; --row-metric:268px; --row-tall:150px; --row-mid:120px; }
+  [data-density="dense"] { --gap:4px; --pad:8px; --row-metric:226px; --row-tall:128px; --row-mid:104px; }
+  /* Compact tightens tables to a mid level (between Spacious and Dense) */
+  [data-density="compact"] .ptable th, [data-density="compact"] .ptable td,
+  [data-density="compact"] .rq-table thead th, [data-density="compact"] .rq-table tbody td { padding:6px 10px; }
+  [data-density="compact"] .data-table thead th, [data-density="compact"] .data-table tbody td { padding:6px 12px; }
+  [data-density="compact"] .ptable, [data-density="compact"] .data-table, [data-density="compact"] .rq-table { font-size:12.5px; }
+  /* Dense tightens every table's rows further */
+  [data-density="dense"] .ptable th, [data-density="dense"] .ptable td,
+  [data-density="dense"] .rq-table thead th, [data-density="dense"] .rq-table tbody td { padding:3px 8px; }
+  [data-density="dense"] .data-table thead th, [data-density="dense"] .data-table tbody td { padding:4px 10px; }
+  [data-density="dense"] .ptable, [data-density="dense"] .data-table, [data-density="dense"] .rq-table { font-size:12px; }
+  [data-density="dense"] .otd-pill { height:20px; padding:0 9px; font-size:10.5px; }
+  [data-density="dense"] .feed .row { padding:5px 8px; }
+  [data-density="dense"] .plist .row { padding:5px 9px; }
+
+  body { font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; background:#000; color:var(--chrome-text); letter-spacing:-0.005em; overflow:hidden; padding:12px; }
+
+  /* SVG stop classes */
+  .stop-1a{stop-color:var(--cstop-1a)} .stop-1b{stop-color:var(--cstop-1b)}
+  .stop-2a{stop-color:var(--cstop-2a)} .stop-2b{stop-color:var(--cstop-2b)}
+  .stop-3a{stop-color:var(--cstop-3a)} .stop-3b{stop-color:var(--cstop-3b)}
+  .stop-4a{stop-color:var(--cstop-4a)} .stop-4b{stop-color:var(--cstop-4b)}
+  .stop-area-top{stop-color:var(--area-top)} .stop-area-mid{stop-color:var(--area-mid)}
+
+  /* ====== LIGHT MODE ====== */
+  [data-mode="light"] {
+    --chrome-0:#eef0f3; --chrome-rail:#ffffff; --chrome-side:#fafbfc; --chrome-panel:#ffffff;
+    --chrome-border: rgba(0,0,0,0.10); --chrome-border-soft: rgba(0,0,0,0.06);
+    --chrome-text:#1b1c20; --chrome-dim: rgba(27,28,32,0.62); --chrome-faint: rgba(27,28,32,0.42);
+    --chrome-hover: rgba(0,0,0,0.05); --chrome-active: rgba(0,0,0,0.075);
+    --celo-green:#1f9d2f; --celo-green-soft: rgba(31,157,47,0.14);
+    --bg-1:#ffffff; --card: rgba(0,0,0,0.02); --card-strong: rgba(0,0,0,0.04);
+    --border: rgba(0,0,0,0.09); --border-strong: rgba(0,0,0,0.18);
+    --text:#1b1c20; --text-dim: rgba(27,28,32,0.64); --text-faint: rgba(27,28,32,0.44);
+    --track: rgba(0,0,0,0.07);
+    --ambient-1: rgba(0,0,0,0.045); --ambient-2: rgba(0,0,0,0.03); --ambient-3: rgba(0,0,0,0.03);
+    /* base (Mono) charts darkened so they read on white surfaces */
+    --grad-primary: linear-gradient(135deg,#3a3a3a,#777);
+    --cstop-1a:#2b2b2b; --cstop-1b:#555; --cstop-2a:#6a6a6a; --cstop-2b:#8f8f8f;
+    --cstop-3a:#a0a0a0; --cstop-3b:#bcbcbc; --cstop-4a:#cfcfcf; --cstop-4b:#e2e2e2;
+    --area-top: rgba(0,0,0,0.10); --area-mid: rgba(0,0,0,0);
+    --bar-1:#2f2f2f; --bar-2:#6a6a6a; --line-2:#1f9d2f;
+    --legend-1:#2b2b2b; --legend-2:#6a6a6a; --legend-3:#a0a0a0; --legend-4:#cfcfcf; --legend-5:#1f9d2f;
+    --ring-from:#3fbf3f; --ring-to:#1f9d2f; --pulse-color:#1f9d2f; --success:#1f9d2f;
+    /* brand/accent default in light mode = near-black ink */
+    --accent:#15161a; --accent-glow: rgba(0,0,0,0.16); --accent-text:#ffffff; --brand-fixed:#15161a;
+    color-scheme: light;
+  }
+  /* COLOR theme in light mode: recolor charts only */
+  [data-mode="light"][data-theme="color"] {
+    --grad-primary: linear-gradient(135deg,#a78bfa,#6366f1 45%,#3b82f6);
+    --accent:#8b8cf8; --success:#10b981;
+    --cstop-1a:#a78bfa; --cstop-1b:#7c3aed; --cstop-2a:#6ee7b7; --cstop-2b:#10b981;
+    --cstop-3a:#fde68a; --cstop-3b:#f59e0b; --cstop-4a:#f9a8d4; --cstop-4b:#ec4899;
+    --area-top: rgba(124,58,237,0.42); --area-mid: rgba(124,58,237,0);
+    --line-2:#7c3aed; --bar-1:#8b8cf8; --bar-2:#6366f1;
+    --legend-1:#7c3aed; --legend-2:#10b981; --legend-3:#f59e0b; --legend-4:#ec4899; --legend-5:#06b6d4;
+    --ring-from:#a78bfa; --ring-to:#10b981; --pulse-color:#10b981;
+  }
+  /* VIVID in light mode: keep the multi-colour donut/ring (override the darkened base) */
+  [data-mode="light"][data-theme="vivid"] {
+    --legend-1:#6366f1; --legend-2:#10b981; --legend-3:#f59e0b; --legend-4:#ec4899; --legend-5:#06b6d4;
+    --cstop-1a:#6366f1; --cstop-1b:#4338ca; --cstop-2a:#10b981; --cstop-2b:#059669; --cstop-3a:#f59e0b; --cstop-3b:#d97706; --cstop-4a:#ec4899; --cstop-4b:#db2777;
+    --ring-from:#6366f1; --ring-to:#ec4899; --pulse-color:#10b981;
+    --grad-primary: linear-gradient(135deg,#6366f1,#a78bfa);
+  }
+  [data-mode="light"] .app { border-color: rgba(0,0,0,0.10); box-shadow: 0 40px 90px -50px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.7); }
+  [data-mode="light"] .card { background:#fff; box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 14px 30px -20px rgba(0,0,0,0.16), 0 0 calc(8px + var(--card-glow)*26px) -6px rgba(0,0,0, calc(var(--card-glow)*0.18)); }
+  [data-mode="light"] .card:hover { box-shadow: 0 2px 5px rgba(0,0,0,0.06), 0 22px 42px -18px rgba(0,0,0,0.22), 0 0 0 1px rgba(0,0,0,0.06); }
+  [data-mode="light"] .card.is-active { border-color: rgba(0,0,0,0.22); box-shadow: 0 2px 5px rgba(0,0,0,0.06), 0 22px 46px -16px rgba(0,0,0,0.26), 0 0 0 1px rgba(0,0,0,0.12); }
+  [data-mode="light"] .card .gloss { display:none; }
+  [data-mode="light"] .card .rim { opacity:.3; background: radial-gradient(240px circle at var(--mx) var(--my), rgba(0,0,0,0.15), rgba(0,0,0,0.05) 34%, transparent 62%); }
+  [data-mode="light"] .card:hover .rim { opacity:.6; }
+  [data-mode="light"] .ch .icon { background: rgba(0,0,0,0.05); }
+  [data-mode="light"] .toggle { background: rgba(0,0,0,0.05); border-color: rgba(0,0,0,0.10); }
+  [data-mode="light"] .toggle button.on { background:#fff; color:#1b1c20; box-shadow: 0 1px 3px rgba(0,0,0,0.14); }
+  [data-mode="light"] .btn-deploy { background:#fff; border-color: rgba(0,0,0,0.16); color:#1b1c20; box-shadow:0 1px 2px rgba(0,0,0,0.06); }
+  [data-mode="light"] .data-table thead th { background:#f6f7f9; }
+  [data-mode="light"] .data-table tbody tr:hover { background: rgba(0,0,0,0.03); }
+  [data-mode="light"] .proto { background:#fff; border-color: rgba(0,0,0,0.12); box-shadow: 0 24px 60px -20px rgba(0,0,0,0.3); color:#1b1c20; }
+  /* the controls panel + context menu are their own light surfaces — re-assert light-on-chrome vars so the Contrast shell's inverted vars don't bleed into them */
+  [data-mode="light"] .proto, [data-mode="light"] .ctxmenu {
+    --chrome-text:#1b1c20; --chrome-dim:rgba(27,28,32,0.62); --chrome-faint:rgba(27,28,32,0.42);
+    --chrome-border:rgba(0,0,0,0.10); --chrome-border-soft:rgba(0,0,0,0.06);
+    --chrome-hover:rgba(0,0,0,0.05); --chrome-active:rgba(0,0,0,0.075);
+  }
+  [data-mode="light"] .fab { background:#17181c; color:#fff; }
+

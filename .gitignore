@@ -1,0 +1,10 @@
+node_modules/
+dist/
+
+# Local env (never commit secrets; use GitHub Actions secrets in CI)
+.env
+.env.*
+!.env.example
+
+.DS_Store
+*.local

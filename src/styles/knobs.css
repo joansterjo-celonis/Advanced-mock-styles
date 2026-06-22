@@ -1,0 +1,143 @@
+  /* ---- Intensity (Calm / Strategic / Expressive) ---- dials the overall visual energy: colour reach + shadow + gloss/light effects */
+
+  /* ===== CALM — flat & matte: strip shadows/gloss/rim/sheen; rely on a single light hairline border (no doubled outline) ===== */
+  [data-coloruse="calm"] .card { box-shadow:none !important; --card-glow:0 !important; border-color:rgba(255,255,255,0.05); }
+  [data-mode="light"][data-coloruse="calm"] .card { border-color:rgba(0,0,0,0.06); }
+  [data-coloruse="calm"] .card:hover { box-shadow:none !important; border-color:var(--border-strong); }
+  [data-coloruse="calm"] .card.is-active { box-shadow:none !important; border-color:var(--border-strong); }
+  [data-coloruse="calm"] .card .gloss, [data-coloruse="calm"] .card .rim, [data-coloruse="calm"] .card .sheen { display:none !important; }
+  [data-coloruse="calm"] .content { background-image:none; }      /* drop the ambient light wash */
+  /* quiet chrome — neutral status pills / chips / legend swatches; colour reserved for genuine alerts */
+  [data-coloruse="calm"] .otd-pill { background:var(--card-strong) !important; color:var(--text-dim) !important; }
+  [data-coloruse="calm"] .otd-pill.late { background:#b4232b !important; color:#fff !important; }
+  [data-coloruse="calm"] .gchip { background:var(--card-strong) !important; color:var(--text-dim) !important; }
+  [data-coloruse="calm"] .hc-status::before { background:var(--text-faint) !important; }
+  [data-coloruse="calm"] .donut-legend .sw, [data-coloruse="calm"] .rq-act .dot { filter:grayscale(1) brightness(.9); }
+
+  /* ===== STRATEGIC — balanced: soft, smaller shadow (clearly less than Expressive); no moving gloss / hover-glow; faint rim ===== */
+  [data-coloruse="strategic"] .card { --card-glow:0 !important; box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), 0 8px 20px -18px rgba(0,0,0,0.7) !important; }
+  [data-coloruse="strategic"] .card:hover { box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 12px 26px -18px rgba(0,0,0,0.78) !important; border-color:var(--border-strong); }
+  [data-mode="light"][data-coloruse="strategic"] .card { box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 6px 16px -14px rgba(0,0,0,0.13) !important; }
+  [data-mode="light"][data-coloruse="strategic"] .card:hover { box-shadow: 0 2px 5px rgba(0,0,0,0.06), 0 12px 26px -16px rgba(0,0,0,0.18) !important; }
+  [data-coloruse="strategic"] .card .gloss { display:none !important; }
+  [data-coloruse="strategic"] .card .sheen { opacity:.5; }
+  [data-coloruse="strategic"] .card .rim { opacity:.16 !important; }
+  [data-coloruse="strategic"] .card:hover .rim { opacity:.32 !important; }
+
+  /* ===== EXPRESSIVE — the full rich treatment (gloss, rim, sheen, hover glow = base) + colour-tinted chips ===== */
+  [data-coloruse="expressive"] .hc-status { background:var(--accent-glow); color:var(--text); }
+
+  /* ---- B · Shell separation ---- */
+  /* Seamless: shell surfaces match the workspace (low distinction) */
+  [data-shell="seamless"] { --chrome-rail:var(--chrome-0); --chrome-side:var(--chrome-0); }
+  [data-shell="seamless"] .rail, [data-shell="seamless"] .sidebar { border-color:transparent; }
+  [data-shell="seamless"] .topbar, [data-shell="seamless"] .tabbar { border-color:var(--chrome-border-soft); }
+  /* Contrast: strong surface contrast — dark shell against the light workspace (and deeper black in dark mode) */
+  [data-mode="light"][data-shell="contrast"] {
+    --chrome-rail:#15161a; --chrome-side:#1b1d22; --chrome-panel:#15161a;
+    --chrome-text:#e9eaee; --chrome-dim:rgba(233,234,238,0.62); --chrome-faint:rgba(233,234,238,0.40);
+    --chrome-border:rgba(255,255,255,0.08); --chrome-border-soft:rgba(255,255,255,0.05);
+    --chrome-hover:rgba(255,255,255,0.06); --chrome-active:rgba(255,255,255,0.10);
+  }
+  [data-shell="contrast"]:not([data-mode="light"]) { --chrome-rail:#000; --chrome-side:#050507; --chrome-panel:#000; --chrome-border:rgba(255,255,255,0.10); }
+  /* make the whole shell chrome cohesive (rail + top bar + tab bar) and lift the workspace as a distinct surface */
+  [data-shell="contrast"] .topbar, [data-shell="contrast"] .tabbar { background:var(--chrome-panel); }
+  [data-mode="light"][data-shell="contrast"] .main { background:#15161a; }
+  [data-mode="light"][data-shell="contrast"] .content { background:#eef0f3; border-top-left-radius:14px; }
+  /* shell pop-overs (header "more" menu, L0 flyout) live IN the dark shell — give them a dark surface so the (light) chrome text stays legible */
+  [data-mode="light"][data-shell="contrast"] .hmore-menu,
+  [data-mode="light"][data-shell="contrast"] .l0-panel {
+    background: rgba(21,22,26,0.94); border-color: rgba(255,255,255,0.12);
+    box-shadow: 0 28px 60px -20px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.10);
+    -webkit-backdrop-filter: blur(22px) saturate(1.4); backdrop-filter: blur(22px) saturate(1.4);
+  }
+  /* Contrast (light) inverts the chrome to a dark shell. But accent-derived tokens now resolve to near-black ink, and the editor tab bar still inherits the light workspace tokens — both go dark-on-dark and vanish. Re-map them per shell region so buttons, tabs, chevrons and icons convert. */
+  [data-mode="light"][data-shell="contrast"] #l1,
+  [data-mode="light"][data-shell="contrast"] .ctx-overview,
+  [data-mode="light"][data-shell="contrast"] #main .tabbar {
+    --ia-navy: var(--chrome-text); --ia-navy-2: var(--chrome-text);
+    --ia-blue: var(--chrome-text); --ia-pill-active: var(--chrome-text);
+    --accent-text: #15161a;
+  }
+  /* the editor tab bar paints on the dark chrome panel but lives in #main — restore chrome text/lines for tab labels, tools, separators and close icons */
+  [data-mode="light"][data-shell="contrast"] #main .tabbar {
+    --ia-text: var(--chrome-text); --ia-ink: var(--chrome-text);
+    --ia-muted: var(--chrome-dim); --ia-muted-2: var(--chrome-faint);
+    --ia-panel: var(--chrome-panel);
+    --ia-line: var(--chrome-border); --ia-line-soft: var(--chrome-border-soft);
+    --ia-hover: var(--chrome-hover); --ia-active: var(--chrome-active);
+  }
+  /* active tab icon is pinned to --brand-fixed (near-black) — flip it to chrome ink on the dark bar */
+  [data-mode="light"][data-shell="contrast"] #main .ia-tab.active .icon { color: var(--chrome-text); }
+  /* primary button (e.g. New package) sits on the dark overview; its :hover uses raw --accent (dark), so keep it light to preserve the dark label */
+  [data-mode="light"][data-shell="contrast"] .ctx-overview .btn.primary:hover { background: color-mix(in srgb, var(--chrome-text) 88%, #000); }
+
+  /* ---- D · Composition ---- (scoped to .bento so custom-grid views stay intact) */
+  [data-composition="uniform"] .view.active .bento > .card:not(.kpi-strip):not(.span-12) { grid-column: span 6; }
+  [data-composition="hero"] .view.active .bento > .card[data-hero] { grid-column: span 8; }
+  [data-composition="hero"] .view.active .bento > .card:not([data-hero]):not(.kpi-strip):not(.span-12) { grid-column: span 4; }
+  /* hero emphasis — the "few high-contrast cards" of a bento (elevation, not colour) */
+  [data-composition="bento"] .view.active .card[data-hero],
+  [data-composition="hero"] .view.active .card[data-hero] {
+    border-color: var(--border-strong);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.10), 0 30px 60px -26px rgba(0,0,0,0.6), 0 0 0 1px var(--border-strong);
+  }
+
+  /* ---- KPI numerals (weight + font family knobs) ---- */
+  :root { --kpi-weight:600; --kpi-font:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; }
+  .metric-val, .kpi .v, [data-counter] {
+    font-weight:var(--kpi-weight) !important;
+    font-family:var(--kpi-font);
+    letter-spacing:-0.02em; font-variant-numeric:tabular-nums;
+  }
+
+  /* ---- F · Tab model ---- */
+  /* Segmented: sub-tabs become a compact segmented control, clearly a second level */
+  [data-tabmodel="seg"] .subtabs { display:inline-flex; align-self:flex-start; gap:3px; padding:4px; border:1px solid var(--border); background:var(--track); border-radius:11px; }
+  [data-tabmodel="seg"] .subtab { height:28px; border-radius:8px; color:var(--text-dim); }
+  [data-tabmodel="seg"] .subtab:hover { background:var(--card-strong); }
+  [data-tabmodel="seg"] .subtab.on { background:var(--bg-1); color:var(--text); font-weight:600; box-shadow:0 1px 3px rgba(0,0,0,0.18), 0 0 0 1px var(--border); }
+  [data-tabmodel="seg"] .subtab.on::after { display:none; }
+  [data-tabmodel="seg"] .subtab .x, [data-tabmodel="seg"] .subtab .dots { display:none !important; }
+  [data-tabmodel="seg"] .subtab-add { display:none; }
+  /* Flattened: de-chrome the top tabs so the nesting reads as a single calm level */
+  [data-tabmodel="flat"] .tabstrip .tab { background:transparent !important; color:var(--chrome-dim); font-weight:500; }
+  [data-tabmodel="flat"] .tabstrip .tab.active { background:transparent !important; color:var(--chrome-text); font-weight:700; }
+  [data-tabmodel="flat"] .tabstrip .tab.active::after { display:none; }
+  [data-tabmodel="flat"] .subtabs { border-bottom:1px solid var(--border); }
+
+  /* ---- Tables ---- (row TREATMENT only; spacing is owned by the Density knob) */
+  /* Lined: zebra striping for scannability */
+  [data-tables="lined"] .ptable tbody tr:nth-child(even) td,
+  [data-tables="lined"] .rq-table tbody tr:nth-child(even) td,
+  [data-tables="lined"] .data-table tbody tr:nth-child(even) td { background:var(--card); }
+  [data-tables="lined"] .ptable td, [data-tables="lined"] .rq-table tbody td { border-bottom:1px solid var(--border); }
+
+  /* ---- Right-click context menu (per-chart style + per-card invert) ---- */
+  .ctxmenu { position:fixed; z-index:90; min-width:190px; padding:6px; border-radius:12px; display:none;
+    background:rgba(17,19,23,0.72); -webkit-backdrop-filter:blur(22px) saturate(1.5); backdrop-filter:blur(22px) saturate(1.5);
+    border:1px solid rgba(255,255,255,0.12); box-shadow:0 28px 60px -20px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.12); color:var(--chrome-text); }
+  [data-mode="light"] .ctxmenu { background:rgba(255,255,255,0.74); border-color:rgba(0,0,0,0.08); box-shadow:0 28px 60px -20px rgba(0,0,0,0.24), inset 0 1px 0 rgba(255,255,255,0.7); color:#1b1c20; }
+  .ctxmenu.open { display:block; animation:ctxIn .14s ease both; }
+  @keyframes ctxIn { from { opacity:0; transform:translateY(-4px) scale(.98); } to { opacity:1; transform:none; } }
+  .ctxmenu .ctx-h { font-size:10.5px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--chrome-faint); padding:7px 10px 4px; }
+  .ctxmenu .ctx-i { display:flex; align-items:center; gap:9px; height:32px; padding:0 10px; border-radius:8px; font-size:13px; cursor:pointer; color:inherit; }
+  .ctxmenu .ctx-i svg.ico { width:15px; height:15px; opacity:.7; }
+  .ctxmenu .ctx-i:hover { background:var(--chrome-hover); }
+  .ctxmenu .ctx-i .ck { margin-left:auto; width:14px; height:14px; opacity:0; }
+  .ctxmenu .ctx-i.on .ck { opacity:1; }
+  .ctxmenu .ctx-sep { height:1px; background:var(--chrome-border-soft); margin:5px 4px; }
+
+  /* ---- Inverted component (right-click → Invert): flips the local surface + text for hierarchy ---- */
+  .card[data-inverted] {  /* default app is dark → an inverted card becomes a light surface */
+    --text:#15161a; --text-dim:rgba(27,28,32,0.64); --text-faint:rgba(27,28,32,0.44);
+    --bg-1:#ffffff; --card:rgba(0,0,0,0.02); --card-strong:rgba(0,0,0,0.05); --border:rgba(0,0,0,0.10); --border-strong:rgba(0,0,0,0.20); --track:rgba(0,0,0,0.07);
+    background:#ffffff; color:#15161a; border-color:rgba(0,0,0,0.10);
+    box-shadow:0 26px 54px -22px rgba(0,0,0,0.6), 0 0 0 1px rgba(0,0,0,0.06); }
+  [data-mode="light"] .card[data-inverted] {  /* light app → inverted card becomes a dark surface */
+    --text:#ffffff; --text-dim:rgba(255,255,255,0.64); --text-faint:rgba(255,255,255,0.40);
+    --bg-1:#15161a; --card:rgba(255,255,255,0.05); --card-strong:rgba(255,255,255,0.09); --border:rgba(255,255,255,0.12); --border-strong:rgba(255,255,255,0.26); --track:rgba(255,255,255,0.09);
+    background:#15161a; color:#ffffff; border-color:rgba(255,255,255,0.12);
+    box-shadow:0 26px 54px -22px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.08); }
+  .card[data-inverted] .gloss, .card[data-inverted] .sheen, .card[data-inverted] .rim { display:none; }
+
