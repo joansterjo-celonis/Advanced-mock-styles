@@ -55,11 +55,11 @@
 }
 .glass::before, .gsearch::before, .modal-card::before, .sb-pop::before,
 .wb-menu::before, .vh-menu::before, .ctxmenu::before {
-  background: linear-gradient(180deg, rgba(255,255,255, calc(var(--glass)*.22)), transparent 46%);
+  background: linear-gradient(180deg, rgba(255,255,255, calc(var(--glass-bl)*.22)), transparent 46%);
 }
 .glass::after, .gsearch::after, .modal-card::after, .sb-pop::after,
 .wb-menu::after, .vh-menu::after, .ctxmenu::after {
-  opacity: var(--glass); mix-blend-mode: screen;
+  opacity: var(--glass-bl); mix-blend-mode: screen;
   background: linear-gradient(135deg, rgba(120,170,255,.16), transparent 30%, transparent 70%, rgba(255,140,200,.14));
 }
 /* The .proto controls panel is itself the scroll container (position:fixed; overflow-y:auto),

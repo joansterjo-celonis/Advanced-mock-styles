@@ -17,10 +17,11 @@
   body{margin:0;font-family:var(--ia-sans);color:var(--ia-text);background:var(--ia-bg);-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;overflow:hidden;}
   button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit;}
   .icon{width:18px;height:18px;display:inline-block;flex:none;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;}
-  /* Chevron carets are often bare <svg class="ia-chev"> (statusbar / popovers carry no .icon class),
-     so without this they default to fill:black and vanish against dark chrome. Paint them like .icon
-     so they follow currentColor in every mode. */
-  .ia-chev{fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+  /* Chevron carets are often bare <svg class="ia-chev"> / <svg class="gchev"> (statusbar / popovers /
+     the L1 group-head toggle carry no .icon class), so without this they default to fill:black and
+     vanish against dark chrome (ignoring their `color`). Paint them like .icon so they stroke with
+     currentColor and follow the mode in every theme. */
+  .ia-chev,.gchev{fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
   .icon-sm{width:15px;height:15px;}
   #app{height:100vh;width:100vw;display:flex;position:relative;overflow:hidden;}
   .l0-spacer{flex:none;width:0;transition:width .22s cubic-bezier(.4,0,.2,1);}
@@ -83,11 +84,13 @@
   .l1-group.collapsed .gchev{transform:rotate(-90deg);}
   .l1-children{display:flex;flex-direction:column;}
   .l1-group.collapsed .l1-children{display:none;}
-  .l1-leaf{display:flex;align-items:center;height:34px;padding:0 10px 0 38px;font-size:13.5px;color:var(--ia-text);border-radius:8px;width:100%;text-align:left;}
+  /* block (not flex) so a long asset name truncates to one line with an ellipsis — line-height
+     centers the single row, the leading icon is inline-aligned, nothing trails to be clipped */
+  .l1-leaf{display:block;line-height:34px;height:34px;padding:0 10px 0 38px;font-size:13.5px;color:var(--ia-text);border-radius:8px;width:100%;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .l1-leaf:hover{background:var(--ia-hover);}
   .l1-leaf.active{background:var(--ia-active);font-weight:500;}
-  .l1-leaf.l1-leaf-ic{padding-left:20px;gap:8px;}
-  .l1-leaf-ic .icon{width:16px;height:16px;color:var(--ia-muted);flex:none;}
+  .l1-leaf.l1-leaf-ic{padding-left:20px;}
+  .l1-leaf-ic .icon{width:16px;height:16px;color:var(--ia-muted);vertical-align:middle;margin-right:8px;flex:none;}
   .l1-leaf-ic.active .icon{color:var(--ia-navy);}
   #main{flex:1;min-width:0;display:flex;flex-direction:column;overflow:hidden;background:var(--ia-bg);}
   .home-topbar{position:absolute;top:0;right:0;left:0;height:60px;display:flex;align-items:center;padding:0 22px;pointer-events:none;z-index:30;}
@@ -158,7 +161,9 @@
   .ia-tab{display:flex;align-items:center;gap:8px;padding:0 14px;height:100%;font-size:13.5px;color:var(--ia-muted);position:relative;border-right:1px solid var(--ia-line-soft);max-width:200px;cursor:pointer;transition:color .2s ease, background .2s ease;}
   .ia-tab:hover{color:var(--ia-ink);}
   .ia-tab .icon{width:16px;height:16px;color:var(--ia-muted-2);}
-  .ia-tab .ia-x{width:0;height:16px;border-radius:5px;color:var(--ia-muted-2);display:flex;align-items:center;justify-content:center;opacity:0;margin-left:-8px;overflow:hidden;transition:width .24s cubic-bezier(.22,.61,.36,1), opacity .2s ease, margin .24s cubic-bezier(.22,.61,.36,1), background .16s ease, color .16s ease;}
+  /* label truncates to a single line with an ellipsis; the icon + close stay fixed (flex:none) */
+  .ia-tab .ia-tab-lbl{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .ia-tab .ia-x{flex:none;width:0;height:16px;border-radius:5px;color:var(--ia-muted-2);display:flex;align-items:center;justify-content:center;opacity:0;margin-left:-8px;overflow:hidden;transition:width .24s cubic-bezier(.22,.61,.36,1), opacity .2s ease, margin .24s cubic-bezier(.22,.61,.36,1), background .16s ease, color .16s ease;}
   .ia-tab:hover .ia-x, .ia-tab.active .ia-x{width:16px;opacity:1;margin-left:0;}
   .ia-tab .ia-x:hover{background:var(--ia-hover);color:var(--ia-ink);}
   .ia-tab.active{color:var(--ia-ink);background:var(--ia-panel);}
@@ -311,7 +316,9 @@
   .modal-head h3{margin:0;font-size:17px;color:var(--ia-ink);font-weight:700;}
   .modal-head .sub{font-size:13px;color:var(--ia-muted);margin-top:1px;}
   .modal-head .head-actions{margin-left:auto;display:flex;align-items:center;gap:8px;}
-  .modal-x{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--ia-muted);}
+  .modal-x{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--ia-muted);flex:none;cursor:pointer;}
+  /* always pin the close button to the head's right corner (when it isn't already inside .head-actions) */
+  .modal-head > .modal-x{margin-left:auto;}
   .modal-x:hover{background:var(--ia-hover);color:var(--ia-ink);}
   .modal-x .icon{width:18px;height:18px;}
   .modal-body{flex:1;overflow-y:auto;padding:18px 20px;}
@@ -501,8 +508,9 @@
    (so the asset header can pin INSIDE the card). #main's gray is the single backdrop behind it. */
 [data-layout="flowy"] .ctx-canvas{background:transparent;margin:0;overflow:hidden;}
 /* the inner .view card is the single frame (its radius follows the corner-radius knob), fills the
-   canvas height, and a symmetric content gap floats it on the gray (extra bottom room for its shadow) */
-[data-layout="flowy"] .ctx-canvas #content{padding:12px 12px 22px;height:100%;}
+   canvas height, and a tight content gap floats it on the gray. The bottom gap is small because the
+   statusbar below is transparent (nothing scrolls under it) — the card's drop shadow reads through it. */
+[data-layout="flowy"] .ctx-canvas #content{padding:10px 12px 8px;height:100%;}
 [data-layout="flowy"] .tabbar{background:transparent;border-bottom-color:var(--chrome-border-soft);}
 [data-layout="flowy"].l0-open #l0,[data-layout="flowy"].pinned #l0{margin:10px;border-radius:18px;height:calc(100vh - 20px);border:1px solid var(--chrome-border);box-shadow:0 28px 70px -28px rgba(0,0,0,.55);}
 [data-layout="flowy"] .home-topbar{padding-top:8px;}

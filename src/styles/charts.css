@@ -109,13 +109,52 @@
   .proto .label .hint-i { font-weight:400; text-transform:none; letter-spacing:0; color:var(--chrome-faint); font-size:11px; margin-left:6px; }
   .proto-hint { font-size:11px; color:var(--chrome-faint); line-height:1.5; padding:6px 4px 2px; }
   .toggle.is-disabled { opacity:.4; pointer-events:none; }
+  /* Global-glass: single slider by default, "Advanced" splits it into translucency + glassiness */
+  .gg-grp > .label { display:flex; align-items:center; gap:8px; }
+  .gg-grp > .label .val { float:none; margin-left:auto; }
+  .gg-adv { font-size:10px; font-weight:600; letter-spacing:.02em; text-transform:uppercase; color:var(--chrome-dim); background:rgba(255,255,255,0.05); border:1px solid var(--chrome-border); border-radius:6px; padding:3px 8px; cursor:pointer; transition:color .15s, background .15s, border-color .15s; }
+  .gg-adv:hover { color:#fff; background:rgba(255,255,255,0.09); }
+  .gg-adv[aria-pressed="true"] { color:#fff; background:rgba(255,255,255,0.12); border-color:rgba(255,255,255,0.22); }
+  .gg-grp.gg-advanced > .label .val { display:none; }
+  .gg-grp.gg-advanced > .label .gg-adv { margin-left:auto; }
+  .gg-simple[hidden], .gg-split[hidden] { display:none; }
+  .gg-sub { margin-top:12px; }
+  .gg-sub:first-child { margin-top:6px; }
+  .gg-sub .label { display:flex; align-items:center; font-size:11px; margin-bottom:7px; }
+  .gg-sub .label .val { margin-left:auto; color:var(--chrome-faint); font-variant-numeric:tabular-nums; font-weight:400; }
+  [data-mode="light"] .gg-adv { background:rgba(0,0,0,0.05); border-color:rgba(0,0,0,0.10); color:var(--chrome-dim); }
+  [data-mode="light"] .gg-adv:hover { background:rgba(0,0,0,0.07); color:var(--chrome-text); }
+  [data-mode="light"] .gg-adv[aria-pressed="true"] { background:rgba(0,0,0,0.09); border-color:rgba(0,0,0,0.2); color:var(--chrome-text); }
   /* presets */
-  .preset-sel { width:100%; height:36px; border-radius:var(--r-interactive); background:var(--chrome-hover); border:1px solid var(--chrome-border); color:var(--chrome-text); font:inherit; font-size:13px; font-weight:500; padding:0 10px; cursor:pointer; appearance:none;
+  .preset-applyrow { display:flex; align-items:center; gap:8px; }
+  .preset-sel { flex:1 1 auto; min-width:0; width:100%; height:36px; border-radius:var(--r-interactive); background:var(--chrome-hover); border:1px solid var(--chrome-border); color:var(--chrome-text); font:inherit; font-size:13px; font-weight:500; padding:0 32px 0 10px; cursor:pointer; appearance:none; text-overflow:ellipsis;
     background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2.4'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 10px center; }
+  .preset-sel:focus { outline:none; border-color:var(--chrome-text); }
+  /* "Modified" pill — current settings drifted from the applied preset */
+  .preset-flag { flex:none; display:inline-flex; align-items:center; gap:5px; font-size:10px; font-weight:600; letter-spacing:.05em; text-transform:uppercase; color:#f5b14a; border:1px solid rgba(245,177,74,0.5); border-radius:999px; padding:3px 8px; white-space:nowrap; }
+  .preset-flag::before { content:""; width:6px; height:6px; border-radius:50%; background:#f5b14a; }
+
   .preset-actions { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
-  .preset-actions button { flex:1 1 auto; height:30px; border-radius:var(--r-interactive); border:1px solid var(--chrome-border); background:transparent; color:var(--chrome-text); font:inherit; font-size:12px; cursor:pointer; padding:0 10px; transition:background .15s,border-color .15s,color .15s; }
+  .preset-actions button { flex:1 1 auto; height:30px; border-radius:var(--r-interactive); border:1px solid var(--chrome-border); background:transparent; color:var(--chrome-text); font:inherit; font-size:12px; cursor:pointer; padding:0 10px; transition:background .15s,border-color .15s,color .15s,opacity .15s; }
   .preset-actions button:hover { background:var(--chrome-hover); border-color:var(--chrome-text); }
-  .preset-actions button#preset-del:hover { color:#e5484d; border-color:#e5484d; background:transparent; }
+  /* "Save" lights up white when there is something to commit (dirty / Custom) */
+  .preset-actions button#preset-save:not(:disabled) { border-color:rgba(255,255,255,0.5); color:#fff; }
+  .preset-actions button#preset-del:not(:disabled):hover { color:#e5484d; border-color:#e5484d; background:transparent; }
+  .preset-actions button:disabled { opacity:.34; cursor:default; }
+  .preset-actions button:disabled:hover { background:transparent; border-color:var(--chrome-border); color:var(--chrome-text); }
+
+  /* inline editor + delete confirm rows (replace native prompt/confirm) */
+  .preset-inline { display:flex; align-items:center; gap:6px; margin-top:8px; }
+  .preset-inline[hidden] { display:none; }
+  .preset-name { flex:1 1 auto; min-width:0; height:32px; border-radius:var(--r-interactive); background:var(--chrome-hover); border:1px solid var(--chrome-border); color:var(--chrome-text); font:inherit; font-size:13px; padding:0 10px; }
+  .preset-name:focus { outline:none; border-color:#fff; }
+  .preset-inline button { flex:none; height:32px; padding:0 12px; border-radius:var(--r-interactive); border:1px solid var(--chrome-border); background:transparent; color:var(--chrome-text); font:inherit; font-size:12px; cursor:pointer; transition:background .15s,border-color .15s,color .15s; }
+  .preset-inline button:hover { border-color:var(--chrome-text); }
+  .preset-inline .pi-ok { border-color:rgba(255,255,255,0.55); color:#fff; }
+  .preset-inline .pi-ok:hover { background:#fff; color:#15161a; border-color:#fff; }
+  .preset-inline .pi-danger { border-color:rgba(229,72,77,0.6); color:#ff6b6f; }
+  .preset-inline .pi-danger:hover { background:#e5484d; color:#fff; border-color:#e5484d; }
+  .preset-confirm .pc-text { flex:1 1 auto; min-width:0; font-size:12px; color:var(--chrome-dim); }
 
   /* graceful fallback when a single chart fails to render (see buildChart guard) */
   .chart-error { display:flex; align-items:center; justify-content:center; min-height:80px; padding:12px; font:500 12px/1.4 Inter,sans-serif; color:var(--text-2,#8a8d98); opacity:.7; text-align:center; }

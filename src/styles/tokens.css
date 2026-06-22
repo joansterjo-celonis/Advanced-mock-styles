@@ -50,11 +50,17 @@
        shell tier follows light/dark/contrast automatically — e.g. contrast is a
        light mode but has a dark --chrome-panel, which must NOT go white. */
     --glass-tint-chrome: var(--chrome-panel);
-    --glass-blur: calc(4px + var(--glass)*24px);
-    --glass-saturate: calc(1.05 + var(--glass)*0.65);
-    --glass-fill: clamp(0.5, calc(0.97 - var(--glass)*0.5), 0.97);
-    --glass-fill-chrome: clamp(0.66, calc(0.99 - var(--glass)*0.3), 0.99);
-    --glass-edge-alpha: calc(0.10 + var(--glass)*0.45);
+    /* Two-axis split: --glass-op (translucency / fill) and --glass-bl (glassiness:
+       blur + saturate + edge diffraction). Both DEFAULT to the single --glass slider,
+       so the simple slider behaves exactly as before; the Advanced toggle overrides
+       each axis independently to drive opacity and blur separately. */
+    --glass-op: var(--glass);
+    --glass-bl: var(--glass);
+    --glass-blur: calc(4px + var(--glass-bl)*24px);
+    --glass-saturate: calc(1.05 + var(--glass-bl)*0.65);
+    --glass-fill: clamp(0.5, calc(0.97 - var(--glass-op)*0.5), 0.97);
+    --glass-fill-chrome: clamp(0.66, calc(0.99 - var(--glass-op)*0.3), 0.99);
+    --glass-edge-alpha: calc(0.10 + var(--glass-bl)*0.45);
     --glass-bg: color-mix(in srgb, var(--glass-tint) calc(var(--glass-fill)*100%), transparent);
     --glass-bg-chrome: color-mix(in srgb, var(--glass-tint-chrome) calc(var(--glass-fill-chrome)*100%), transparent);
     color-scheme: dark;
@@ -122,7 +128,7 @@
     --glass-tint:#ffffff; --glass-edge:18,22,30;
     /* the global edge-alpha (up to .55) over a near-black edge reads as a hard black
        border at high glass; cap it low in light mode so it stays a subtle hairline */
-    --glass-edge-alpha: calc(0.05 + var(--glass)*0.14);
+    --glass-edge-alpha: calc(0.05 + var(--glass-bl)*0.14);
     color-scheme: light;
   }
   /* COLOR theme in light mode: recolor charts only */

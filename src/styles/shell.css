@@ -33,6 +33,11 @@
   /* dashboard header */
   .dash-head { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:6px; }
   .dash-head h1 { font-size:26px; font-weight:600; letter-spacing:-0.02em; color:var(--text); }
+  /* groups the title with any inline title-meta icons so .actions still floats right */
+  .dash-head .dh-title { display:flex; align-items:center; gap:8px; min-width:0; }
+  .dash-head .dh-title h1 { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .dh-ic { width:28px; height:28px; display:inline-grid; place-items:center; border-radius:var(--r-interactive); color:var(--text-dim); cursor:pointer; flex:none; }
+  .dh-ic:hover { background:var(--card-strong); color:var(--text); }
   .dash-head .actions { display:flex; align-items:center; gap:8px; }
   .dash-head .hbtn { display:inline-flex; align-items:center; gap:6px; height:30px; padding:0 10px; border-radius:var(--r-interactive); border:1px solid var(--border); background:var(--card); color:var(--text-dim); font-size:12.5px; cursor:pointer; }
   .dash-head .hbtn:hover { border-color:var(--border-strong); color:var(--text); }
@@ -130,6 +135,11 @@
   .toggle .sw { width:8px; height:8px; border-radius:50%; background:linear-gradient(135deg,#a78bfa,#ec4899); }
   .toggle .sw.lime { background:#5cf55c; box-shadow:0 0 8px rgba(92,245,92,0.6); }
   .toggle .sw.vivid { background: conic-gradient(from 0deg,#6366f1,#10b981,#f59e0b,#ec4899,#6366f1); }
+  /* icon-only appearance toggle — taller hit target, glyph carries the meaning */
+  .toggle-icon button { padding:9px 10px; }
+  .toggle-icon button .icon { width:17px; height:17px; opacity:.75; transition:opacity .16s,transform .2s; }
+  .toggle-icon button.on .icon { opacity:1; }
+  .toggle-icon button:hover .icon { opacity:1; }
   .proto .label { font-size:12px; color:var(--chrome-dim); margin-bottom:6px; }
 
   /* ===== FLOWY LAYERS layout ===== */
@@ -163,7 +173,7 @@
   [data-layout="flowy"] .view.active {
     --flowy-surface:#08090b; background: var(--flowy-surface); border: 1px solid var(--border); border-radius: calc(var(--r-surface) + 8px);
     flex:1 1 auto; min-height:0; overflow-y:auto; overflow-x:hidden;
-    padding: 0 20px 24px;        /* no top padding — the sticky header supplies the top inset */
+    padding: 0 20px 16px;        /* no top padding — the sticky header supplies the top inset */
     box-shadow: 0 28px 60px -30px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.05);
   }
   [data-mode="light"][data-layout="flowy"] .view.active {

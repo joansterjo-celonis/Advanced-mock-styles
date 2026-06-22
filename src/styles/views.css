@@ -140,3 +140,216 @@
     outline-offset: 2px;
   }
 
+  /* ===== Tracking Analysis (PQL editor) view ===== */
+  .kpi-strip.kpi8 { grid-template-columns:repeat(8,1fr); }
+  @media (max-width:1280px){ .kpi-strip.kpi8 { grid-template-columns:repeat(4,1fr); } }
+  @media (max-width:680px){ .kpi-strip.kpi8 { grid-template-columns:repeat(2,1fr); } }
+
+  .tr-view .dash-head h1, .ocpm-view .dash-head h1 { font-size:18px; }
+  /* shared header filter pill (two-line: small label + bold value) */
+  .hpill { display:flex; flex-direction:column; justify-content:center; gap:2px; min-width:0; height:40px; padding:4px 11px; border:1px solid var(--border); border-radius:var(--r-interactive); background:var(--card); cursor:pointer; }
+  .hpill:hover { border-color:var(--border-strong); }
+  .hpill .hp-k { font-size:9px; text-transform:uppercase; letter-spacing:.05em; color:var(--text-faint); white-space:nowrap; }
+  .hpill .hp-v { display:flex; align-items:center; gap:6px; font-size:12px; font-weight:600; color:var(--text); white-space:nowrap; max-width:170px; overflow:hidden; text-overflow:ellipsis; }
+  .hpill .hp-v svg { color:var(--text-dim); flex:none; }
+  .hpill .hp-av { width:16px; height:16px; border-radius:50%; background:linear-gradient(135deg,#6366f1,#a855f7); flex:none; }
+
+  /* KPI strip: long PQL labels truncate on one line like the source */
+  .tr-view .kpi { padding:13px 15px; }
+  .tr-view .kpi .k { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:block; }
+  .tr-view .kpi .v { font-size:25px; }
+
+  /* event-select cards (start / end event) */
+  .tr-evcard { display:flex; flex-direction:column; gap:7px; }
+  .tr-evlabel { font-size:12.5px; font-weight:600; color:var(--text); }
+  .tr-evsub { font-size:11.5px; color:var(--text-dim); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .tr-select { display:flex; align-items:center; justify-content:space-between; gap:8px; height:32px; padding:0 10px; border:1px solid var(--border); border-radius:var(--r-interactive); background:var(--card); color:var(--text); font-size:12.5px; cursor:pointer; }
+  .tr-select:hover { border-color:var(--border-strong); }
+  .tr-select .tr-seltext { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .tr-select svg { flex:none; color:var(--text-dim); }
+  .tr-evfoot { font-size:11px; color:var(--text-dim); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:2px; }
+  .tr-bignum { font-size:33px; font-weight:600; letter-spacing:-0.025em; color:var(--text); margin-top:auto; font-variant-numeric:tabular-nums; }
+
+  /* chart captions + legend */
+  .tr-xlabel { font-size:10.5px; color:var(--text-dim); margin-top:6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .tr-legend { display:flex; align-items:center; justify-content:center; gap:6px; font-size:11px; color:var(--text-dim); margin-top:6px; }
+  .tr-legdot { width:16px; height:2px; background:var(--cstop-1a); border-radius:2px; }
+
+  /* tables: truncate the long first column with an ellipsis, add a trailing kebab column */
+  .tr-view .ptable th:first-child, .tr-view .ptable td:first-child { max-width:190px; overflow:hidden; text-overflow:ellipsis; }
+  .tr-view .ptable th.tr-kebab, .tr-view .ptable td.tr-kebab { width:24px; text-align:center; color:var(--text-faint); }
+  .tr-view .ptable th .tr-sort, .ocpm-view .ptable th .tr-sort { vertical-align:-2px; margin-left:3px; color:var(--text-faint); }
+
+  .tr-view .card-title .i, .ocpm-view .card-title .i { width:14px; height:14px; border-radius:50%; border:1px solid var(--text-faint); color:var(--text-faint); display:inline-grid; place-items:center; font-size:9px; vertical-align:1px; margin-left:4px; cursor:default; font-weight:400; }
+
+  /* empty state for the tabs that aren't part of this mock */
+  .tr-emptybox { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; min-height:300px; text-align:center; color:var(--text-dim); }
+  .tr-emptybox .tr-emico { width:34px; height:34px; color:var(--text-faint); }
+  .tr-emptybox .tr-emt { font-size:15px; font-weight:600; color:var(--text); }
+
+  /* ===== OCPM adoption view ===== */
+  /* title-side "last modified" pill + a bell + the blue action button */
+  .ocpm-age { display:inline-flex; align-items:center; gap:4px; font-size:11px; color:var(--text-dim); }
+  .ocpm-bell { position:relative; }
+  .ocpm-bell .ocpm-badge { position:absolute; top:2px; right:2px; min-width:13px; height:13px; padding:0 3px; border-radius:7px; background:var(--accent); color:var(--accent-text,#fff); font-size:8.5px; font-weight:700; display:grid; place-items:center; }
+  .ocpm-bluebtn { width:30px; height:30px; display:grid; place-items:center; border:0; border-radius:var(--r-interactive); background:var(--accent); color:var(--accent-text,#fff); cursor:pointer; }
+
+  /* tab strip: many tabs scroll horizontally; trailing ‹ › ☰ controls stay pinned right */
+  .ocpm-view .subtabs { overflow-x:auto; flex-wrap:nowrap; scrollbar-width:none; }
+  .ocpm-view .subtabs::-webkit-scrollbar { display:none; }
+  .ocpm-view .subtab { flex:none; white-space:nowrap; }
+  .ocpm-tabnav { position:sticky; right:0; display:flex; align-items:center; gap:2px; padding-left:6px; margin-left:auto; background:var(--ia-canvas); }
+  [data-layout="flowy"] .ocpm-view .ocpm-tabnav { background:var(--flowy-surface); }
+  .ocpm-tnav { width:24px; height:26px; display:grid; place-items:center; border:0; background:transparent; color:var(--text-dim); cursor:pointer; border-radius:6px; }
+  .ocpm-tnav:hover { background:var(--card-strong); color:var(--text); }
+
+  /* top filter/overview panel: three columns */
+  .ocpm-toprow { display:flex; gap:18px; align-items:stretch; }
+  .ocpm-col { display:flex; flex-direction:column; gap:8px; min-width:0; }
+  .ocpm-side { flex:0 0 200px; }
+  .ocpm-mid { flex:1 1 auto; min-width:0; }
+  .ocpm-coltitle { font-size:17px; font-weight:600; color:var(--text); text-align:center; margin-bottom:2px; }
+  .ocpm-filter-dd { display:flex; align-items:center; justify-content:space-between; height:30px; padding:0 10px; border:1px solid var(--border); border-radius:var(--r-interactive); background:var(--card); font-size:12px; color:var(--text); }
+  .ocpm-optlist { display:flex; flex-direction:column; border:1px solid var(--border); border-radius:var(--r-interactive); overflow:hidden; }
+  .ocpm-opt { text-align:left; height:30px; padding:0 11px; border:0; border-top:1px solid var(--border); background:var(--bg-1); color:var(--text-dim); font-size:12px; cursor:pointer; font-family:inherit; }
+  .ocpm-opt:first-child { border-top:0; }
+  .ocpm-opt:hover { background:var(--card-strong); color:var(--text); }
+  .ocpm-opt.solo { margin-top:8px; border:1px solid var(--border); border-radius:var(--r-interactive); }
+  .ocpm-xlabel { font-size:10px; color:var(--text-dim); text-align:center; margin-top:2px; }
+
+  /* middle KPIs + filter bars + paired charts */
+  .ocpm-kpis { display:grid; grid-template-columns:repeat(4,1fr); gap:0; }
+  .ocpm-kpi { padding:2px 14px; border-right:1px solid var(--border); }
+  .ocpm-kpi:last-child { border-right:0; }
+  .ocpm-kpi .k { font-size:12px; color:var(--text-dim); }
+  .ocpm-kpi .v { font-size:30px; font-weight:600; letter-spacing:-0.025em; color:var(--text); margin-top:2px; font-variant-numeric:tabular-nums; }
+  .ocpm-filterbar { display:flex; align-items:center; justify-content:center; gap:10px; height:34px; padding:0 12px; border:1px solid var(--border); border-radius:var(--r-interactive); background:var(--bg-1); }
+  .ocpm-fbtext { font-size:12px; color:var(--text-dim); }
+  .ocpm-seg { display:inline-flex; gap:2px; padding:2px; border-radius:9px; background:var(--track); border:1px solid var(--border); }
+  .ocpm-seg button { height:22px; padding:0 12px; border:0; border-radius:7px; background:transparent; color:var(--text-dim); font-size:11.5px; cursor:pointer; font-family:inherit; }
+  .ocpm-seg button.on { background:var(--bg-1); color:var(--text); font-weight:600; box-shadow:0 1px 2px rgba(0,0,0,0.2); }
+  .ocpm-midcharts { display:grid; grid-template-columns:1fr 1fr; gap:18px; margin-top:2px; }
+  .ocpm-chartcol { display:flex; flex-direction:column; gap:4px; min-width:0; }
+  .ocpm-hbar { min-height:128px; flex:none; margin-top:4px; }
+
+  /* table card head with a download action */
+  .ocpm-cardhead { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  .ocpm-dl { color:var(--text-faint); cursor:pointer; display:grid; place-items:center; }
+  .ocpm-dl:hover { color:var(--text); }
+  .ocpm-view .ptable th:first-child, .ocpm-view .ptable td:first-child { max-width:150px; overflow:hidden; text-overflow:ellipsis; }
+  .ocpm-view .ptable td, .ocpm-view .ptable th { white-space:nowrap; }
+  .ocpm-view .ptable th.tr-kebab, .ocpm-view .ptable td.tr-kebab { width:24px; text-align:center; color:var(--text-faint); }
+
+  /* "List of CS projects" failed/empty widget */
+  .ocpm-errstate { display:flex; align-items:center; justify-content:center; min-height:150px; }
+  .ocpm-errdot { width:22px; height:22px; border-radius:50%; background:#e5484d; color:#fff; font-size:14px; font-weight:700; display:grid; place-items:center; box-shadow:0 4px 12px -3px rgba(229,72,77,0.6); }
+
+  /* ===== OCPM adoption view — activity breakdown (filter-panel variant) ===== */
+  /* body splits into the dashboard + a right filter drawer toggled from the header */
+  .ocpm2-body { display:flex; gap:16px; align-items:flex-start; }
+  .ocpm2-main { flex:1 1 auto; min-width:0; }
+  .ocpm2-fbar { flex:0 0 238px; }
+  .ocpm2-body:not([data-fbar="open"]) .ocpm2-fbar { display:none; }
+
+  .ocpm2-fbar-inner { border:1px solid var(--border); border-radius:var(--r-surface); background:var(--bg-1); overflow:hidden; }
+  .ocpm2-fbar-head { display:flex; align-items:center; justify-content:space-between; padding:9px 12px; border-bottom:1px solid var(--border); font-size:12px; font-weight:600; color:var(--text-dim); }
+  .ocpm2-fbar-head .x { cursor:pointer; color:var(--text-faint); display:grid; place-items:center; }
+  .ocpm2-fbar-head .x:hover { color:var(--text); }
+  .ocpm2-fsec { padding:11px 12px; border-bottom:1px solid var(--border); display:flex; flex-direction:column; gap:8px; }
+  .ocpm2-fsec:last-child { border-bottom:0; }
+  .ocpm2-fsec-title { font-size:13px; font-weight:600; color:var(--text); text-align:center; margin-bottom:1px; }
+  .ocpm2-fctl { display:flex; align-items:center; justify-content:space-between; gap:6px; height:32px; padding:0 10px; border:1px solid var(--border); border-radius:var(--r-interactive); background:var(--card); font-size:12px; color:var(--text); cursor:pointer; }
+  .ocpm2-fctl:hover { border-color:var(--border-strong); }
+  .ocpm2-fctl.btn { justify-content:center; color:var(--text-dim); }
+  .ocpm2-fctl > span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .ocpm2-fctl svg { color:var(--text-faint); flex:none; }
+
+  /* big "N days" eligibility counters */
+  .ocpm2-days { font-size:46px; font-weight:600; letter-spacing:-0.03em; color:var(--text); font-variant-numeric:tabular-nums; line-height:1.05; }
+  .ocpm2-bignum { font-size:34px; font-weight:600; letter-spacing:-0.03em; color:var(--text); font-variant-numeric:tabular-nums; }
+  .ocpm2-subm { display:flex; align-items:baseline; justify-content:space-between; gap:8px; font-size:11.5px; color:var(--text-dim); margin-top:5px; }
+  .ocpm2-subm b { color:var(--text); font-weight:600; font-variant-numeric:tabular-nums; }
+  .ocpm2-subm .lbl { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+  /* account-average KPI block (4 inline metrics inside one card) */
+  .ocpm2-avgkpis { display:grid; grid-template-columns:repeat(4,1fr); gap:0; margin-top:10px; }
+  .ocpm2-avgkpis .ocpm-kpi { padding:2px 14px; }
+  .ocpm2-avgkpis .ocpm-kpi:first-child { padding-left:2px; }
+
+  /* Quick Filters list */
+  .ocpm2-qf-title { font-size:14px; font-weight:600; color:var(--text); text-align:center; }
+  .ocpm2-qf { display:flex; flex-direction:column; margin-top:8px; }
+  .ocpm2-qf-row { padding:9px 6px; border-top:1px solid var(--border); font-size:12.5px; color:var(--text); cursor:pointer; }
+  .ocpm2-qf-row:hover { background:var(--card-strong); }
+
+  /* HTML chart legends */
+  .ocpm2-legend { display:flex; flex-wrap:wrap; gap:4px 12px; margin-top:8px; font-size:10.5px; color:var(--text-dim); }
+  .ocpm2-legitem { display:inline-flex; align-items:center; gap:5px; }
+  .ocpm2-swatch { width:9px; height:9px; border-radius:2px; flex:none; }
+  .ocpm2-xlabel { font-size:10px; color:var(--text-dim); text-align:right; margin-top:4px; }
+  .ocpm2-chart { min-height:130px; }
+  .ocpm2-chart-sm { min-height:96px; }
+
+  /* ===== OCPM adoption view — Summary_h "maturity funnel - history view" ===== */
+  /* big centered title banner */
+  .ocpm3-banner { display:flex; align-items:center; justify-content:center; min-height:30px; }
+  .ocpm3-banner h2 { margin:0; font-size:17px; font-weight:600; color:var(--text); text-align:center; }
+  /* "last load date" info card */
+  .ocpm3-loadinfo { display:flex; flex-direction:column; align-items:flex-end; justify-content:center; height:100%; gap:1px; font-size:12px; color:var(--text-dim); }
+  .ocpm3-loadinfo a { color:var(--accent); text-decoration:none; }
+  .ocpm3-loadinfo a:hover { text-decoration:underline; }
+
+  /* left "filter current cohort" card */
+  .ocpm3-bigpct { font-size:54px; font-weight:600; letter-spacing:-0.03em; color:var(--text); font-variant-numeric:tabular-nums; line-height:1; margin:6px 0; }
+  .ocpm3-cohort-foot { margin-top:auto; padding-top:14px; }
+
+  /* funnel KPI strip (6 across) */
+  .ocpm3-funnel { display:grid; grid-template-columns:repeat(6,1fr); gap:0; margin-top:12px; }
+  .ocpm3-funnel .ocpm-kpi { padding:2px 10px; }
+  .ocpm3-funnel .ocpm-kpi:first-child { padding-left:2px; }
+  .ocpm3-funnel .ocpm-kpi .v { font-size:32px; }
+
+  /* OCPM-eligible filter button stack (top-right) */
+  .ocpm3-filterbtns { display:flex; flex-direction:column; gap:8px; }
+  .ocpm3-fbtn { height:30px; display:flex; align-items:center; justify-content:center; padding:0 10px; border:1px solid var(--border); border-radius:var(--r-interactive); background:var(--card); font-size:12px; color:var(--text); cursor:pointer; }
+  .ocpm3-fbtn:hover { border-color:var(--border-strong); }
+  .ocpm3-fbtn.on { border-color:var(--accent); color:var(--accent); box-shadow:0 0 0 1px var(--accent) inset; }
+
+  /* segmented in-card tabs (time to "in development" | "productive") */
+  .ocpm3-segtabs { display:flex; gap:8px; margin-bottom:4px; }
+  .ocpm3-segtab { flex:1; height:30px; display:flex; align-items:center; justify-content:center; padding:0 8px; border:1px solid var(--border); border-radius:var(--r-interactive); background:var(--card); font-size:12px; color:var(--text-dim); cursor:pointer; white-space:nowrap; }
+  .ocpm3-segtab.on { border-color:var(--accent); color:var(--text); background:var(--card-strong); }
+
+  /* ===== Inventory Cockpit 2.0 ===== */
+  .inv-fhead-info { display:flex; align-items:center; gap:5px; padding:8px 12px; border-bottom:1px solid var(--border); font-size:11.5px; color:var(--accent); cursor:pointer; }
+  .inv-fbar-attr { font-size:13px; font-weight:600; color:var(--text); padding:10px 12px 4px; }
+
+  /* three-part section band: left KPIs · centre chart · right KPIs */
+  .inv-body { display:flex; gap:18px; align-items:stretch; margin-top:8px; }
+  .inv-left { flex:0 0 auto; display:flex; flex-direction:column; gap:16px; justify-content:center; }
+  .inv-mid { flex:1 1 auto; min-width:0; display:flex; flex-direction:column; }
+  .inv-right { flex:0 0 auto; }
+  .span-12 .inv-left { width:140px; } .span-12 .inv-right { width:430px; }
+  .span-6 .inv-left { width:104px; } .span-6 .inv-right { width:160px; }
+
+  /* KPI cell (replaces the screenshot's redacted pills) */
+  .inv-kpi .k { font-size:11px; color:var(--text-dim); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .inv-kpi .v { font-size:21px; font-weight:600; color:var(--text); font-variant-numeric:tabular-nums; line-height:1.1; white-space:nowrap; }
+  .inv-kpi .v .u { font-size:12px; color:var(--text-dim); font-weight:500; margin-left:2px; }
+  .inv-kpi.big .v { font-size:30px; }
+  .inv-kpi .d { font-size:11px; font-weight:600; font-variant-numeric:tabular-nums; }
+  .inv-kpi .d.up { color:var(--success); } .inv-kpi .d.down { color:var(--danger); }
+  .inv-kpi .det { display:inline-flex; align-items:center; gap:3px; font-size:10.5px; color:var(--accent); cursor:pointer; margin-top:1px; }
+
+  /* right matrix (Total Stock: 5 category columns) + right list (Unrestricted etc.) */
+  .inv-matrix { display:grid; grid-template-columns:repeat(5,1fr); gap:12px 10px; }
+  .inv-mcol { display:flex; flex-direction:column; gap:6px; }
+  .inv-mcol .inv-kpi .v { font-size:16px; }
+  .inv-kpilist { display:grid; grid-template-columns:1fr 1fr; gap:14px 18px; align-content:center; height:100%; }
+  .inv-kpilist.one { grid-template-columns:1fr; }
+  .inv-kpilist .inv-kpi .v { font-size:17px; }
+
+  /* centred blue pill button above charts (Cockpit / KPI Drilldown) */
+  .inv-chartbtn { align-self:center; background:var(--accent); color:var(--accent-text,#fff); font-size:11px; font-weight:600; padding:5px 16px; border-radius:7px; display:inline-flex; align-items:center; gap:6px; cursor:pointer; border:0; margin-bottom:2px; }
+  .inv-chart { min-height:120px; }
+

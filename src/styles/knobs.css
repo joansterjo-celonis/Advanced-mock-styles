@@ -45,10 +45,14 @@
      workspace bleeds through the blur, washing the rail/tab-bar/status-bar to a muddy gray. The
      overlay tier (menus / modals / the controls panel) still glassifies via --glass-fill. */
   [data-shell="contrast"] { --glass-fill-chrome:1; }
-  /* make the shell chrome cohesive — the editor tab bar matches the dark panel, and the
-     tab-bar / status-bar dividers drop so the dark shell reads as one seamless surface */
+  /* make the shell chrome cohesive — the editor tab bar matches the dark panel, and EVERY
+     shell-separation hairline (tab-bar, status-bar, the L0 rail + L1 sidebar right edges and
+     the L0 avatar footer) drops so the whole dark shell reads as one seamless surface */
   [data-shell="contrast"] .tabbar { background:var(--chrome-panel); border-bottom-color:transparent; }
   [data-shell="contrast"] .statusbar { border-top-color:transparent; }
+  [data-shell="contrast"] #l0,
+  [data-shell="contrast"] #l1 { border-right-color:transparent; }
+  [data-shell="contrast"] .ia-l0-foot { border-top-color:transparent; }
 
   /* Contrast (light) inverts ONLY the shell chrome (L0/L1/tabbar/statusbar) to dark.
      The content region stays LIGHT and floats as an inset, all-four-rounded card framed
@@ -66,7 +70,8 @@
   [data-mode="light"][data-shell="contrast"] .modal-overlay,
   [data-mode="light"][data-shell="contrast"] .sb-pop,
   [data-mode="light"][data-shell="contrast"] .wb-menu,
-  [data-mode="light"][data-shell="contrast"] .vh-menu {
+  [data-mode="light"][data-shell="contrast"] .vh-menu,
+  [data-mode="light"][data-shell="contrast"] .ctxmenu {
     --ia-text:var(--text); --ia-ink:var(--text); --ia-muted:var(--text-dim); --ia-muted-2:var(--text-faint);
     --ia-bg:var(--bg-1); --ia-panel:var(--bg-1); --ia-canvas:var(--chrome-0);
     --ia-line:var(--border); --ia-line-soft:var(--border); --ia-hover:var(--card-strong); --ia-active:var(--card-strong);

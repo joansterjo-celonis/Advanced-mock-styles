@@ -246,10 +246,139 @@ import { buildAssetHeader } from './components/asset-header.js';
         hitRect(svg,bx,by,bw,bh,'1970-01',[['On-Time','760K'],['Rate','47.5%']]);
         wrap.appendChild(svg);
       }
+      /* ---- Tracking Analysis: "time between events" frequency histogram (exponential decay) ---- */
+      function freqhist(wrap){
+        const W=Math.max(Math.round(wrap.clientWidth),240), H=Math.max(Math.round(wrap.clientHeight),150);
+        const padL=48,padR=10,padT=10,padB=26, innerW=W-padL-padR, innerH=H-padT-padB;
+        const n=21, vals=[]; for(let i=0;i<n;i++) vals.push(Math.round(2150000*Math.exp(-i*0.42)));
+        vals.push(180000);                          // far-right grey "200s+" catch-all bucket
+        const mx=2200000, count=vals.length, svg=E('svg',{viewBox:`0 0 ${W} ${H}`,preserveAspectRatio:'none'});
+        [0,1000000,2000000].forEach(g=>{ const y=padT+innerH*(1-g/mx); svg.appendChild(E('line',{x1:padL,x2:padL+innerW,y1:y,y2:y,stroke:'rgba(128,128,128,0.16)','stroke-dasharray':'2 4'})); svg.appendChild(svgText(E,padL-4,y+3,g.toLocaleString('en-US'),'end')); });
+        const step=innerW/count, bw=step*0.74;
+        const m3=chartMode(wrap), col=cssVar('--cstop-1a', wrap);
+        vals.forEach((v,i)=>{ const last=i===count-1, h=Math.max(1,(v/mx)*innerH), x=padL+step*i+(step-bw)/2, y=padT+innerH-h;
+          if(m3 && !last){ bar3dV(svg,x,y,bw,h,col,m3); }
+          else { const r=E('rect',{x:x.toFixed(1),y:y.toFixed(1),width:bw.toFixed(1),height:h.toFixed(1),rx:1.5}); r.style.fill = last?'rgba(140,142,150,0.6)':'var(--cstop-1a)'; svg.appendChild(r); } });
+        [0,0.2,0.4,0.6,0.8,1].forEach(f=>{ svg.appendChild(svgText(E,padL+innerW*f,padT+innerH+12,String(Math.round(f*200)),'middle')); });
+        for(let i=0;i<count;i++){ const lo=Math.round(i/count*200), hi=Math.round((i+1)/count*200); hitRect(svg,padL+step*i,padT,step,innerH,(i===count-1?'200+ s':lo+'\u2013'+hi+' s'),[['Frequency',fmt(vals[i])]]); }
+        wrap.appendChild(svg);
+      }
+      /* ---- Tracking Analysis: avg time-between-events over time (line) ---- */
+      function durline(wrap){
+        const W=Math.max(Math.round(wrap.clientWidth),260), H=Math.max(Math.round(wrap.clientHeight),150);
+        const padL=44,padR=12,padT=10,padB=26, innerW=W-padL-padR, innerH=H-padT-padB;
+        const n=19, pts=[], r=rng(7); let base=13.0;
+        for(let i=0;i<n;i++){ base+=0.06; pts.push(Math.max(11,Math.min(17, base+(r()-0.5)*2.0+Math.sin(i/2)*0.6))); }
+        const mx=20, svg=E('svg',{viewBox:`0 0 ${W} ${H}`,preserveAspectRatio:'none'});
+        [0,5,10,15,20].forEach(g=>{ const y=padT+innerH*(1-g/mx); svg.appendChild(E('line',{x1:padL,x2:padL+innerW,y1:y,y2:y,stroke:'rgba(128,128,128,0.16)','stroke-dasharray':'2 4'})); svg.appendChild(svgText(E,padL-4,y+3,g+'sec.','end')); });
+        const step=innerW/(n-1); let d=''; pts.forEach((v,i)=>{ const x=padL+step*i, y=padT+innerH-(v/mx)*innerH; d+=(i?'L':'M')+x.toFixed(1)+','+y.toFixed(1); });
+        const col=cssVar('--cstop-1a', wrap);
+        const lp=E('path',{d:d,fill:'none','stroke-width':2,'stroke-linecap':'round','stroke-linejoin':'round','vector-effect':'non-scaling-stroke'}); lp.style.stroke=col; svg.appendChild(lp);
+        const dates=['2024-12-30','2025-03-31','2025-06-30','2025-09-29','2025-12-29','2026-06-30'];
+        dates.forEach((dt,i)=>{ const x=padL+innerW*(i/(dates.length-1)); svg.appendChild(svgText(E,x,padT+innerH+12,dt,i===0?'start':(i===dates.length-1?'end':'middle'))); });
+        for(let i=0;i<n;i++){ const cxp=padL+step*i, x0=Math.max(padL,cxp-step/2), x1=Math.min(padL+innerW,cxp+step/2); hitRect(svg,x0,padT,x1-x0,innerH,'duration',[['seconds',pts[i].toFixed(1)]]); }
+        wrap.appendChild(svg);
+      }
+      /* ---- Generic data-driven horizontal category bars (self-describing via data-bars) ----
+         data-bars='[["Label",value],…]'  data-xmax  data-xticks="0,1000,2000"  data-labelw  data-unit */
+      function hbarcat(wrap){
+        let bars=[]; try{ bars=JSON.parse(wrap.dataset.bars||'[]'); }catch(e){ bars=[]; }
+        const xmax=parseFloat(wrap.dataset.xmax)|| (bars.length?Math.max(...bars.map(b=>b[1]))*1.1:1);
+        const ticks=(wrap.dataset.xticks||'').split(',').map(s=>parseFloat(s)).filter(v=>!isNaN(v));
+        const unit=wrap.dataset.unit||'', labelW=parseFloat(wrap.dataset.labelw)||62;
+        const W=Math.max(Math.round(wrap.clientWidth),180), H=Math.max(Math.round(wrap.clientHeight),80);
+        const padL=labelW, padR=10, padT=4, padB=15, innerW=W-padL-padR, innerH=H-padT-padB;
+        const svg=E('svg',{viewBox:`0 0 ${W} ${H}`,preserveAspectRatio:'none'});
+        (ticks.length?ticks:[0,xmax]).forEach(t=>{ const x=padL+(t/xmax)*innerW; svg.appendChild(E('line',{x1:x.toFixed(1),x2:x.toFixed(1),y1:padT,y2:padT+innerH,stroke:'rgba(128,128,128,0.16)','stroke-dasharray':'2 4'})); svg.appendChild(svgText(E,x,padT+innerH+11,fmt(t),'middle')); });
+        const n=Math.max(1,bars.length), rh=innerH/n, bh=Math.min(13,rh*0.6);
+        const m3=chartMode(wrap), col=cssVar('--cstop-1a', wrap);
+        const cap=Math.max(4,Math.floor(labelW/5.2));
+        bars.forEach((b,i)=>{ const cy=padT+rh*i+rh/2, w=Math.max(1,(Math.min(b[1],xmax)/xmax)*innerW), y=cy-bh/2;
+          const shown=(String(b[0]).length>cap)?String(b[0]).slice(0,cap-1)+'\u2026':String(b[0]);
+          const lt=svgText(E,padL-6,cy+3,shown,'end'); lt.setAttribute('font-size','9'); svg.appendChild(lt);
+          const cvar=b[2]||'--cstop-1a';            // optional per-bar colour (a CSS var name)
+          if(m3){ bar3dH(svg,padL,y,w,bh,cssVar(cvar, wrap),m3); }
+          else { const r=E('rect',{x:padL.toFixed(1),y:y.toFixed(1),width:w.toFixed(1),height:bh.toFixed(1),rx:1.5}); r.style.fill='var('+cvar+')'; svg.appendChild(r); }
+          hitRect(svg,padL,padT+rh*i,innerW,rh,String(b[0]),[['Value',fmt(b[1])+(unit?' '+unit:'')]]); });
+        wrap.appendChild(svg);
+      }
+      /* ---- Generic pie (self-describing via data-segs='[["Label",pct,"--colorVar"],…]') ---- */
+      function pieGen(wrap){
+        let segs=[]; try{ segs=JSON.parse(wrap.dataset.segs||'[]'); }catch(e){ segs=[]; }
+        const W=Math.max(Math.round(wrap.clientWidth),140), H=Math.max(Math.round(wrap.clientHeight),120);
+        const cx=W*0.40, cy=H/2, r=Math.min(W*0.34,H*0.42);
+        const svg=E('svg',{viewBox:`0 0 ${W} ${H}`});
+        const pal=['--cstop-1b','--legend-3','--cstop-1a','--legend-2','--legend-1','--cstop-3a'];
+        let a0=-Math.PI/2;
+        segs.forEach((sg,i)=>{ const frac=Math.max(0,sg[1])/100, a1=a0+frac*2*Math.PI;
+          const x0=cx+r*Math.cos(a0), y0=cy+r*Math.sin(a0), x1=cx+r*Math.cos(a1), y1=cy+r*Math.sin(a1), large=frac>0.5?1:0;
+          const cvar=sg[2]||pal[i%pal.length];
+          const p=E('path',{d:`M${cx.toFixed(1)},${cy.toFixed(1)} L${x0.toFixed(1)},${y0.toFixed(1)} A${r.toFixed(1)},${r.toFixed(1)} 0 ${large} 1 ${x1.toFixed(1)},${y1.toFixed(1)} Z`}); p.style.fill='var('+cvar+')'; svg.appendChild(p);
+          const am=(a0+a1)/2, lx=cx+(r+10)*Math.cos(am), ly=cy+(r+10)*Math.sin(am);
+          const nm=String(sg[0]); const lab=sg[1].toFixed(2)+'% '+(nm.length>9?nm.slice(0,8)+'\u2026':nm);
+          const t=svgText(E,lx,ly+3,lab,Math.cos(am)<0?'end':'start'); t.setAttribute('font-size','8'); svg.appendChild(t);
+          setTip(p,nm,[['Share',sg[1].toFixed(2)+'%']]); a0=a1; });
+        wrap.appendChild(svg);
+      }
+      /* ---- Generic stacked bars over a category axis (seeded; data-series='[{"c":"--var","w":weight},…]')
+         Options: data-shape='bell'|'grow'|'rand'  data-full='1' (each bar≈ymax, % stack)
+                  data-bias='1' (last series grows toward the right; final bar all-last)
+                  data-pct='1' (y labels as %)  data-xlabels='a|b|c' (evenly-spaced x labels) ---- */
+      function stackbars(wrap){
+        let series=[]; try{ series=JSON.parse(wrap.dataset.series||'[]'); }catch(e){ series=[]; }
+        if(!series.length) series=[{c:'--cstop-1a'}];
+        const n=parseInt(wrap.dataset.n||'26',10), ymax=parseFloat(wrap.dataset.ymax)||200000, seed=parseInt(wrap.dataset.seed||'7',10);
+        const shape=wrap.dataset.shape||'bell', full=wrap.dataset.full==='1', bias=wrap.dataset.bias==='1', pct=wrap.dataset.pct==='1';
+        const line=wrap.dataset.line||'';   // optional trend line across the stack tops (a CSS var name)
+        const xl=(wrap.dataset.xlabels||'').split('|').filter(Boolean);
+        const W=Math.max(Math.round(wrap.clientWidth),220), H=Math.max(Math.round(wrap.clientHeight),120);
+        const padL=pct?34:46,padR=8,padT=8,padB=22, innerW=W-padL-padR, innerH=H-padT-padB;
+        const svg=E('svg',{viewBox:`0 0 ${W} ${H}`,preserveAspectRatio:'none'});
+        [0,0.5,1].forEach(f=>{ const y=padT+innerH*(1-f); svg.appendChild(E('line',{x1:padL,x2:padL+innerW,y1:y,y2:y,stroke:'rgba(128,128,128,0.16)','stroke-dasharray':'2 4'})); svg.appendChild(svgText(E,padL-4,y+3,pct?Math.round(ymax*f)+'%':fmt(ymax*f),'end')); });
+        const r=rng(seed), step=innerW/n, bw=step*0.74, last=series.length-1, tops=[];
+        for(let i=0;i<n;i++){ const t=n>1?i/(n-1):0;
+          const profile=shape==='grow'?(0.12+0.85*t)*(0.85+r()*0.2):shape==='rand'?(0.2+r()*0.78):Math.pow(Math.sin(Math.min(1,t*1.12)*Math.PI),0.7);
+          const total=full?ymax*(0.9+r()*0.08):ymax*(0.30+0.62*profile)*(0.82+r()*0.3);
+          const finalAllLast=bias&&i===n-1;
+          const shares=series.map((s,si)=>{ if(finalAllLast) return si===last?1:0.0001; let base=(s.w||1)*(0.55+0.9*r()); if(bias&&si===last) base*=(0.1+t*t*4); return base; });
+          const sum=shares.reduce((a,b)=>a+b,0);
+          let yb=padT+innerH; const x=padL+step*i+(step-bw)/2;
+          series.forEach((s,si)=>{ const h=(shares[si]/sum)*(Math.min(total,ymax)/ymax)*innerH, y=yb-h;
+            const rect=E('rect',{x:x.toFixed(1),y:y.toFixed(1),width:bw.toFixed(1),height:Math.max(0.4,h).toFixed(1)}); rect.style.fill='var('+(s.c||'--cstop-1a')+')'; svg.appendChild(rect); yb=y; });
+          tops.push((x+bw/2).toFixed(1)+','+yb.toFixed(1)); }
+        if(line){ svg.appendChild(E('polyline',{points:tops.join(' '),fill:'none',stroke:'var('+line+')','stroke-width':1.6,'stroke-linejoin':'round'})); }
+        if(xl.length){ xl.forEach((lab,idx)=>{ const x=padL+(xl.length===1?innerW/2:innerW*idx/(xl.length-1)); const tx=svgText(E,Math.max(padL+8,Math.min(padL+innerW-8,x)),padT+innerH+12,lab,'middle'); tx.setAttribute('font-size','8'); svg.appendChild(tx); }); }
+        else { const stepX=Math.max(1,Math.ceil(n/12)); for(let i=0;i<n;i+=stepX){ svg.appendChild(svgText(E,padL+step*i+step/2,padT+innerH+11,String(i),'middle')); } }
+        wrap.appendChild(svg);
+      }
+      /* ---- Horizontal stacked bars per category (rows). data-cats='["m1",…]', data-series='[{"c","w"},…]'
+         data-xmax (e.g. 150), data-xticks='0,50,100,150', data-labelw, seeded; older rows fuller. ---- */
+      function hstackbars(wrap){
+        let cats=[],series=[]; try{cats=JSON.parse(wrap.dataset.cats||'[]');}catch(e){} try{series=JSON.parse(wrap.dataset.series||'[]');}catch(e){}
+        if(!series.length) series=[{c:'--cstop-1a'}];
+        const xmax=parseFloat(wrap.dataset.xmax)||100, seed=parseInt(wrap.dataset.seed||'9',10), labelW=parseFloat(wrap.dataset.labelw)||46;
+        const ticks=(wrap.dataset.xticks||('0,'+xmax)).split(',').map(Number);
+        const W=Math.max(Math.round(wrap.clientWidth),220), H=Math.max(Math.round(wrap.clientHeight),120);
+        const padL=labelW,padR=8,padT=6,padB=18, innerW=W-padL-padR, innerH=H-padT-padB;
+        const svg=E('svg',{viewBox:`0 0 ${W} ${H}`,preserveAspectRatio:'none'});
+        ticks.forEach(tk=>{ const x=padL+(tk/xmax)*innerW; svg.appendChild(E('line',{x1:x.toFixed(1),x2:x.toFixed(1),y1:padT,y2:padT+innerH,stroke:'rgba(128,128,128,0.16)','stroke-dasharray':'2 4'})); svg.appendChild(svgText(E,x,padT+innerH+11,tk+'%','middle')); });
+        const m=Math.max(1,cats.length), rh=innerH/m, bh=Math.min(13,rh*0.7), r=rng(seed), cap=Math.max(4,Math.floor(labelW/5));
+        cats.forEach((cat,i)=>{ const cy=padT+rh*i+rh/2, y=cy-bh/2; const t=m>1?i/(m-1):0;
+          const shown=(String(cat).length>cap)?String(cat).slice(0,cap-1)+'\u2026':String(cat);
+          const lt=svgText(E,padL-5,cy+3,shown,'end'); lt.setAttribute('font-size','8.5'); svg.appendChild(lt);
+          const total=(0.34+0.62*t)*(0.9+r()*0.2)*100;
+          const shares=series.map(s=>(s.w||1)*(0.45+0.95*r())), sum=shares.reduce((a,b)=>a+b,0);
+          let x=padL;
+          series.forEach((s,si)=>{ const w=(shares[si]/sum)*(Math.min(total,xmax)/xmax)*innerW; if(w<=0)return; const rect=E('rect',{x:x.toFixed(1),y:y.toFixed(1),width:Math.max(0.4,w).toFixed(1),height:bh.toFixed(1)}); rect.style.fill='var('+(s.c||'--cstop-1a')+')'; svg.appendChild(rect); x+=w; });
+          hitRect(svg,padL,padT+rh*i,innerW,rh,String(cat),[['Total',Math.round(total)+'%']]); });
+        wrap.appendChild(svg);
+      }
       let _rzt; window.addEventListener('resize',()=>{ clearTimeout(_rzt); _rzt=setTimeout(()=>renderChartsIn(document.querySelector('.view.active')),160); });
       function buildChart(w){ const t=w.dataset.chart; w.innerHTML='';
         if(t==='combo')combo(w); else if(t==='donut')donut(w); else if(t==='area')area(w); else if(t==='dots')dots(w);
-        else if(t==='pbars')pbars(w); else if(t==='otd-class')otdClass(w); else if(t==='otd-hist')otdHist(w); else if(t==='otd-dev')otdDev(w); }
+        else if(t==='pbars')pbars(w); else if(t==='otd-class')otdClass(w); else if(t==='otd-hist')otdHist(w); else if(t==='otd-dev')otdDev(w);
+        else if(t==='freqhist')freqhist(w); else if(t==='durline')durline(w); else if(t==='hbarcat')hbarcat(w);
+        else if(t==='pie')pieGen(w); else if(t==='stackbars')stackbars(w); else if(t==='hstackbars')hstackbars(w); }
       function renderChartsIn(view){ if(!view)return; view.querySelectorAll('[data-chart]').forEach(buildChart); }
 
       /* ---- ID table ---- */
@@ -366,7 +495,7 @@ import { buildAssetHeader } from './components/asset-header.js';
         if(def.addTab!==false && tabs && !tabs.querySelector('.ia-tab[data-view="'+id+'"]')){
           const tab=document.createElement('div');
           tab.className='ia-tab'; tab.setAttribute('data-view',id);
-          tab.innerHTML=(def.icon||'')+(def.label||id)+'<span class="ia-x" title="Close" aria-label="Close tab"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4">'+icons.close+'</svg></span>';
+          tab.innerHTML=(def.icon||'')+'<span class="ia-tab-lbl">'+(def.label||id)+'</span>'+'<span class="ia-x" title="Close" aria-label="Close tab"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4">'+icons.close+'</svg></span>';
           const addBtn=tabs.querySelector('.ia-tab-add');
           tabs.insertBefore(tab, addBtn||null);
           tab.addEventListener('click',(e)=>{
@@ -647,9 +776,38 @@ import { buildAssetHeader } from './components/asset-header.js';
       rS.addEventListener('input',()=>{ root.style.setProperty('--r-surface',rS.value+'px'); rsv.textContent=rS.value+'px'; });
       rI.addEventListener('input',()=>{ root.style.setProperty('--r-interactive',rI.value+'px'); riv.textContent=rI.value+'px'; });
 
-      /* global glass: one slider drives the --glass token family consumed by every overlay (.glass) + the shell chrome tier (.glass-chrome) */
+      /* global glass: the single slider drives the --glass token family consumed by every overlay
+         (.glass) + the shell chrome tier (.glass-chrome). "Advanced" splits it into two axis sliders:
+         translucency (--glass-op → fill/opacity) and glassiness (--glass-bl → blur/saturate/diffraction).
+         Both axes default to var(--glass) in CSS, so the single slider behaves exactly as before. */
       const gG=document.getElementById('r-glass'), ggv=document.getElementById('gg-val');
-      if(gG) gG.addEventListener('input',()=>{ root.style.setProperty('--glass',(gG.value/100).toFixed(3)); if(ggv) ggv.textContent=gG.value+'%'; });
+      const gOp=document.getElementById('r-glass-op'), gBl=document.getElementById('r-glass-bl');
+      const gOpV=document.getElementById('gg-op-val'), gBlV=document.getElementById('gg-bl-val');
+      const ggAdv=document.getElementById('gg-adv'), ggGrp=document.getElementById('gg-grp');
+      const ggSimple=document.getElementById('gg-simple'), ggSplit=document.getElementById('gg-split');
+      const setGlass=v=>{ root.style.setProperty('--glass',(v/100).toFixed(3)); if(ggv) ggv.textContent=Math.round(v)+'%'; };
+      const setGlassOp=v=>{ root.style.setProperty('--glass-op',(v/100).toFixed(3)); if(gOpV) gOpV.textContent=Math.round(v)+'%'; };
+      const setGlassBl=v=>{ root.style.setProperty('--glass-bl',(v/100).toFixed(3)); if(gBlV) gBlV.textContent=Math.round(v)+'%'; };
+      if(gG) gG.addEventListener('input',()=>setGlass(gG.value));
+      if(gOp) gOp.addEventListener('input',()=>setGlassOp(gOp.value));
+      if(gBl) gBl.addEventListener('input',()=>setGlassBl(gBl.value));
+      function setGlassMode(adv){
+        if(!ggGrp) return;
+        adv=!!adv;
+        ggGrp.classList.toggle('gg-advanced',adv);
+        if(ggSimple) ggSimple.hidden=adv;
+        if(ggSplit) ggSplit.hidden=!adv;
+        if(ggAdv){ ggAdv.setAttribute('aria-pressed',adv?'true':'false'); ggAdv.textContent=adv?'Single':'Advanced'; }
+        if(adv){
+          const base=gG?+gG.value:0;                  // seed both axes from the current single value, then diverge
+          if(gOp){ gOp.value=base; setGlassOp(base); }
+          if(gBl){ gBl.value=base; setGlassBl(base); }
+        } else {
+          root.style.removeProperty('--glass-op');     // drop overrides so everything follows --glass again
+          root.style.removeProperty('--glass-bl');
+        }
+      }
+      if(ggAdv) ggAdv.addEventListener('click',()=>setGlassMode(ggAdv.getAttribute('aria-pressed')!=='true'));
 
       /* ---- specular cursor light (no tilt) ---- */
       const cards=Array.from(document.querySelectorAll('[data-card]'));
@@ -864,33 +1022,43 @@ import { buildAssetHeader } from './components/asset-header.js';
         document.addEventListener('scroll', hide, true);
       })();
 
-      /* ===== Presets (saved locally) ===== */
+      /* ===== Presets (saved locally) =====
+         Solid CRUD without window.prompt/confirm (those silently fail in sandboxed
+         frames — that was the "can't rename" bug). Naming/deletion happen through
+         inline rows inside the panel; a snapshot-based "Modified" flag tells you
+         when live settings have drifted from the applied preset. */
       (function(){
         const LS='sb-presets-v1';
         const sel=document.getElementById('preset-select'); if(!sel) return;
         const $=id=>document.getElementById(id);
+        const proto=document.getElementById('proto');
+        const flag=$('preset-flag');
+        const editRow=$('preset-edit'), nameInp=$('preset-name');
+        const confirmRow=$('preset-confirm'), confirmText=$('preset-confirm-text');
         const DEFAULTS=[
           { id:'preset-enterprise-calm', name:'Enterprise Calm',
             state:{ buttons:['mode-light','theme-mono','color-calm','shell-contrast','layout-default','tabm-seg','tabs-filled','tabfx-flat','comp-bento','density-spacious','kf-sans','c3d-default','d3-accent'],
-              sliders:{'r-surface':'10','r-interactive':'8','kpi-weight':'300'}, hue:'#6366f1', hueActive:false, tab:'#6366f1' } },
+              sliders:{'r-surface':'10','r-interactive':'8','kpi-weight':'300','r-glass':'0'}, hue:'#6366f1', hueActive:false, tab:'#6366f1' } },
           { id:'preset-bento-bold', name:'Bento Bold',
             state:{ buttons:['mode-light','theme-mono','color-strategic','shell-tinted','layout-default','tabm-seg','tabs-filled','tabfx-flat','comp-hero','density-spacious','kf-sans','c3d-iso','d3-accent'],
-              sliders:{'r-surface':'14','r-interactive':'9','kpi-weight':'200'}, hue:'#6366f1', hueActive:false, tab:'#6366f1' } },
+              sliders:{'r-surface':'14','r-interactive':'9','kpi-weight':'200','r-glass':'0'}, hue:'#6366f1', hueActive:false, tab:'#6366f1' } },
           { id:'preset-exec-dark', name:'Executive Dark',
             state:{ buttons:['mode-dark','theme-color','color-strategic','shell-contrast','layout-default','tabm-seg','tabs-filled','tabfx-slide','comp-bento','density-compact','kf-sans','c3d-glass','d3-accent'],
-              sliders:{'r-surface':'12','r-interactive':'9','kpi-weight':'300'}, hue:'#6366f1', hueActive:false, tab:'#6366f1' } }
+              sliders:{'r-surface':'12','r-interactive':'9','kpi-weight':'300','r-glass':'0'}, hue:'#6366f1', hueActive:false, tab:'#6366f1' } }
         ];
         function load(){ try{ const r=JSON.parse(localStorage.getItem(LS)); if(r&&Array.isArray(r.presets)) return r; }catch(e){} return { presets: JSON.parse(JSON.stringify(DEFAULTS)), selected:'' }; }
         function persist(){ try{ localStorage.setItem(LS, JSON.stringify(store)); }catch(e){} }
         function uid(){ return 'p'+Date.now().toString(36)+'-'+Math.floor(Math.random()*1e6).toString(36); }
-        let store=load();
+        let store=load(), lastSnap='', editMode=null;   // editMode: 'new' | 'rename' | null
 
         function captureState(){
           return {
             buttons:[...document.querySelectorAll('.proto .toggle button.on')].map(b=>b.id).filter(Boolean),
             sliders:{ 'r-surface':$('r-surface').value, 'r-interactive':$('r-interactive').value, 'kpi-weight':$('kpi-weight').value, 'r-glass':($('r-glass')||{}).value },
             hue: hueInput.value, hueActive: customHue!=null, tab: tabColorInput.value,
-            brand: brandInput? brandInput.value : '#000000', brandActive: brandColor!=null
+            brand: brandInput? brandInput.value : '#000000', brandActive: brandColor!=null,
+            glassAdv: ggAdv ? ggAdv.getAttribute('aria-pressed')==='true' : false,
+            glassOp: gOp ? gOp.value : null, glassBl: gBl ? gBl.value : null
           };
         }
         if (import.meta.env.DEV) window.__captureState = captureState;   // dev-only hook for the glass self-check
@@ -900,6 +1068,11 @@ import { buildAssetHeader } from './components/asset-header.js';
           if(!st) return;
           (st.buttons||[]).forEach(id=>{ const fn=BTN_ACTIONS[id]; if(fn) fn(); });
           if(st.sliders) for(const id in st.sliders){ const el=$(id); if(el){ el.value=st.sliders[id]; el.dispatchEvent(new Event('input')); } }
+          // glass split: honor the stored advanced state (else force simple so any live axis overrides clear)
+          if(typeof setGlassMode==='function'){
+            setGlassMode(!!st.glassAdv);
+            if(st.glassAdv){ if(gOp&&st.glassOp!=null){ gOp.value=st.glassOp; setGlassOp(+st.glassOp); } if(gBl&&st.glassBl!=null){ gBl.value=st.glassBl; setGlassBl(+st.glassBl); } }
+          }
           if(tabColorInput && st.tab){ tabColorInput.value=st.tab; applyTabColor(); }
           if(hueInput){
             if(st.hue) hueInput.value=st.hue;
@@ -912,6 +1085,13 @@ import { buildAssetHeader } from './components/asset-header.js';
             applyBrand();
           }
         }
+        // canonical signature for drift detection (order-independent; fixed slider key set)
+        function sig(st){ st=st||{}; const sl=st.sliders||{}; const keys=['r-surface','r-interactive','kpi-weight','r-glass'];
+          return JSON.stringify({ b:[...(st.buttons||[])].sort(), s:keys.map(k=>String(sl[k]==null?'':sl[k])),
+            hue:st.hueActive?st.hue:null, tab:st.tab||null, brand:st.brandActive?st.brand:null,
+            ga:!!st.glassAdv, go:st.glassAdv?String(st.glassOp):null, gb:st.glassAdv?String(st.glassBl):null }); }
+        function snap(){ lastSnap=sig(captureState()); }   // record the baseline right after apply/save
+
         function render(){
           sel.innerHTML='';
           const ph=document.createElement('option'); ph.value=''; ph.textContent='— Custom —'; sel.appendChild(ph);
@@ -920,15 +1100,52 @@ import { buildAssetHeader } from './components/asset-header.js';
         }
         function current(){ return store.presets.find(p=>p.id===sel.value); }
 
-        sel.addEventListener('change', ()=>{ store.selected=sel.value; persist(); const p=current(); if(p) applyState(p.state); });
-        $('preset-save').onclick=()=>{ const p=current(); if(p){ p.state=captureState(); persist(); } else { $('preset-new').click(); } };
-        $('preset-new').onclick=()=>{ const name=prompt('Preset name:','My preset'); if(!name) return; const p={id:uid(),name:name.trim(),state:captureState()}; store.presets.push(p); store.selected=p.id; persist(); render(); };
-        $('preset-dup').onclick=()=>{ const p=current(); if(!p){ $('preset-new').click(); return; } const c={id:uid(),name:p.name+' copy',state:JSON.parse(JSON.stringify(p.state))}; store.presets.push(c); store.selected=c.id; persist(); render(); };
-        $('preset-rename').onclick=()=>{ const p=current(); if(!p) return; const name=prompt('Rename preset:',p.name); if(name&&name.trim()){ p.name=name.trim(); persist(); render(); } };
-        $('preset-del').onclick=()=>{ const p=current(); if(!p) return; if(!confirm('Delete preset "'+p.name+'"?')) return; store.presets=store.presets.filter(x=>x.id!==p.id); store.selected=''; persist(); render(); };
+        function refresh(){
+          const p=current();
+          const dirty = !!p && sig(captureState())!==lastSnap;
+          if(flag) flag.hidden=!dirty;
+          $('preset-save').disabled   = p ? !dirty : false;   // Custom → enabled (acts as "New"); preset → only when drifted
+          $('preset-rename').disabled = !p;                    // nothing to rename on "— Custom —"
+          $('preset-del').disabled    = !p;
+        }
+
+        function closeRows(){ editMode=null; if(editRow) editRow.hidden=true; if(confirmRow) confirmRow.hidden=true; }
+        function openEdit(mode, value){
+          if(confirmRow) confirmRow.hidden=true;
+          editMode=mode; nameInp.value=value||''; editRow.hidden=false;
+          nameInp.focus(); nameInp.select();
+        }
+        function commitEdit(){
+          const name=(nameInp.value||'').trim(); if(!name){ nameInp.focus(); return; }
+          if(editMode==='new'){ const p={id:uid(),name,state:captureState()}; store.presets.push(p); store.selected=p.id; persist(); render(); snap(); }
+          else if(editMode==='rename'){ const p=current(); if(p){ p.name=name; persist(); render(); } }
+          closeRows(); refresh();
+        }
+        function openConfirm(text){ if(editRow) editRow.hidden=true; confirmText.textContent=text; confirmRow.hidden=false; }
+
+        // ---- consume: applying a preset is the primary "use" path ----
+        sel.addEventListener('change', ()=>{ store.selected=sel.value; persist(); closeRows(); const p=current(); if(p) applyState(p.state); snap(); refresh(); });
+        // ---- create / update ----
+        $('preset-save').onclick=()=>{ const p=current(); if(p){ p.state=captureState(); persist(); snap(); refresh(); } else { openEdit('new','My preset'); } };
+        $('preset-new').onclick=()=>{ openEdit('new','My preset'); };
+        $('preset-dup').onclick=()=>{ const p=current(); if(!p){ openEdit('new','My preset'); return; } const c={id:uid(),name:p.name+' copy',state:JSON.parse(JSON.stringify(p.state))}; store.presets.push(c); store.selected=c.id; persist(); render(); snap(); refresh(); };
+        $('preset-rename').onclick=()=>{ const p=current(); if(!p) return; openEdit('rename',p.name); };
+        $('preset-del').onclick=()=>{ const p=current(); if(!p) return; openConfirm('Delete \u201C'+p.name+'\u201D?'); };
+        // ---- inline editor / confirm wiring ----
+        $('preset-ok').onclick=commitEdit;
+        $('preset-cancel').onclick=closeRows;
+        nameInp.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); commitEdit(); } else if(e.key==='Escape'){ e.preventDefault(); closeRows(); } });
+        $('preset-confirm-ok').onclick=()=>{ const p=current(); if(p){ store.presets=store.presets.filter(x=>x.id!==p.id); store.selected=''; persist(); render(); } closeRows(); snap(); refresh(); };
+        $('preset-confirm-cancel').onclick=closeRows;
+
+        // ---- live drift tracking: any knob change re-evaluates the Modified flag ----
+        if(proto){ let t; const ping=()=>{ clearTimeout(t); t=setTimeout(refresh,0); };
+          proto.addEventListener('input', e=>{ if(!e.target.closest('.preset-grp')) ping(); });
+          proto.addEventListener('click', e=>{ if(!e.target.closest('.preset-grp')) ping(); }); }
 
         render();
         if(store.selected){ const p=current(); if(p) applyState(p.state); }   // restore last-applied preset
+        snap(); refresh();
       })();
 
 export { selectView, renderChartsIn, runCounters, registerView, getViews };

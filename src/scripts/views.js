@@ -34,3 +34,8 @@ export { registerView, getViews };
 
 // Concrete views are registered in ./views/*.js and imported below.
 import './views/insights.js';
+import './views/tracking-analysis.js';
+import './views/ocpm-adoption.js';
+import './views/ocpm-activity.js';
+import './views/ocpm-history.js';
+import './views/inventory-cockpit.js';
