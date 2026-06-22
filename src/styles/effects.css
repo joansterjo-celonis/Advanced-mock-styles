@@ -62,6 +62,11 @@
   opacity: var(--glass); mix-blend-mode: screen;
   background: linear-gradient(135deg, rgba(120,170,255,.16), transparent 30%, transparent 70%, rgba(255,140,200,.14));
 }
+/* The .proto controls panel is itself the scroll container (position:fixed; overflow-y:auto),
+   so the inset:0 sheen/diffraction pseudos would sit static over the viewport and read as a
+   pink wash that never scrolls with the content. Keep its glass background + blur, drop the
+   chromatic layers. */
+.proto::before, .proto::after { display: none; }
 
 /* ---------- CHROME tier ---------- */
 /* Gentler glass for the shell chrome (#l1 rail, .tabbar, .statusbar). Crucially the
@@ -121,8 +126,7 @@
    ============================================================ */
 
 /* Frosted: translucent cards that blur whatever sits behind them */
-[data-surfacefx="frost"] .card,
-[data-surfacefx="aurora"] .card {
+[data-surfacefx="frost"] .card {
   background:
     linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.01)),
     color-mix(in srgb, var(--bg-1) 60%, transparent);
@@ -130,25 +134,7 @@
   -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
   backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
 }
-[data-surfacefx="frost"] .card .sheen,
-[data-surfacefx="aurora"] .card .sheen { opacity: .85; }
-
-/* Aurora: a light-reactive holographic wash that follows the cursor.
-   Lives below content (z-index:1) and is brightest where the pointer is. */
-[data-surfacefx="aurora"] .card::after {
-  content: ""; position: absolute; inset: 0; border-radius: inherit;
-  pointer-events: none; z-index: 1; opacity: .35;
-  mix-blend-mode: screen; transition: opacity .26s ease;
-  background:
-    radial-gradient(420px circle at var(--mx, 50%) var(--my, 0%),
-      color-mix(in srgb, var(--cstop-1a, #6366f1) 70%, transparent), transparent 60%),
-    conic-gradient(from 120deg at var(--mx, 50%) var(--my, 0%),
-      color-mix(in srgb, var(--cstop-2a, #22d3ee) 60%, transparent),
-      color-mix(in srgb, var(--cstop-3a, #a855f7) 60%, transparent),
-      color-mix(in srgb, var(--cstop-4a, #f472b6) 60%, transparent),
-      color-mix(in srgb, var(--cstop-1a, #6366f1) 60%, transparent));
-}
-[data-surfacefx="aurora"] .card:hover::after { opacity: .6; }
+[data-surfacefx="frost"] .card .sheen { opacity: .85; }
 
 /* Respect reduced-transparency: neutralize the ENTIRE glass system in one place.
    Forcing the fills opaque, zeroing --glass, dropping backdrop-filter and hiding the
@@ -158,13 +144,11 @@
   :root { --glass: 0; --glass-fill: 1; --glass-fill-chrome: 1; }
   .glass, .gsearch, .modal-card, .sb-pop, .wb-menu, .vh-menu, .ctxmenu,
   .glass-chrome, .glass-tip, .chart-tip,
-  [data-surfacefx="frost"] .card,
-  [data-surfacefx="aurora"] .card { -webkit-backdrop-filter: none; backdrop-filter: none; }
+  [data-surfacefx="frost"] .card { -webkit-backdrop-filter: none; backdrop-filter: none; }
   /* the manifest sheen/diffraction layers + the chrome blur layer */
   .glass::before, .glass::after,
   .gsearch::before, .gsearch::after, .modal-card::before, .modal-card::after,
   .sb-pop::before, .sb-pop::after, .wb-menu::before, .wb-menu::after,
   .vh-menu::before, .vh-menu::after, .ctxmenu::before, .ctxmenu::after,
   .glass-chrome::before { display: none; }
-  [data-surfacefx="aurora"] .card::after { opacity: .22; }
 }

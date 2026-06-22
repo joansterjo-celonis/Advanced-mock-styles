@@ -28,8 +28,10 @@
   [data-coloruse="expressive"] .hc-status { background:var(--accent-glow); color:var(--text); }
 
   /* ---- B · Shell separation ---- */
-  /* Seamless: shell surfaces match the workspace (low distinction) */
-  [data-shell="seamless"] { --chrome-rail:var(--chrome-0); --chrome-side:var(--chrome-0); }
+  /* Seamless: shell surfaces collapse onto the gray workspace (no distinction). Flatten the
+     full chrome tier — rail/side AND the panel that feeds glass-chrome (#l1/.tabbar/.statusbar)
+     — to --chrome-0, so seamless reads as one continuous gray and differs from tinted. */
+  [data-shell="seamless"] { --chrome-rail:var(--chrome-0); --chrome-side:var(--chrome-0); --chrome-panel:var(--chrome-0); --glass-tint-chrome:var(--chrome-0); }
   [data-shell="seamless"] .rail, [data-shell="seamless"] .sidebar { border-color:transparent; }
   [data-shell="seamless"] .topbar, [data-shell="seamless"] .tabbar { border-color:var(--chrome-border-soft); }
   /* Contrast: strong surface contrast — dark shell against the light workspace (and deeper black in dark mode) */
@@ -40,30 +42,48 @@
     --chrome-hover:rgba(255,255,255,0.06); --chrome-active:rgba(255,255,255,0.10);
   }
   [data-shell="contrast"]:not([data-mode="light"]) { --chrome-rail:#000; --chrome-side:#050507; --chrome-panel:#000; --chrome-border:rgba(255,255,255,0.10); }
-  /* make the whole shell chrome cohesive (rail + top bar + tab bar) and lift the workspace as a distinct surface */
+  /* make the whole shell chrome cohesive (rail + top bar + tab bar) */
   [data-shell="contrast"] .topbar, [data-shell="contrast"] .tabbar { background:var(--chrome-panel); }
-  [data-mode="light"][data-shell="contrast"] .main { background:#15161a; }
-  [data-mode="light"][data-shell="contrast"] .content { background:#eef0f3; border-top-left-radius:14px; }
-  /* Contrast (light) inverts the chrome to a dark shell. But accent-derived tokens now resolve to near-black ink, and the editor tab bar still inherits the light workspace tokens — both go dark-on-dark and vanish. Re-map them per shell region so buttons, tabs, chevrons and icons convert. */
-  [data-mode="light"][data-shell="contrast"] #l1,
+
+  /* Contrast (light) inverts ONLY the shell chrome (L0/L1/tabbar/statusbar) to dark.
+     The content region stays LIGHT and floats as an inset, all-four-rounded card framed
+     by the dark shell: #main becomes the dark frame, .ctx-canvas the light inset card. */
+  [data-mode="light"][data-shell="contrast"] #main { background:#15161a; }
+  [data-mode="light"][data-shell="contrast"] .ctx-canvas { background:var(--chrome-0); border-radius:14px; margin:8px; }
+
+  /* The overview + the search/modal overlays must also stay light. Left alone they
+     inherit the dark chrome --ia-* tokens from :root and render light-text-on-light-glass
+     (unreadable). Re-assert the content tokens (mirrors #main) so they stay readable. */
   [data-mode="light"][data-shell="contrast"] .ctx-overview,
+  [data-mode="light"][data-shell="contrast"] .gsearch-overlay,
+  [data-mode="light"][data-shell="contrast"] .modal-overlay {
+    --ia-text:var(--text); --ia-ink:var(--text); --ia-muted:var(--text-dim); --ia-muted-2:var(--text-faint);
+    --ia-bg:var(--bg-1); --ia-panel:var(--bg-1); --ia-canvas:var(--chrome-0);
+    --ia-line:var(--border); --ia-line-soft:var(--border); --ia-hover:var(--card-strong); --ia-active:var(--card-strong);
+    --ia-navy:var(--accent); --ia-navy-2:var(--accent); --ia-blue:var(--accent); --ia-pill-active:var(--accent);
+  }
+
+  /* The editor tab bar paints on the dark chrome panel but lives in #main — re-map its
+     text/lines/accents to chrome so tab labels, tools, separators, chevrons and close
+     icons convert against the dark bar. */
   [data-mode="light"][data-shell="contrast"] #main .tabbar {
     --ia-navy: var(--chrome-text); --ia-navy-2: var(--chrome-text);
     --ia-blue: var(--chrome-text); --ia-pill-active: var(--chrome-text);
     --accent-text: #15161a;
-  }
-  /* the editor tab bar paints on the dark chrome panel but lives in #main — restore chrome text/lines for tab labels, tools, separators and close icons */
-  [data-mode="light"][data-shell="contrast"] #main .tabbar {
     --ia-text: var(--chrome-text); --ia-ink: var(--chrome-text);
     --ia-muted: var(--chrome-dim); --ia-muted-2: var(--chrome-faint);
     --ia-panel: var(--chrome-panel);
     --ia-line: var(--chrome-border); --ia-line-soft: var(--chrome-border-soft);
     --ia-hover: var(--chrome-hover); --ia-active: var(--chrome-active);
   }
+  /* #l1 rail is shell — keep its accent-derived states on chrome ink (text already light from :root) */
+  [data-mode="light"][data-shell="contrast"] #l1 {
+    --ia-navy: var(--chrome-text); --ia-navy-2: var(--chrome-text);
+    --ia-blue: var(--chrome-text); --ia-pill-active: var(--chrome-text);
+    --accent-text: #15161a;
+  }
   /* active tab icon is pinned to --brand-fixed (near-black) — flip it to chrome ink on the dark bar */
   [data-mode="light"][data-shell="contrast"] #main .ia-tab.active .icon { color: var(--chrome-text); }
-  /* primary button (e.g. New package) sits on the dark overview; its :hover uses raw --accent (dark), so keep it light to preserve the dark label */
-  [data-mode="light"][data-shell="contrast"] .ctx-overview .btn.primary:hover { background: color-mix(in srgb, var(--chrome-text) 88%, #000); }
 
   /* ---- D · Composition ---- (scoped to .bento so custom-grid views stay intact) */
   [data-composition="uniform"] .view.active .bento > .card:not(.kpi-strip):not(.span-12) { grid-column: span 6; }
@@ -93,11 +113,6 @@
   [data-tabmodel="seg"] .subtab.on::after { display:none; }
   [data-tabmodel="seg"] .subtab .x, [data-tabmodel="seg"] .subtab .dots { display:none !important; }
   [data-tabmodel="seg"] .subtab-add { display:none; }
-  /* Flattened: de-chrome the top tabs so the nesting reads as a single calm level */
-  [data-tabmodel="flat"] .tabstrip .tab { background:transparent !important; color:var(--chrome-dim); font-weight:500; }
-  [data-tabmodel="flat"] .tabstrip .tab.active { background:transparent !important; color:var(--chrome-text); font-weight:700; }
-  [data-tabmodel="flat"] .tabstrip .tab.active::after { display:none; }
-  [data-tabmodel="flat"] .subtabs { border-bottom:1px solid var(--border); }
 
   /* ---- Tables ---- (row TREATMENT only; spacing is owned by the Density knob) */
   /* Lined: zebra striping for scannability */

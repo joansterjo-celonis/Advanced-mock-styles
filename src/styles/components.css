@@ -23,10 +23,12 @@
   #app.pinned .l0-spacer{width:var(--ia-l0-w);}
   #l0{position:fixed;top:0;left:0;bottom:0;width:var(--ia-l0-w);background:var(--chrome-rail);border-right:1px solid var(--ia-line);display:flex;flex-direction:column;z-index:60;transform-origin:top left;opacity:0;transform:translateY(-8px) scaleY(.985);pointer-events:none;transition:opacity .17s ease, transform .2s cubic-bezier(.32,.72,0,1), box-shadow .2s;}
   #app.l0-open:not(.pinned) #l0{opacity:1;transform:translateY(0) scaleY(1);pointer-events:auto;box-shadow:var(--ia-shadow-pop);}
-  /* Glassy L0 only while it floats OVER the content (overlay mode). Uses the full glass panel tier
-     (--glass-bg) so the Global-glass slider visibly drives its translucency. When pinned it docks via
-     .l0-spacer, so it stays solid (this selector simply doesn't match). */
-  #app.l0-open:not(.pinned) #l0{background:var(--glass-bg);-webkit-backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-saturate));backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-saturate));border-right-color:rgba(var(--glass-edge),var(--glass-edge-alpha));}
+  /* Glassy L0 only while it floats OVER the content (overlay mode). #l0 is shell chrome,
+     so it uses the CHROME glass tier (--glass-bg-chrome, which follows --chrome-panel) —
+     not the overlay tier. This keeps it dark in contrast/dark modes (the overlay tier is
+     white-tinted in light mode and went white-on-white in contrast) while the Global-glass
+     slider still drives its translucency. When pinned it docks via .l0-spacer and stays solid. */
+  #app.l0-open:not(.pinned) #l0{background:var(--glass-bg-chrome);-webkit-backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-saturate));backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-saturate));border-right-color:rgba(var(--glass-edge),var(--glass-edge-alpha));}
   @media (prefers-reduced-transparency: reduce){ #app.l0-open:not(.pinned) #l0{-webkit-backdrop-filter:none;backdrop-filter:none;background:var(--chrome-rail);} }
   #app.pinned #l0{opacity:1;transform:none;pointer-events:auto;box-shadow:none;transition:none;}
   .ia-l0-head{display:flex;align-items:center;gap:8px;padding:16px 14px 10px 16px;}
@@ -258,7 +260,7 @@
   .pkg-row.active .more{opacity:1;color:var(--ia-ink);}
 
   /* ===== Global search modal ===== */
-  .gsearch-overlay{position:fixed;inset:0;background:rgba(18,26,44,.40);z-index:200;display:none;align-items:flex-start;justify-content:center;padding:8vh 20px 24px;}
+  .gsearch-overlay{position:fixed;inset:0;background:rgba(0,0,0,.42);z-index:200;display:none;align-items:flex-start;justify-content:center;padding:8vh 20px 24px;}
   .gsearch-overlay.open{display:flex;animation:ia_gsFade .14s ease;}
   @keyframes ia_gsFade{from{opacity:0}to{opacity:1}}
   /* surface (background/blur/border) comes from the glass manifest in effects.css */
@@ -311,42 +313,11 @@
   .wb-item .ia-ck{margin-left:auto;width:16px;height:16px;color:var(--ia-blue);display:none;flex:none;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;}
   .wb-item.active .ia-ck{display:block;}
 
-  /* ===== Version history modal ===== */
-  .hist-overlay{position:fixed;inset:0;background:rgba(18,26,44,.40);z-index:210;display:none;align-items:flex-start;justify-content:center;padding:7vh 20px 24px;}
-  .hist-overlay.open{display:flex;animation:ia_gsFade .14s ease;}
-  .hist{width:min(640px,95vw);max-height:82vh;background:var(--ia-panel);border-radius:16px;box-shadow:0 28px 80px rgba(15,31,61,.40);display:flex;flex-direction:column;overflow:hidden;animation:ia_gsPop .17s cubic-bezier(.32,.72,0,1);}
-  .hist-head{display:flex;align-items:center;gap:13px;padding:18px 20px;border-bottom:1px solid var(--ia-line);flex:none;}
-  .hist-head .pkgic{width:34px;height:34px;border-radius:9px;background:var(--ia-hover);display:flex;align-items:center;justify-content:center;color:var(--ia-navy);flex:none;}
-  .hist-head .pkgic .icon{width:20px;height:20px;}
-  .hist-head h3{margin:0;font-size:17px;color:var(--ia-ink);font-weight:700;}
-  .hist-head .sub{font-size:13px;color:var(--ia-muted);margin-top:1px;}
-  .hist-head .ia-x{margin-left:auto;width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--ia-muted);}
-  .hist-head .ia-x:hover{background:var(--ia-hover);color:var(--ia-ink);}
-  .hist-head .ia-x .icon{width:18px;height:18px;}
-  .hist-body{flex:1;overflow-y:auto;padding:6px 22px 18px;}
-  .hist-item{display:flex;gap:14px;padding:14px 0;}
-  .hist-rail{display:flex;flex-direction:column;align-items:center;flex:none;width:14px;}
-  .hist-dot{width:12px;height:12px;border-radius:50%;border:2px solid var(--ia-muted-2);background:var(--ia-panel);margin-top:4px;flex:none;}
-  .hist-item.current .hist-dot{border-color:var(--ia-blue);background:var(--ia-blue);box-shadow:0 0 0 4px rgba(47,109,246,.15);}
-  .hist-line{flex:1;width:2px;background:var(--ia-line);margin-top:5px;}
-  .hist-item:last-child .hist-line{display:none;}
-  .hist-main{flex:1;min-width:0;padding-bottom:2px;}
-  .hist-row1{display:flex;align-items:center;gap:9px;}
-  .hist-row1 .ttl{font-size:15px;font-weight:600;color:var(--ia-ink);}
-  .hist-tag{font-size:11.5px;font-family:var(--ia-mono);color:var(--ia-ink);background:var(--ia-hover);border-radius:6px;padding:2px 8px;}
-  .hist-tag.cur{background:#dbeafe;color:#1e3a8a;font-weight:600;}
-  .hist-actions{margin-left:auto;display:flex;gap:6px;opacity:0;transition:opacity .12s;}
-  .hist-item:hover .hist-actions{opacity:1;}
-  .hist-btn{font-size:13px;font-weight:500;color:var(--ia-ink);border:1px solid var(--ia-line);border-radius:7px;padding:5px 12px;background:var(--ia-panel);}
-  .hist-btn:hover{background:var(--ia-hover);}
-  .hist-btn.primary{color:var(--accent-text,#fff);background:var(--ia-navy);border-color:var(--ia-navy);}
-  .hist-meta{display:flex;align-items:center;gap:8px;margin-top:8px;color:var(--ia-muted);font-size:13px;}
-  .hist-av{width:22px;height:22px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;color:#fff;font-size:9px;font-weight:700;}
-  .hist-meta .dotsep{width:3px;height:3px;border-radius:50%;background:var(--ia-muted-2);}
-  .hist-desc{margin-top:6px;font-size:13.5px;color:var(--ia-text);}
+  /* Legacy .hist-* version-history modal removed — the live history modal is a
+     .modal-card (#hist-overlay > .modal-card.vh-card) styled via the .vh-* rules. */
 
   /* ===== Generic modal shell ===== */
-  .modal-overlay{position:fixed;inset:0;background:rgba(18,26,44,.40);z-index:215;display:none;align-items:flex-start;justify-content:center;padding:7vh 20px 24px;}
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.42);z-index:215;display:none;align-items:flex-start;justify-content:center;padding:7vh 20px 24px;}
   .modal-overlay.open{display:flex;animation:ia_gsFade .14s ease;}
   /* surface (background/blur/border) comes from the glass manifest in effects.css */
   .modal-card{position:relative;width:min(720px,95vw);max-height:82vh;border-radius:16px;box-shadow:0 28px 80px rgba(15,31,61,.40);display:flex;flex-direction:column;overflow:hidden;animation:ia_gsPop .17s cubic-bezier(.32,.72,0,1);}
@@ -569,5 +540,11 @@
 [data-layout="flowy"] .statusbar{background:transparent;border-top:0;-webkit-backdrop-filter:none;backdrop-filter:none;box-shadow:none;}
 /* the chrome glass blur lives on ::before now — drop it too so the flowy bar fully recedes into the canvas */
 [data-layout="flowy"] .statusbar::before{display:none;}
+/* Flowy: .ctx-body carries an inline overflow:hidden that clips the floating #l1 rail's drop
+   shadow exactly at the statusbar's top edge, so the rail looks cut off above the bar. Let the
+   shadow bleed down in flowy (still clipped at the route's bottom). Because the flowy statusbar
+   is transparent and paints as a later sibling, the shadow reads THROUGH it — integrated on the
+   bar rather than severed above it. (!important overrides the inline overflow.) */
+[data-layout="flowy"] .ctx-body{overflow:visible !important;}
 /* Tab style knob ([data-tabs]) for .ia-tab is unified with .subtab/.ep-tab in
    shell.css ("Tab style knob — ONE place styling every interactive tab"). */

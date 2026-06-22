@@ -102,10 +102,9 @@
   body { font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; background:#000; color:var(--chrome-text); letter-spacing:-0.005em; overflow:hidden; padding:12px; }
 
   /* SVG stop classes */
+  /* gradient stop classes — only 1a/1b + area are emitted by charts (engine.js); the
+     2a..4b cstop colours are consumed directly via var() (worldmap, slice palettes) */
   .stop-1a{stop-color:var(--cstop-1a)} .stop-1b{stop-color:var(--cstop-1b)}
-  .stop-2a{stop-color:var(--cstop-2a)} .stop-2b{stop-color:var(--cstop-2b)}
-  .stop-3a{stop-color:var(--cstop-3a)} .stop-3b{stop-color:var(--cstop-3b)}
-  .stop-4a{stop-color:var(--cstop-4a)} .stop-4b{stop-color:var(--cstop-4b)}
   .stop-area-top{stop-color:var(--area-top)} .stop-area-mid{stop-color:var(--area-mid)}
 
   /* ====== LIGHT MODE ====== */
@@ -132,6 +131,9 @@
     --accent:#15161a; --accent-glow: rgba(0,0,0,0.16); --accent-text:#ffffff; --brand-fixed:#15161a;
     /* glass surfaces go white-tinted with a dark hairline in light mode */
     --glass-tint:#ffffff; --glass-edge:18,22,30;
+    /* the global edge-alpha (up to .55) over a near-black edge reads as a hard black
+       border at high glass; cap it low in light mode so it stays a subtle hairline */
+    --glass-edge-alpha: calc(0.05 + var(--glass)*0.14);
     color-scheme: light;
   }
   /* COLOR theme in light mode: recolor charts only */
