@@ -44,13 +44,6 @@
   [data-shell="contrast"] .topbar, [data-shell="contrast"] .tabbar { background:var(--chrome-panel); }
   [data-mode="light"][data-shell="contrast"] .main { background:#15161a; }
   [data-mode="light"][data-shell="contrast"] .content { background:#eef0f3; border-top-left-radius:14px; }
-  /* shell pop-overs (header "more" menu, L0 flyout) live IN the dark shell — give them a dark surface so the (light) chrome text stays legible */
-  [data-mode="light"][data-shell="contrast"] .hmore-menu,
-  [data-mode="light"][data-shell="contrast"] .l0-panel {
-    background: rgba(21,22,26,0.94); border-color: rgba(255,255,255,0.12);
-    box-shadow: 0 28px 60px -20px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.10);
-    -webkit-backdrop-filter: blur(22px) saturate(1.4); backdrop-filter: blur(22px) saturate(1.4);
-  }
   /* Contrast (light) inverts the chrome to a dark shell. But accent-derived tokens now resolve to near-black ink, and the editor tab bar still inherits the light workspace tokens — both go dark-on-dark and vanish. Re-map them per shell region so buttons, tabs, chevrons and icons convert. */
   [data-mode="light"][data-shell="contrast"] #l1,
   [data-mode="light"][data-shell="contrast"] .ctx-overview,
@@ -113,13 +106,7 @@
   [data-tables="lined"] .data-table tbody tr:nth-child(even) td { background:var(--card); }
   [data-tables="lined"] .ptable td, [data-tables="lined"] .rq-table tbody td { border-bottom:1px solid var(--border); }
 
-  /* ---- Right-click context menu (per-chart style + per-card invert) ---- */
-  .ctxmenu { position:fixed; z-index:90; min-width:190px; padding:6px; border-radius:12px; display:none;
-    background:rgba(17,19,23,0.72); -webkit-backdrop-filter:blur(22px) saturate(1.5); backdrop-filter:blur(22px) saturate(1.5);
-    border:1px solid rgba(255,255,255,0.12); box-shadow:0 28px 60px -20px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.12); color:var(--chrome-text); }
-  [data-mode="light"] .ctxmenu { background:rgba(255,255,255,0.74); border-color:rgba(0,0,0,0.08); box-shadow:0 28px 60px -20px rgba(0,0,0,0.24), inset 0 1px 0 rgba(255,255,255,0.7); color:#1b1c20; }
-  .ctxmenu.open { display:block; animation:ctxIn .14s ease both; }
-  @keyframes ctxIn { from { opacity:0; transform:translateY(-4px) scale(.98); } to { opacity:1; transform:none; } }
+  /* ---- Right-click context menu items (container + glass surface unified in components.css: .ctxmenu + .glass) ---- */
   .ctxmenu .ctx-h { font-size:10.5px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--chrome-faint); padding:7px 10px 4px; }
   .ctxmenu .ctx-i { display:flex; align-items:center; gap:9px; height:32px; padding:0 10px; border-radius:8px; font-size:13px; cursor:pointer; color:inherit; }
   .ctxmenu .ctx-i svg.ico { width:15px; height:15px; opacity:.7; }

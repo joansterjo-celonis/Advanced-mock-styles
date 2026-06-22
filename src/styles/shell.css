@@ -44,14 +44,6 @@
   .ai-spark2:hover { background:var(--chrome-hover); }
   .hmore { width:32px; height:32px; border-radius:9px; display:grid; place-items:center; color:var(--chrome-dim); cursor:pointer; }
   .hmore:hover { background:var(--chrome-hover); color:var(--chrome-text); }
-  .hmore-menu { position:absolute; top:40px; right:0; min-width:172px; border:1px solid rgba(255,255,255,0.12); border-radius:12px; padding:6px; display:none; z-index:45;
-    background: rgba(17,19,23,0.55); -webkit-backdrop-filter: blur(22px) saturate(1.5); backdrop-filter: blur(22px) saturate(1.5);
-    box-shadow:0 28px 60px -20px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.12); }
-  [data-mode="light"] .hmore-menu { background: rgba(255,255,255,0.62); border-color: rgba(0,0,0,0.08); box-shadow:0 28px 60px -20px rgba(0,0,0,0.24), inset 0 1px 0 rgba(255,255,255,0.7); }
-  .hmore-menu.open { display:block; }
-  .hmore-menu .mi { display:flex; align-items:center; gap:10px; height:34px; padding:0 10px; border-radius:8px; font-size:13px; color:var(--chrome-text); cursor:pointer; }
-  .hmore-menu .mi svg { width:16px; height:16px; color:var(--chrome-dim); }
-  .hmore-menu .mi:hover { background:var(--chrome-hover); }
   .crumb { display:flex; align-items:center; gap:8px; font-size:13.5px; color:var(--chrome-dim); }
   .crumb .sep { color:var(--chrome-faint); } .crumb .cur { color:var(--chrome-text); font-weight:500; }
   .topbar .spacer { flex:1; }
@@ -90,21 +82,8 @@
 
   /* ===== L0 glassy flyout ===== */
   .app { position: relative; }
-  .l0-backdrop { position:absolute; inset:0; z-index:60; background:rgba(0,0,0,0.42); opacity:0; pointer-events:none; transition:opacity .28s ease; }
-  .l0-backdrop.open { opacity:1; pointer-events:auto; }
-  [data-mode="light"] .l0-backdrop { background: rgba(18,20,28,0.20); }
-  .l0-panel {
-    position:absolute; top:10px; left:10px; bottom:10px; width:266px; z-index:61;
-    display:flex; flex-direction:column; padding:12px 12px 14px;
-    background: rgba(17,19,23,0.55); -webkit-backdrop-filter: blur(26px) saturate(1.5); backdrop-filter: blur(26px) saturate(1.5);
-    border:1px solid rgba(255,255,255,0.12); border-radius:16px;
-    box-shadow: 0 30px 80px -22px rgba(0,0,0,0.65), inset 0 1px 0 rgba(255,255,255,0.14);
-    transform: translateX(-16px); opacity:0; pointer-events:none;
-    transition: transform .32s cubic-bezier(.22,.61,.36,1), opacity .26s ease;
-  }
-  .l0-panel.open { transform:translateX(0); opacity:1; pointer-events:auto; }
-  [data-mode="light"] .l0-panel { background: rgba(255,255,255,0.62); border-color: rgba(0,0,0,0.08); box-shadow: 0 30px 80px -22px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.75); }
-
+  /* NOTE: the active app's L0 is #l0 + .ia-l0-* (see components.css). The legacy .l0-panel/.l0-backdrop
+     flyout was removed here as dead code; the .l0-* helper rules below are retained legacy styles. */
   .l0-head { display:flex; align-items:center; gap:9px; padding:6px 6px 12px; }
   .l0-head .lmark { width:22px; height:22px; color:var(--chrome-text); flex:0 0 auto; }
   .l0-head .lmark svg { width:100%; height:100%; display:block; }
@@ -259,7 +238,7 @@
   [data-layout="flowy"] .rail .ico.active::before { display:none; }  /* marker would float outside the pill */
 
   /* the view itself sits inside an elevated rounded body floating on the gray */
-  [data-layout="flowy"] .content { padding: 14px clamp(14px,1.6vw,22px) 40px; }
+  [data-layout="flowy"] .content { padding: 8px; }   /* authoritative value lives in components.css ([data-layout=flowy] .ctx-canvas #content) which wins on specificity */
   [data-layout="flowy"] .view.active {
     background: #08090b; border: 1px solid var(--border); border-radius: calc(var(--r-surface) + 8px);
     padding: 18px 20px 24px; flex:1 0 auto; min-height: 0;
@@ -280,14 +259,12 @@
   [data-layout="flowy"] .bento { gap: calc(var(--gap) + 2px); }
   [data-layout="flowy"] .card { border-radius: calc(var(--radius) + 3px); }
 
-  /* ===== slider-driven corner radii ===== */
+  /* ===== slider-driven corner radii =====
+     Interactive radii unique to the shell chrome. The shared control + surface lists
+     (.ptool/.gchip/.toggle/.card/.proto/...) are owned by views.css to avoid duplication. */
   .btn-ghost,.btn-deploy,.btn-validate,.hbtn,.toggle button,.ch .icon,
   .tab .x,.tab .dots,.subtab .x,.subtab .dots,.tab-add,.subtab-add,
-  .rail .ico,.rrail .ico,.nav-leaf,.l0-item,.l0-collapse,.l0-gear,.side-top .mini,
-  .hmore,.hmore-menu .mi,.ai-spark2,.side-search,.l0-search,.search,
-  .ptool,.gchip,.gctrl-sel,.pbar .pb,.ch2 .add,.ch2 .dim-sel,.elabel,.otd-settings { border-radius: var(--r-interactive); }
-  .toggle { border-radius: calc(var(--r-interactive) + 3px); }
-  .card,.mini-row,.l0-panel,.hmore-menu,.proto,.asset-bar,.pnode,.gctrl,.pbar { border-radius: var(--r-surface); }
+  .rail .ico,.rrail .ico,.nav-leaf,.l0-item,.l0-collapse,.l0-gear,.side-top .mini { border-radius: var(--r-interactive); }
 
   /* range sliders in the prototype panel */
   .proto .slider { -webkit-appearance:none; appearance:none; width:100%; height:4px; border-radius:3px; background:rgba(255,255,255,0.16); outline:none; margin-top:10px; }

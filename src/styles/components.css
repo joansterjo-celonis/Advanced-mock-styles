@@ -24,7 +24,7 @@
   #l0{position:fixed;top:0;left:0;bottom:0;width:var(--ia-l0-w);background:var(--chrome-rail);border-right:1px solid var(--ia-line);display:flex;flex-direction:column;z-index:60;transform-origin:top left;opacity:0;transform:translateY(-8px) scaleY(.985);pointer-events:none;transition:opacity .17s ease, transform .2s cubic-bezier(.32,.72,0,1), box-shadow .2s;}
   #app.l0-open:not(.pinned) #l0{opacity:1;transform:translateY(0) scaleY(1);pointer-events:auto;box-shadow:var(--ia-shadow-pop);}
   /* Glassy L0 only while it floats OVER the content (overlay mode). When pinned it docks via .l0-spacer, so it stays solid. */
-  #app.l0-open:not(.pinned) #l0{background:color-mix(in srgb, var(--chrome-rail) 70%, transparent);-webkit-backdrop-filter:blur(26px) saturate(1.5);backdrop-filter:blur(26px) saturate(1.5);border-right-color:color-mix(in srgb, var(--ia-line) 55%, transparent);}
+  #app.l0-open:not(.pinned) #l0{background:var(--glass-bg-chrome);-webkit-backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-saturate));backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-saturate));border-right-color:rgba(var(--glass-edge),var(--glass-edge-alpha));}
   @media (prefers-reduced-transparency: reduce){ #app.l0-open:not(.pinned) #l0{-webkit-backdrop-filter:none;backdrop-filter:none;background:var(--chrome-rail);} }
   #app.pinned #l0{opacity:1;transform:none;pointer-events:auto;box-shadow:none;transition:none;}
   .ia-l0-head{display:flex;align-items:center;gap:8px;padding:16px 14px 10px 16px;}
@@ -78,6 +78,9 @@
   .l1-leaf{display:flex;align-items:center;height:34px;padding:0 10px 0 38px;font-size:13.5px;color:var(--ia-text);border-radius:8px;width:100%;text-align:left;}
   .l1-leaf:hover{background:var(--ia-hover);}
   .l1-leaf.active{background:var(--ia-active);font-weight:500;}
+  .l1-leaf.l1-leaf-ic{padding-left:20px;gap:8px;}
+  .l1-leaf-ic .icon{width:16px;height:16px;color:var(--ia-muted);flex:none;}
+  .l1-leaf-ic.active .icon{color:var(--ia-navy);}
   #main{flex:1;min-width:0;display:flex;flex-direction:column;overflow:hidden;background:var(--ia-bg);}
   .home-topbar{position:absolute;top:0;right:0;left:0;height:60px;display:flex;align-items:center;padding:0 22px;pointer-events:none;z-index:30;}
   .home-topbar .right{margin-left:auto;display:flex;align-items:center;gap:14px;pointer-events:auto;}
@@ -151,9 +154,11 @@
   .tab-tool:hover{background:var(--ia-hover);color:var(--ia-ink);}
   .tab-sep{width:1px;height:22px;background:var(--ia-line);margin:0 8px;flex:none;}
   .tabs{display:flex;align-items:stretch;height:100%;flex:1;min-width:0;overflow:hidden;}
-  .ia-tab{display:flex;align-items:center;gap:8px;padding:0 14px;height:100%;font-size:13.5px;color:var(--ia-muted);position:relative;border-right:1px solid var(--ia-line-soft);max-width:200px;cursor:pointer;}
+  .ia-tab{display:flex;align-items:center;gap:8px;padding:0 14px;height:100%;font-size:13.5px;color:var(--ia-muted);position:relative;border-right:1px solid var(--ia-line-soft);max-width:200px;cursor:pointer;transition:color .2s ease, background .2s ease;}
+  .ia-tab:hover{color:var(--ia-ink);}
   .ia-tab .icon{width:16px;height:16px;color:var(--ia-muted-2);}
-  .ia-tab .ia-x{width:16px;height:16px;border-radius:5px;color:var(--ia-muted-2);display:flex;align-items:center;justify-content:center;}
+  .ia-tab .ia-x{width:0;height:16px;border-radius:5px;color:var(--ia-muted-2);display:flex;align-items:center;justify-content:center;opacity:0;margin-left:-8px;overflow:hidden;transition:width .24s cubic-bezier(.22,.61,.36,1), opacity .2s ease, margin .24s cubic-bezier(.22,.61,.36,1), background .16s ease, color .16s ease;}
+  .ia-tab:hover .ia-x, .ia-tab.active .ia-x{width:16px;opacity:1;margin-left:0;}
   .ia-tab .ia-x:hover{background:var(--ia-hover);color:var(--ia-ink);}
   .ia-tab.active{color:var(--ia-ink);background:var(--ia-panel);}
   .ia-tab.active::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:2px;background:var(--ia-navy);}
@@ -163,6 +168,11 @@
   .tabbar .right{margin-left:auto;display:flex;align-items:center;gap:10px;flex:none;}
   .ctx-canvas{flex:1;background:var(--ia-canvas);position:relative;}
   .statusbar{height:40px;border-top:1px solid var(--ia-line);display:flex;align-items:center;padding:0 14px;font-size:13px;color:var(--ia-text);flex:none;background:var(--ia-panel);}
+  .view-empty{display:none;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-height:60vh;color:var(--ia-muted);text-align:center;}
+  .view-empty .icon{width:30px;height:30px;color:var(--ia-muted-2);}
+  .view-empty .ve-title{font-size:15px;font-weight:600;color:var(--ia-text);}
+  .view-empty .ve-sub{font-size:13px;color:var(--ia-muted);}
+  #content.is-empty .view-empty{display:flex;}
   .sb-item{display:flex;align-items:center;gap:7px;padding:0 12px;height:26px;border-radius:7px;}
   .sb-item:hover{background:var(--ia-hover);}
   .sb-item .icon{width:15px;height:15px;color:var(--ia-muted);}
@@ -328,7 +338,7 @@
   /* ===== Generic modal shell ===== */
   .modal-overlay{position:fixed;inset:0;background:rgba(18,26,44,.40);z-index:215;display:none;align-items:flex-start;justify-content:center;padding:7vh 20px 24px;}
   .modal-overlay.open{display:flex;animation:ia_gsFade .14s ease;}
-  .modal-card{width:min(720px,95vw);max-height:82vh;background:var(--ia-panel);border-radius:16px;box-shadow:0 28px 80px rgba(15,31,61,.40);display:flex;flex-direction:column;overflow:hidden;animation:ia_gsPop .17s cubic-bezier(.32,.72,0,1);}
+  .modal-card{position:relative;width:min(720px,95vw);max-height:82vh;background:var(--ia-panel);border-radius:16px;box-shadow:0 28px 80px rgba(15,31,61,.40);display:flex;flex-direction:column;overflow:hidden;animation:ia_gsPop .17s cubic-bezier(.32,.72,0,1);}
   .modal-head{display:flex;align-items:center;gap:13px;padding:18px 20px;border-bottom:1px solid var(--ia-line);flex:none;}
   .modal-head .hic{width:34px;height:34px;border-radius:9px;background:var(--ia-hover);display:flex;align-items:center;justify-content:center;color:var(--ia-navy);flex:none;}
   .modal-head .hic .icon{width:20px;height:20px;}
@@ -506,7 +516,8 @@
   #route-context.mode-overview .statusbar{display:none;}
 
   /* ===== Package context menu ===== */
-  .ctxmenu{position:fixed;z-index:300;background:var(--ia-panel);border:1px solid var(--ia-line);border-radius:11px;box-shadow:var(--ia-shadow-pop);padding:7px;min-width:212px;display:none;}
+  /* Canonical context-menu container (surface = .glass). Both the package menu (#pkg-ctxmenu, .ctxmenu-item) and the JS chart-style menu (.ctx-i) share this. */
+  .ctxmenu{position:fixed;z-index:300;color:var(--text);border-radius:11px;box-shadow:var(--ia-shadow-pop);padding:7px;min-width:212px;display:none;}
   .ctxmenu.open{display:block;animation:ia_gsFade .12s ease;}
   .ctxmenu-item{display:flex;align-items:center;gap:12px;padding:9px 11px;border-radius:8px;font-size:14px;color:var(--ia-ink);width:100%;text-align:left;}
   .ctxmenu-item:hover{background:var(--ia-hover);}
@@ -532,10 +543,14 @@
 /* ===== Layers knob (Default / Flowy) → also treats the L0 + L1 shell ===== */
 [data-layout="flowy"] #main{background:var(--chrome-0);}
 [data-layout="flowy"] #l1{margin:10px 8px;border:1px solid var(--chrome-border);border-radius:16px;height:calc(100vh - 20px);box-shadow:0 22px 48px -26px rgba(0,0,0,.45);overflow:hidden;}
-[data-layout="flowy"] .ctx-canvas{margin:10px 10px 10px 0;border:1px solid var(--chrome-border);border-radius:16px;}
+[data-layout="flowy"] .ctx-canvas{margin:10px 10px 10px 0;}
+/* the inner .view card is the single frame (its radius follows the corner-radius knob); drop the redundant fixed outer frame and trim the content gap so the card fills the canvas */
+[data-layout="flowy"] .ctx-canvas #content{padding:8px;}
 [data-layout="flowy"] .tabbar{background:transparent;border-bottom-color:var(--chrome-border-soft);}
 [data-layout="flowy"].l0-open #l0,[data-layout="flowy"].pinned #l0{margin:10px;border-radius:18px;height:calc(100vh - 20px);border:1px solid var(--chrome-border);box-shadow:0 28px 70px -28px rgba(0,0,0,.55);}
 [data-layout="flowy"] .home-topbar{padding-top:8px;}
+/* Flowy: let the statusbar blend into the canvas gray instead of reading as a separate solid bar */
+[data-layout="flowy"] .statusbar{background:transparent;border-top:0;}
 /* ===== Tab style knob → the editor's top tabs (.ia-tab), mirroring the asset tab styles ===== */
 [data-tabs="filled"] #route-context .ia-tab.active{background:var(--chrome-active);border-radius:9px;}
 [data-tabs="filled"] #route-context .ia-tab.active::after{display:none;}

@@ -5,39 +5,55 @@
    only affect elements that explicitly use them.
    ============================================================ */
 
-/* Frosted translucent surface — backdrop blur + a soft top-lit gloss */
-.fx-glass {
-  position: relative;
-  background: color-mix(in srgb, var(--bg-1, #ffffff) 72%, transparent);
-  -webkit-backdrop-filter: blur(14px) saturate(1.4);
-  backdrop-filter: blur(14px) saturate(1.4);
-  border: 1px solid color-mix(in srgb, var(--chrome-border, #dddddd) 70%, transparent);
+/* ============================================================
+   Global glass system — ONE token-driven surface shared by every
+   overlay (menus, context menus, modals, tooltips, panels) plus a
+   gentler tier (.glass-chrome) for shell bars/sidebars. Everything is
+   driven by --glass (the "Global glass" slider): 0 = near-opaque
+   (current look), 1 = full liquid glass. Opt in by adding the class.
+   ============================================================ */
+/* isolation (not position) so we don't clobber position:fixed on .proto/.ctxmenu/.glass-tip;
+   it still gives the z-index:-1 pseudos a private stacking context. Glass elements are always
+   positioned (overlays are fixed/absolute; the static .modal-card gets position:relative). */
+.glass {
+  isolation: isolate;
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border: 1px solid rgba(var(--glass-edge), var(--glass-edge-alpha));
 }
-.fx-glass::before {
-  content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
-  background: linear-gradient(180deg, rgba(255,255,255,.22), rgba(255,255,255,0) 45%);
+/* Specular top sheen (::before) + iOS-style chromatic edge diffraction (::after),
+   both scaled by --glass. z-index:-1 keeps them above the blur but below content,
+   inside the element's own stacking context (isolation), so text stays crisp. */
+.glass::before, .glass::after {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: -1;
+}
+.glass::before { background: linear-gradient(180deg, rgba(255,255,255, calc(var(--glass)*.22)), transparent 46%); }
+.glass::after {
+  opacity: var(--glass); mix-blend-mode: screen;
+  background: linear-gradient(135deg, rgba(120,170,255,.16), transparent 30%, transparent 70%, rgba(255,140,200,.14));
+}
+/* Gentler tier for the main shell chrome — stays legible at max glass.
+   The id-bumped selector lets the chrome glass win over #l1's base background;
+   the flowy-mode transparent .tabbar/.statusbar rules keep higher specificity, so they still win. */
+.glass-chrome,
+#l1.glass-chrome {
+  background: var(--glass-bg-chrome);
+  -webkit-backdrop-filter: blur(calc(var(--glass-blur)*.6)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(calc(var(--glass-blur)*.6)) saturate(var(--glass-saturate));
 }
 
-/* Lighter frost, no border — good for overlays/popovers */
-.fx-frost {
-  -webkit-backdrop-filter: blur(8px) saturate(1.2);
-  backdrop-filter: blur(8px) saturate(1.2);
-  background: color-mix(in srgb, var(--bg-1, #ffffff) 60%, transparent);
+/* Reusable glass tooltip — one shared node driven by src/scripts/tooltip.js.
+   Any element with [data-tip] gets it; the surface comes from .glass. */
+.glass-tip {
+  position: fixed; z-index: 340; top: 0; left: 0; max-width: 240px;
+  padding: 7px 10px; border-radius: 9px; font-size: 12px; line-height: 1.35;
+  color: var(--text); box-shadow: var(--ia-shadow-pop, 0 18px 40px -18px rgba(0,0,0,.5));
+  opacity: 0; transform: translateY(2px); pointer-events: none;
+  transition: opacity .14s ease, transform .14s ease;
 }
-
-/* Moving specular gloss that tracks --mx/--my (set by the card cursor wiring) */
-.fx-gloss { position: relative; overflow: hidden; }
-.fx-gloss::after {
-  content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; opacity: .6;
-  background: radial-gradient(220px 160px at var(--mx, 50%) var(--my, 0%), rgba(255,255,255,.25), rgba(255,255,255,0) 60%);
-}
-
-/* Hairline rim-light for a subtle raised edge */
-.fx-rim {
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,.5),
-    inset 0 0 0 1px color-mix(in srgb, var(--chrome-border, #dddddd) 60%, transparent);
-}
+.glass-tip.below { transform: translateY(-2px); }
+.glass-tip.open { opacity: 1; transform: none; }
 
 /* ============================================================
    Knob-driven surface finishes — toggled by the "Surface finish"
@@ -52,8 +68,9 @@
   background:
     linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.01)),
     color-mix(in srgb, var(--bg-1) 60%, transparent);
-  -webkit-backdrop-filter: blur(16px) saturate(1.4);
-  backdrop-filter: blur(16px) saturate(1.4);
+  /* card finish is a separate style layer, but its blur/saturation follow the global glass slider */
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
 }
 [data-surfacefx="frost"] .card .sheen,
 [data-surfacefx="aurora"] .card .sheen { opacity: .85; }
@@ -75,10 +92,15 @@
 }
 [data-surfacefx="aurora"] .card:hover::after { opacity: .6; }
 
-/* Respect reduced-motion / reduced-transparency preferences */
+/* Respect reduced-transparency: neutralize the ENTIRE glass system in one place.
+   Forcing the fills opaque, zeroing --glass, dropping backdrop-filter and hiding the
+   specular/diffraction layers covers every .glass / .glass-chrome / .glass-tip surface,
+   the #l0 overlay (tokens) and the card finishes — no per-surface opt-out needed. */
 @media (prefers-reduced-transparency: reduce) {
-  .fx-glass, .fx-frost,
+  :root { --glass: 0; --glass-fill: 1; --glass-fill-chrome: 1; }
+  .glass, .glass-chrome, .glass-tip,
   [data-surfacefx="frost"] .card,
   [data-surfacefx="aurora"] .card { -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .glass::before, .glass::after { display: none; }
   [data-surfacefx="aurora"] .card::after { opacity: .22; }
 }

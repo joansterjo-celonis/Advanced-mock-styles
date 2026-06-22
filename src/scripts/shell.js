@@ -50,19 +50,8 @@ import { selectView, renderChartsIn, runCounters } from './engine.js';
       p.classList.add('active');
     });
   });
-  document.querySelectorAll('.ia-tab .ia-x').forEach(function(x){
-    x.addEventListener('click', function(e){
-      e.stopPropagation();
-      var t=x.closest('.ia-tab'); var wasActive=t.classList.contains('active'); t.remove();
-      if(wasActive){ var first=document.querySelector('#route-context .ia-tab'); if(first) first.classList.add('active'); }
-    });
-  });
-  document.querySelectorAll('#route-context .ia-tab').forEach(function(t){
-    t.addEventListener('click', function(){
-      document.querySelectorAll('#route-context .ia-tab').forEach(function(x){ x.classList.remove('active'); });
-      t.classList.add('active');
-    });
-  });
+  /* editor tab activation + closing is centralized in the source<->asset bridge below
+     (delegated on .tabbar .tabs so it also covers registered + reopened tabs). */
   function closeAllPops(){
     document.querySelectorAll('.sb-pop').forEach(function(p){p.classList.remove('open');});
     document.querySelectorAll('.sb-item[data-pop]').forEach(function(b){b.classList.remove('active-pop');});
@@ -244,22 +233,70 @@ import { selectView, renderChartsIn, runCounters } from './engine.js';
 
   /* ===== bridge: source shell ↔ asset ===== */
   (function(){
-    function sv(v){ selectView(v); }
-    // editor tabs drive the mounted dashboard
-    document.querySelectorAll('#route-context .tabs .ia-tab[data-view]').forEach(function(t){
-      t.addEventListener('click',function(){ document.querySelectorAll('#route-context .tabs .ia-tab').forEach(function(x){x.classList.remove('active');}); t.classList.add('active'); sv(t.dataset.view); });
-    });
-    // L1 leaves + overview rows open the editor on the right dashboard
-    var map={'operations view':'order-management','order management':'order-management','purchase order':'purchase-order','rework and quality':'rework-quality'};
+    var CLOSE_SVG='<span class="ia-x" title="Close" aria-label="Close tab"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 6l12 12M18 6 6 18"/></svg></span>';
+    var content=document.getElementById('content');
+    function tabsEl(){ return document.querySelector('.tabbar .tabs'); }
+    function tabFor(v){ return document.querySelector('.tabbar .tabs .ia-tab[data-view="'+v+'"]'); }
+    function activateTab(v){ document.querySelectorAll('.tabbar .tabs .ia-tab[data-view]').forEach(function(x){ x.classList.toggle('active', x.dataset.view===v); }); }
+    function showEmpty(){ document.querySelectorAll('#content .view').forEach(function(v){ v.classList.remove('active'); }); if(content) content.classList.add('is-empty'); }
+    function hideEmpty(){ if(content) content.classList.remove('is-empty'); }
+    // (re)create a tab chip for a view, reusing the matching L1 leaf's icon + label
+    function makeTab(v){
+      var tabs=tabsEl(); if(!tabs) return null;
+      var existing=tabFor(v); if(existing) return existing;
+      var leaf=document.querySelector('.l1-leaf[data-view="'+v+'"]');
+      var ic=(leaf && leaf.querySelector('.icon')) ? leaf.querySelector('.icon').outerHTML : '';
+      var label=((leaf?leaf.textContent:'')||v||'').trim()||v;
+      var tab=document.createElement('div');
+      tab.className='ia-tab'; tab.setAttribute('data-view',v);
+      tab.innerHTML=ic+' '+label+CLOSE_SVG;
+      tabs.insertBefore(tab, tabs.querySelector('.ia-tab-add')||null);
+      return tab;
+    }
+    function openTab(v){
+      if(!v) return;
+      var rc=document.getElementById('route-context'); rc.classList.remove('mode-overview'); rc.classList.add('mode-editor');
+      makeTab(v); hideEmpty(); activateTab(v); selectView(v);
+    }
+    function closeTab(tab){
+      if(!tab) return;
+      var wasActive=tab.classList.contains('active');
+      var next=tab.nextElementSibling, prev=tab.previousElementSibling;
+      tab.remove();
+      if(wasActive){
+        var pick=(next && next.matches('.ia-tab[data-view]')) ? next
+               : ((prev && prev.matches('.ia-tab[data-view]')) ? prev
+               : document.querySelector('.tabbar .tabs .ia-tab[data-view]'));
+        if(pick){ activateTab(pick.dataset.view); selectView(pick.dataset.view); }
+        else { showEmpty(); }
+      } else if(!document.querySelector('.tabbar .tabs .ia-tab[data-view]')){ showEmpty(); }
+    }
+
+    // delegated editor-tab clicks: close via the x, otherwise activate (covers static, registered + reopened tabs)
+    var tabs=tabsEl();
+    if(tabs){
+      tabs.addEventListener('click',function(e){
+        var x=e.target.closest('.ia-x');
+        if(x){ e.stopPropagation(); closeTab(x.closest('.ia-tab')); return; }
+        var t=e.target.closest('.ia-tab[data-view]');
+        if(t){ hideEmpty(); activateTab(t.dataset.view); selectView(t.dataset.view); }
+      });
+    }
+
+    // L1 leaves + overview rows open (and reopen) the editor on the right dashboard
+    var map={'operations view':'order-management','order management':'order-management','purchase order':'purchase-order','rework and quality':'rework-quality','insights':'insights'};
     document.querySelectorAll('.l1-leaf, .ctx-overview .ovrow, .ctx-overview .sp-card, #route-context .ia-ov-card').forEach(function(el){
-      el.addEventListener('click',function(){ var t=(el.textContent||'').trim().toLowerCase(); var v=el.dataset.view||map[t];
-        var rc=document.getElementById('route-context'); rc.classList.remove('mode-overview'); rc.classList.add('mode-editor');
-        if(v){ sv(v); document.querySelectorAll('#route-context .tabs .ia-tab[data-view]').forEach(function(x){x.classList.toggle('active',x.dataset.view===v);}); }
-        else { var av=document.querySelector('#content .view.active'); if(av){ renderChartsIn(av); runCounters(av); } } });
+      el.addEventListener('click',function(){
+        var t=(el.textContent||'').trim().toLowerCase(); var v=el.dataset.view||map[t];
+        if(v){ openTab(v); }
+        else {
+          var rc=document.getElementById('route-context'); rc.classList.remove('mode-overview'); rc.classList.add('mode-editor');
+          var av=document.querySelector('#content .view.active'); if(av){ renderChartsIn(av); runCounters(av); }
+        }
+      });
     });
     // gear / settings opens the prototype controls
     var proto=document.getElementById('proto');
-    document.querySelectorAll('.gear,[data-pin]~* ,#rail-settings').forEach(function(){});
     var g=document.querySelector('#l0 .gear'); if(g&&proto) g.addEventListener('click',function(e){e.stopPropagation(); proto.classList.toggle('open');});
     // #fab is wired in engine.js; binding it here too would double-toggle and never open the panel.
   })();

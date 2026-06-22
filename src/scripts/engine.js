@@ -223,7 +223,7 @@ import { E, svgText, chartMode, cssVar, toRGB, shadeC, rgbaC, resolveColor, ensu
         const current=document.querySelector('.view.active');
         const next=document.querySelector('.view[data-view="'+v+'"]');
         const slide=root.getAttribute('data-tabfx')==='slide';
-        if(!next || next===current || !slide){
+        if(!next || next===current || !slide || !current){   // !current: reopening from the empty state has nothing to slide from
           document.querySelectorAll('.view').forEach(s=>s.classList.toggle('active', s.dataset.view===v));
           setNavTabActive(v);
           renderChartsIn(next); runCounters(next);
@@ -298,10 +298,11 @@ import { E, svgText, chartMode, cssVar, toRGB, shadeC, rgbaC, resolveColor, ensu
         if(def.addTab!==false && tabs && !tabs.querySelector('.ia-tab[data-view="'+id+'"]')){
           const tab=document.createElement('div');
           tab.className='ia-tab'; tab.setAttribute('data-view',id);
-          tab.innerHTML=(def.icon||'')+(def.label||id);
+          tab.innerHTML=(def.icon||'')+(def.label||id)+'<span class="ia-x" title="Close" aria-label="Close tab"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 6l12 12M18 6 6 18"/></svg></span>';
           const addBtn=tabs.querySelector('.ia-tab-add');
           tabs.insertBefore(tab, addBtn||null);
-          tab.addEventListener('click',()=>{
+          tab.addEventListener('click',(e)=>{
+            if(e.target.closest('.ia-x')) return;   // close is handled by the delegated handler in shell.js
             selectView(id);
             tabs.querySelectorAll('.ia-tab[data-view]').forEach(x=>x.classList.toggle('active', x===tab));
           });
@@ -546,6 +547,30 @@ import { E, svgText, chartMode, cssVar, toRGB, shadeC, rgbaC, resolveColor, ensu
           if (!orphanControls.length && !orphanAttrs.length)
             console.info('[knob-audit] OK \u2014 ' + toggles.length + ' toggle controls wired; ' +
               cssAttrs.length + ' attrs consumed by CSS, ' + jsAttrs.length + ' by JS.');
+
+          /* ---- glass audit (cleaning loop): every backdrop-filter must flow from the global --glass token,
+             so new surfaces can't silently bypass the slider. backdrop-filter:none = reduced-transparency neutralizer. */
+          const stray = [];
+          const walk = rules => { for (const r of rules) {
+            if (r.style && r.style.backdropFilter) {
+              const bf = r.style.backdropFilter;
+              if (bf !== 'none' && bf.indexOf('--glass-blur') === -1) stray.push(r.selectorText || '(anonymous rule)');
+            }
+            if (r.cssRules) walk(Array.from(r.cssRules));   // recurse into @media / @supports
+          } };
+          for (const s of Array.from(document.styleSheets)) {
+            try { walk(Array.from(s.cssRules)); } catch (e) { /* cross-origin sheet */ }
+          }
+          const glassTok = getComputedStyle(document.documentElement).getPropertyValue('--glass').trim();
+          const hasSlider = !!document.getElementById('r-glass');
+          const cap = window.__captureState;
+          const capturesGlass = (typeof cap === 'function') && ('r-glass' in ((cap().sliders) || {}));
+          if (stray.length) console.warn('[glass-audit] backdrop-filter not driven by var(--glass-blur):', stray);
+          if (!hasSlider) console.warn('[glass-audit] #r-glass slider control is missing.');
+          if (glassTok === '') console.warn('[glass-audit] --glass token missing from :root.');
+          if (!capturesGlass) console.warn('[glass-audit] r-glass is not wired into captureState().sliders (presets will not persist it).');
+          if (!stray.length && hasSlider && glassTok !== '' && capturesGlass)
+            console.info('[glass-audit] OK \u2014 global glass token + slider wired; all backdrop-filter surfaces flow from var(--glass-blur).');
         };
         if (document.readyState === 'complete') setTimeout(runAudit, 0);
         else window.addEventListener('load', runAudit);
@@ -575,6 +600,10 @@ import { E, svgText, chartMode, cssVar, toRGB, shadeC, rgbaC, resolveColor, ensu
             rsv=document.getElementById('rs-val'), riv=document.getElementById('ri-val');
       rS.addEventListener('input',()=>{ root.style.setProperty('--r-surface',rS.value+'px'); rsv.textContent=rS.value+'px'; });
       rI.addEventListener('input',()=>{ root.style.setProperty('--r-interactive',rI.value+'px'); riv.textContent=rI.value+'px'; });
+
+      /* global glass: one slider drives the --glass token family consumed by every overlay (.glass) + the shell chrome tier (.glass-chrome) */
+      const gG=document.getElementById('r-glass'), ggv=document.getElementById('gg-val');
+      if(gG) gG.addEventListener('input',()=>{ root.style.setProperty('--glass',(gG.value/100).toFixed(3)); if(ggv) ggv.textContent=gG.value+'%'; });
 
       /* ---- specular cursor light (no tilt) ---- */
       const cards=Array.from(document.querySelectorAll('[data-card]'));
@@ -744,7 +773,7 @@ import { E, svgText, chartMode, cssVar, toRGB, shadeC, rgbaC, resolveColor, ensu
 
       /* ===== Right-click context menu: per-chart 3D style + per-card invert ===== */
       (function(){
-        const menu=document.createElement('div'); menu.className='ctxmenu'; document.body.appendChild(menu);
+        const menu=document.createElement('div'); menu.className='ctxmenu glass'; document.body.appendChild(menu);
         const CK='<svg class="ck" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M5 12l5 5L20 7"/></svg>';
         function hide(){ menu.classList.remove('open'); }
         function header(t){ const h=document.createElement('div'); h.className='ctx-h'; h.textContent=t; return h; }
@@ -812,11 +841,12 @@ import { E, svgText, chartMode, cssVar, toRGB, shadeC, rgbaC, resolveColor, ensu
         function captureState(){
           return {
             buttons:[...document.querySelectorAll('.proto .toggle button.on')].map(b=>b.id).filter(Boolean),
-            sliders:{ 'r-surface':$('r-surface').value, 'r-interactive':$('r-interactive').value, 'kpi-weight':$('kpi-weight').value },
+            sliders:{ 'r-surface':$('r-surface').value, 'r-interactive':$('r-interactive').value, 'kpi-weight':$('kpi-weight').value, 'r-glass':($('r-glass')||{}).value },
             hue: hueInput.value, hueActive: customHue!=null, tab: tabColorInput.value,
             brand: brandInput? brandInput.value : '#000000', brandActive: brandColor!=null
           };
         }
+        if (import.meta.env.DEV) window.__captureState = captureState;   // dev-only hook for the glass self-check
         // Declarative + idempotent: apply the stored state directly (root attributes / CSS vars
         // + .on sync) through the knob registry, instead of replaying .click() in array order.
         function applyState(st){

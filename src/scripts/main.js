@@ -12,6 +12,8 @@ import './engine.js';
 import './shell.js';
 // Registered after shell so dynamically-added tabs get exactly one click handler.
 import './views.js';
+// Shared glass tooltip (delegated; any [data-tip] element opts in).
+import './tooltip.js';
 
 import { initFeedback } from './feedback.js';
 initFeedback();
