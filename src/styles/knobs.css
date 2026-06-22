@@ -11,7 +11,6 @@
   [data-coloruse="calm"] .otd-pill { background:var(--card-strong) !important; color:var(--text-dim) !important; }
   [data-coloruse="calm"] .otd-pill.late { background:#b4232b !important; color:#fff !important; }
   [data-coloruse="calm"] .gchip { background:var(--card-strong) !important; color:var(--text-dim) !important; }
-  [data-coloruse="calm"] .hc-status::before { background:var(--text-faint) !important; }
   [data-coloruse="calm"] .donut-legend .sw, [data-coloruse="calm"] .rq-act .dot { filter:grayscale(1) brightness(.9); }
 
   /* ===== STRATEGIC — balanced: soft, smaller shadow (clearly less than Expressive); no moving gloss / hover-glow; faint rim ===== */
@@ -24,16 +23,15 @@
   [data-coloruse="strategic"] .card .rim { opacity:.16 !important; }
   [data-coloruse="strategic"] .card:hover .rim { opacity:.32 !important; }
 
-  /* ===== EXPRESSIVE — the full rich treatment (gloss, rim, sheen, hover glow = base) + colour-tinted chips ===== */
-  [data-coloruse="expressive"] .hc-status { background:var(--accent-glow); color:var(--text); }
+  /* ===== EXPRESSIVE — the full rich treatment (gloss, rim, sheen, hover glow) is the base; no overrides needed ===== */
 
   /* ---- B · Shell separation ---- */
   /* Seamless: shell surfaces collapse onto the gray workspace (no distinction). Flatten the
      full chrome tier — rail/side AND the panel that feeds glass-chrome (#l1/.tabbar/.statusbar)
      — to --chrome-0, so seamless reads as one continuous gray and differs from tinted. */
   [data-shell="seamless"] { --chrome-rail:var(--chrome-0); --chrome-side:var(--chrome-0); --chrome-panel:var(--chrome-0); --glass-tint-chrome:var(--chrome-0); }
-  [data-shell="seamless"] .rail, [data-shell="seamless"] .sidebar { border-color:transparent; }
-  [data-shell="seamless"] .topbar, [data-shell="seamless"] .tabbar { border-color:var(--chrome-border-soft); }
+  [data-shell="seamless"] .sidebar { border-color:transparent; }
+  [data-shell="seamless"] .tabbar { border-color:var(--chrome-border-soft); }
   /* Contrast: strong surface contrast — dark shell against the light workspace (and deeper black in dark mode) */
   [data-mode="light"][data-shell="contrast"] {
     --chrome-rail:#15161a; --chrome-side:#1b1d22; --chrome-panel:#15161a;
@@ -42,8 +40,8 @@
     --chrome-hover:rgba(255,255,255,0.06); --chrome-active:rgba(255,255,255,0.10);
   }
   [data-shell="contrast"]:not([data-mode="light"]) { --chrome-rail:#000; --chrome-side:#050507; --chrome-panel:#000; --chrome-border:rgba(255,255,255,0.10); }
-  /* make the whole shell chrome cohesive (rail + top bar + tab bar) */
-  [data-shell="contrast"] .topbar, [data-shell="contrast"] .tabbar { background:var(--chrome-panel); }
+  /* make the shell chrome cohesive — the editor tab bar matches the dark panel */
+  [data-shell="contrast"] .tabbar { background:var(--chrome-panel); }
 
   /* Contrast (light) inverts ONLY the shell chrome (L0/L1/tabbar/statusbar) to dark.
      The content region stays LIGHT and floats as an inset, all-four-rounded card framed
@@ -60,14 +58,14 @@
     --ia-text:var(--text); --ia-ink:var(--text); --ia-muted:var(--text-dim); --ia-muted-2:var(--text-faint);
     --ia-bg:var(--bg-1); --ia-panel:var(--bg-1); --ia-canvas:var(--chrome-0);
     --ia-line:var(--border); --ia-line-soft:var(--border); --ia-hover:var(--card-strong); --ia-active:var(--card-strong);
-    --ia-navy:var(--accent); --ia-navy-2:var(--accent); --ia-blue:var(--accent); --ia-pill-active:var(--accent);
+    --ia-navy:var(--accent); --ia-blue:var(--accent); --ia-pill-active:var(--accent);
   }
 
   /* The editor tab bar paints on the dark chrome panel but lives in #main — re-map its
      text/lines/accents to chrome so tab labels, tools, separators, chevrons and close
      icons convert against the dark bar. */
   [data-mode="light"][data-shell="contrast"] #main .tabbar {
-    --ia-navy: var(--chrome-text); --ia-navy-2: var(--chrome-text);
+    --ia-navy: var(--chrome-text);
     --ia-blue: var(--chrome-text); --ia-pill-active: var(--chrome-text);
     --accent-text: #15161a;
     --ia-text: var(--chrome-text); --ia-ink: var(--chrome-text);
@@ -78,7 +76,7 @@
   }
   /* #l1 rail is shell — keep its accent-derived states on chrome ink (text already light from :root) */
   [data-mode="light"][data-shell="contrast"] #l1 {
-    --ia-navy: var(--chrome-text); --ia-navy-2: var(--chrome-text);
+    --ia-navy: var(--chrome-text);
     --ia-blue: var(--chrome-text); --ia-pill-active: var(--chrome-text);
     --accent-text: #15161a;
   }
@@ -124,7 +122,7 @@
   /* ---- Right-click context menu items (container + glass surface unified in components.css: .ctxmenu + .glass) ---- */
   .ctxmenu .ctx-h { font-size:10.5px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--chrome-faint); padding:7px 10px 4px; }
   .ctxmenu .ctx-i { display:flex; align-items:center; gap:9px; height:32px; padding:0 10px; border-radius:8px; font-size:13px; cursor:pointer; color:inherit; }
-  .ctxmenu .ctx-i svg.ico { width:15px; height:15px; opacity:.7; }
+  .ctxmenu .ctx-i .icon { width:15px; height:15px; opacity:.7; }
   .ctxmenu .ctx-i:hover { background:var(--chrome-hover); }
   .ctxmenu .ctx-i .ck { margin-left:auto; width:14px; height:14px; opacity:0; }
   .ctxmenu .ctx-i.on .ck { opacity:1; }

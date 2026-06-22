@@ -1,9 +1,9 @@
 /* ===== TOKEN BRIDGE: source shell tokens (--ia-*) → knob-driven theme vars ===== */
 :root{
-  --ia-navy:var(--accent); --ia-navy-2:var(--accent); --ia-ink:var(--chrome-text); --ia-text:var(--chrome-text);
+  --ia-navy:var(--accent); --ia-ink:var(--chrome-text); --ia-text:var(--chrome-text);
   --ia-muted:var(--chrome-dim); --ia-muted-2:var(--chrome-faint); --ia-line:var(--chrome-border); --ia-line-soft:var(--chrome-border-soft);
   --ia-bg:var(--chrome-panel); --ia-canvas:var(--chrome-0); --ia-panel:var(--chrome-panel); --ia-hover:var(--chrome-hover); --ia-active:var(--chrome-active);
-  --ia-blue:var(--accent); --ia-green:var(--success); --ia-magenta:#c026d3; --ia-red:var(--danger); --ia-pill-active:var(--accent);
+  --ia-blue:var(--accent); --ia-green:var(--success); --ia-red:var(--danger); --ia-pill-active:var(--accent);
   --ia-l0-w:248px; --ia-l1-w:250px; --ia-mono:ui-monospace,"SFMono-Regular",Menlo,monospace; --ia-sans:'Inter',-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
   --ia-shadow-pop:0 18px 50px -16px rgba(0,0,0,.45); --ia-shadow-card:0 1px 2px rgba(0,0,0,.06);
 }
@@ -17,6 +17,10 @@
   body{margin:0;font-family:var(--ia-sans);color:var(--ia-text);background:var(--ia-bg);-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;overflow:hidden;}
   button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit;}
   .icon{width:18px;height:18px;display:inline-block;flex:none;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;}
+  /* Chevron carets are often bare <svg class="ia-chev"> (statusbar / popovers carry no .icon class),
+     so without this they default to fill:black and vanish against dark chrome. Paint them like .icon
+     so they follow currentColor in every mode. */
+  .ia-chev{fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
   .icon-sm{width:15px;height:15px;}
   #app{height:100vh;width:100vw;display:flex;position:relative;overflow:hidden;}
   .l0-spacer{flex:none;width:0;transition:width .22s cubic-bezier(.4,0,.2,1);}
@@ -124,13 +128,8 @@
   .stat .foot{display:flex;align-items:center;gap:8px;color:var(--ia-muted);font-size:12px;}
   .stat .foot .icon{width:15px;height:15px;}
   .dotscatter{flex:1;position:relative;margin-top:10px;}
-  .section-card{background:var(--ia-panel);border:1px solid var(--ia-line-soft);border-radius:16px;padding:18px 20px;margin-bottom:22px;}
+  /* legacy recents grid removed (section-card and recents/rec prefixed rules) */
   .section-h{font-size:12px;letter-spacing:.09em;color:var(--ia-muted);text-transform:uppercase;font-weight:600;margin:0 0 14px;}
-  .recents-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
-  .recents-col{display:flex;flex-direction:column;gap:10px;}
-  .rec{display:flex;align-items:center;gap:10px;height:42px;padding:0 12px;border:1px solid var(--ia-line);border-radius:9px;background:var(--ia-panel);font-size:13.5px;color:var(--ia-text);cursor:pointer;}
-  .rec:hover{background:var(--ia-hover);}
-  .rec .icon{color:var(--ia-muted);width:16px;height:16px;}
   .seeall{margin-top:12px;text-align:right;}
   .seeall a{color:var(--ia-blue);font-size:13px;font-weight:500;text-decoration:none;}
   .seeall a:hover{text-decoration:underline;}
@@ -144,9 +143,7 @@
   table.sug td{font-size:13.5px;color:var(--ia-text);padding:13px 10px;border-bottom:1px solid var(--ia-line-soft);vertical-align:middle;}
   .name-cell{display:flex;align-items:center;gap:8px;}
   .name-cell .tw{width:14px;height:14px;color:var(--ia-muted);flex:none;}
-  .name-cell .ia-ico{width:17px;height:17px;color:var(--ia-muted);flex:none;}
-  .name-cell.indent{padding-left:26px;}
-  .pin-ic{width:13px;height:13px;color:var(--ia-muted);margin-left:4px;}
+  .name-cell .ia-ico{width:17px;height:17px;color:var(--ia-muted);flex:none;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;}
   .chip{display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 9px;border-radius:7px;background:var(--ia-hover);font-size:12.5px;color:var(--ia-ink);}
   .chip .ia-dot{width:7px;height:7px;border-radius:50%;background:var(--ia-navy);}
   .chip-plus{display:inline-flex;align-items:center;height:24px;padding:0 8px;border-radius:7px;background:var(--ia-hover);font-size:12.5px;color:var(--ia-muted);margin-left:6px;}
@@ -191,12 +188,7 @@
   .placeholder h2{margin:0;color:var(--ia-ink);font-weight:600;font-size:18px;}
   .route{display:none;flex-direction:column;flex:1;min-width:0;overflow:hidden;position:relative;}
   .route.active{display:flex;}
-  .hint{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);z-index:90;background:var(--ia-navy);color:var(--accent-text,#fff);border-radius:10px;padding:10px 14px;font-size:12.5px;display:flex;align-items:center;gap:12px;box-shadow:var(--ia-shadow-pop);max-width:90vw;}
-  .hint b{font-weight:600;}
-  .hint .close{color:#cdd4e4;width:24px;height:24px;display:flex;align-items:center;justify-content:center;border-radius:6px;}
-  .hint .close:hover{background:rgba(255,255,255,.12);color:#fff;}
-  .hint.hide{display:none;}
-  .kbd2{font-family:var(--ia-mono);background:rgba(255,255,255,.14);border-radius:4px;padding:1px 6px;font-size:11px;}
+  /* legacy bottom toast (.hint/.kbd2) removed — unused */
 
   /* ---- Celonis mark + avatar ---- */
   .cmark{width:24px;height:24px;display:flex;align-items:center;justify-content:center;flex:none;color:var(--brand-fixed);}
@@ -229,17 +221,7 @@
   .pkg-pop{min-width:432px;padding:12px;}
   .pkg-search{display:flex;align-items:center;gap:8px;height:40px;border:1px solid var(--ia-line);border-radius:9px;padding:0 12px;color:var(--ia-muted-2);font-size:14px;margin-bottom:12px;}
   .pkg-search .icon{color:var(--ia-muted);}
-  .pkg-tags{display:flex;align-items:center;gap:6px;margin-bottom:6px;}
-  .pkg-tag{display:flex;align-items:center;gap:6px;height:28px;padding:0 12px;border-radius:8px;background:var(--ia-hover);font-size:13px;color:var(--ia-ink);font-weight:500;flex:none;}
-  .pkg-tag.all{background:var(--ia-navy);color:var(--accent-text,#fff);}
-  .pkg-tag .ia-dot{width:7px;height:7px;border-radius:50%;background:var(--ia-navy);}
-  .pkg-tag.icon-only{padding:0 9px;}
-  .pkg-arrow{width:32px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:8px;color:var(--ia-muted);flex:none;}
-  .pkg-arrow:hover{background:var(--ia-hover);color:var(--ia-ink);}
-  .pkg-sortrow{display:flex;align-items:center;padding:8px 8px 6px;font-size:13px;color:var(--ia-muted);}
-  .pkg-sortrow b{color:var(--ia-ink);font-weight:600;margin:0 4px;}
-  .pkg-sortrow .ia-chev{width:13px;height:13px;color:var(--ia-muted);}
-  .pkg-sortrow .sortic{margin-left:auto;color:var(--ia-muted);width:18px;height:18px;}
+  /* legacy pkg tag/sort chrome removed (pkg-tags, pkg-tag, pkg-arrow, pkg-sortrow, sortic, icon-only) */
   .pkg-new{display:flex;align-items:center;gap:11px;padding:9px 8px;font-size:14px;font-weight:500;color:var(--ia-ink);border-radius:8px;width:100%;}
   .pkg-new:hover{background:var(--ia-hover);}
   .pkg-new .icon{color:var(--ia-ink);}
@@ -257,7 +239,9 @@
   .pkg-row.active .pcube{color:#1e3a8a;}
   .pkg-row .more{margin-left:auto;color:var(--ia-muted);width:18px;height:18px;flex:none;opacity:0;transition:opacity .12s ease;}
   .pkg-row:hover .more{opacity:1;}
-  .pkg-row.active .more{opacity:1;color:var(--ia-ink);}
+  /* active row keeps the fixed light-blue fill in every mode, so pin the kebab to the same dark-blue
+     ink as .pcube (var(--ia-ink) is near-white in dark mode and would disappear on the light row) */
+  .pkg-row.active .more{opacity:1;color:#1e3a8a;}
 
   /* ===== Global search modal ===== */
   .gsearch-overlay{position:fixed;inset:0;background:rgba(0,0,0,.42);z-index:200;display:none;align-items:flex-start;justify-content:center;padding:8vh 20px 24px;}
@@ -350,24 +334,8 @@
   .space-ic .icon{width:20px;height:20px;color:#fff;}
   .space-nm{font-size:15px;font-weight:600;color:var(--ia-ink);}
   .space-meta{font-size:12.5px;color:var(--ia-muted);margin-top:3px;}
-  .dep-sum{font-size:14px;color:var(--ia-text);margin-bottom:14px;}
-  .dep-sum b{color:var(--ia-ink);}
-  .dep-list{border:1px solid var(--ia-line);border-radius:11px;overflow:hidden;margin-bottom:18px;}
-  .dep-row{display:flex;align-items:center;gap:11px;padding:11px 14px;border-bottom:1px solid var(--ia-line-soft);font-size:14px;color:var(--ia-ink);}
-  .dep-row:last-child{border-bottom:none;}
-  .dep-row .icon{width:18px;height:18px;color:var(--ia-navy);flex:none;}
-  .dep-badge{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:2px 8px;border-radius:6px;flex:none;}
-  .dep-badge.add{background:#dcfce7;color:#166534;}
-  .dep-badge.mod{background:#fef3c7;color:#92400e;}
-  .dep-badge.del{background:#fee2e2;color:#991b1b;}
-  .dep-row .ia-ec{margin-left:auto;font-size:12px;color:var(--ia-muted-2);}
-  .dep-field{margin-bottom:14px;}
-  .dep-field label{display:block;font-size:13px;font-weight:600;color:var(--ia-ink);margin-bottom:6px;}
-  .dep-select{width:100%;border:1px solid var(--ia-line);border-radius:9px;padding:10px 12px;font-size:14px;color:var(--ia-ink);background:var(--ia-panel);display:flex;align-items:center;gap:8px;}
-  .dep-select .ia-dot{width:8px;height:8px;border-radius:50%;background:var(--ia-green);}
-  .dep-select .ia-chev{margin-left:auto;width:14px;height:14px;color:var(--ia-muted);}
-  .dep-textarea{width:100%;min-height:64px;border:1px solid var(--ia-line);border-radius:9px;padding:10px 12px;font-size:14px;color:var(--ia-ink);font-family:inherit;resize:vertical;}
-  .dep-textarea::placeholder{color:var(--ia-muted-2);}
+  /* legacy deploy form fields removed (dep-sum/dep-list/dep-row/dep-badge/dep-field/dep-select/dep-textarea);
+     the live Deploy modal uses dep-tabs/dep-cols/dep-side/dep-sec/dep-sum-txt/dvf- rules below. */
 
   /* ===== Version history (rebuild) ===== */
   .vh-card{width:min(600px,95vw);height:80vh;}
@@ -462,9 +430,12 @@
   .sp-sec-head{display:flex;align-items:center;gap:16px;margin:6px 0 14px;}
   .sp-sec-head h3{margin:0;font-size:14px;font-weight:700;color:var(--ia-ink);}
   .sp-tabs{display:flex;gap:18px;}
-  .sp-tab{font-size:13.5px;font-weight:600;color:var(--ia-muted);cursor:pointer;padding-bottom:3px;border-bottom:2px solid transparent;}
+  /* Overview section tabs share the unified tab-style knob with .subtab — same ::after underline
+     mechanism so [data-tabs] filled/color/underline can drive them (see shell.css knob block). */
+  .sp-tab{position:relative;display:inline-flex;align-items:center;height:30px;font-size:13.5px;font-weight:600;color:var(--ia-muted);cursor:pointer;transition:color .2s ease, background .2s ease;}
   .sp-tab:hover{color:var(--ia-ink);}
-  .sp-tab.active{color:var(--ia-ink);border-bottom-color:var(--ia-navy);}
+  .sp-tab.active{color:var(--ia-ink);}
+  .sp-tab.active::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:2.5px;border-radius:2px;background:var(--shine);box-shadow:var(--shine-glow);}
   .sp-cards{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:28px;}
   .sp-card{border:1px solid var(--ia-line);border-radius:12px;padding:16px;display:flex;gap:13px;align-items:flex-start;cursor:pointer;}
   .sp-card:hover{background:var(--ia-hover);border-color:var(--ia-muted-2);}
@@ -480,8 +451,6 @@
   .sp-ctrl{font-size:13px;color:var(--ia-muted);display:flex;align-items:center;gap:5px;cursor:pointer;}
   .sp-ctrl b{color:var(--ia-ink);font-weight:600;}
   .sp-ctrl .ia-chev{width:13px;height:13px;color:var(--ia-muted);}
-  .sp-search{display:flex;align-items:center;gap:8px;height:36px;width:240px;border:1px solid var(--ia-line);border-radius:9px;padding:0 12px;color:var(--ia-muted-2);font-size:13px;margin-bottom:8px;}
-  .sp-search .icon{color:var(--ia-muted);}
   table.sp-tbl{width:100%;border-collapse:collapse;}
   table.sp-tbl th{text-align:left;font-size:13px;font-weight:600;color:var(--ia-ink);padding:11px 12px;border-bottom:1px solid var(--ia-line);}
   table.sp-tbl td{padding:13px 12px;border-bottom:1px solid var(--ia-line-soft);font-size:13.5px;color:var(--ia-text);}
@@ -521,14 +490,13 @@
 #app{height:calc(100vh - 0px);} body{overflow:hidden;padding:0;background:var(--chrome-0);}
 .ctx-canvas{overflow:auto;}
 .ctx-canvas #content{padding:18px clamp(12px,2vw,24px) 60px;}
-#route-context.mode-overview .ia-editor,#route-context.mode-overview #main{display:none;}
+#route-context.mode-overview #main{display:none;}
 #route-context.mode-editor .ctx-overview{display:none;}
-.ctx-canvas .rrail{display:none;}
 /* ===== Layers knob (Default / Flowy) → also treats the L0 + L1 shell ===== */
 [data-layout="flowy"] #main{background:var(--chrome-0);}
 /* Flowy: the rail terminates above the 40px statusbar (10px margins top+bottom + 40px bar = 60px)
    so its rounded bottom corners and drop shadow read over the bottom bar instead of being clipped behind it. */
-[data-layout="flowy"] #l1{margin:10px 8px;border:1px solid var(--chrome-border);border-radius:16px;height:calc(100vh - 60px);box-shadow:0 22px 48px -26px rgba(0,0,0,.45);overflow:hidden;}
+[data-layout="flowy"] #l1{margin:10px 8px;border:1px solid var(--chrome-border);border-radius:calc(var(--r-surface) + 4px);height:calc(100vh - 60px);box-shadow:0 22px 48px -26px rgba(0,0,0,.45);overflow:hidden;}
 /* Flowy: the canvas is a pure scroll viewport (no surface, no asymmetric margin) so #main's gray is the single backdrop behind the one floating .view card */
 [data-layout="flowy"] .ctx-canvas{background:transparent;margin:0;}
 /* the inner .view card is the single frame (its radius follows the corner-radius knob); a symmetric content gap floats it on the gray, with extra bottom room so its drop shadow isn't clipped by the scroll container */
@@ -544,7 +512,11 @@
    shadow exactly at the statusbar's top edge, so the rail looks cut off above the bar. Let the
    shadow bleed down in flowy (still clipped at the route's bottom). Because the flowy statusbar
    is transparent and paints as a later sibling, the shadow reads THROUGH it — integrated on the
-   bar rather than severed above it. (!important overrides the inline overflow.) */
-[data-layout="flowy"] .ctx-body{overflow:visible !important;}
+   bar rather than severed above it. (!important overrides the inline overflow.)
+   min-height:0 is essential: overflow:visible would otherwise restore this flex item's automatic
+   min-height to its content (the rail's tall calc(100vh-60px)), over-constraining the #route-context
+   column so the 40px statusbar is pushed past the clipped fold (disappears) and the canvas scroll
+   height is starved. Resetting it to 0 keeps the shadow bleed without breaking the layout. */
+[data-layout="flowy"] .ctx-body{overflow:visible !important;min-height:0;}
 /* Tab style knob ([data-tabs]) for .ia-tab is unified with .subtab/.ep-tab in
    shell.css ("Tab style knob — ONE place styling every interactive tab"). */

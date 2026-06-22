@@ -118,7 +118,7 @@
   /* ===== FINAL slider-radius pass — wins over every component default (keep last) ===== */
   .btn-validate,.hbtn,.toggle button,.ch .icon,
   .tab .x,.tab .dots,.subtab .x,.subtab .dots,.subtab-add,
-  .tree-head,.nav-leaf,.hmore,
+  .nav-leaf,.hmore,
   .ptool,.gchip,.gctrl-sel,.pbar .pb,.ch2 .add,.ch2 .dim-sel,.elabel,.otd-settings,
   .ep-search,.tabcolor-row input[type="color"],.fab { border-radius: var(--r-interactive); }
   .toggle { border-radius: calc(var(--r-interactive) + 3px); }
@@ -131,7 +131,7 @@
 
   @media (max-width:1280px){ .sidebar{display:none;} }
   @media (max-width:1080px){ .span-8,.span-7{grid-column:span 12} .span-3,.span-4,.span-5{grid-column:span 6} }
-  @media (max-width:760px){ .span-3,.span-4,.span-5,.span-6,.span-7,.span-8{grid-column:span 12} .rail,.rrail{display:none} }
+  @media (max-width:760px){ .span-3,.span-4,.span-5,.span-6,.span-7,.span-8{grid-column:span 12} }
   @media (prefers-reduced-motion: reduce){ *,*::before,*::after{transition:none!important;animation:none!important;} }
 
   /* ===== a11y: visible keyboard focus (mouse clicks stay ring-free via :focus-visible) ===== */

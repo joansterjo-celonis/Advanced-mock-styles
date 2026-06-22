@@ -269,16 +269,22 @@ import { icons, hydrateIcons } from './icons.js';
       function slideTransition(oldView, newView){
         fxAnimating=true;
         const content=document.getElementById('content');
+        const canvas=content.closest('.ctx-canvas')||content;   // the real scroll viewport (#content no longer owns overflow)
         const cs=getComputedStyle(content);
         const padL=parseFloat(cs.paddingLeft)||0, padT=parseFloat(cs.paddingTop)||0,
               padR=parseFloat(cs.paddingRight)||0, padB=parseFloat(cs.paddingBottom)||0;
-        const w=content.clientWidth-padL-padR, h=content.clientHeight-padT-padB;
+        // Size faces to the VISIBLE viewport, not #content's full scroll height. Once both views go
+        // position:absolute, #content collapses to its padding, so a page-tall face would be clipped
+        // to a sliver by .fx-scene's overflow:hidden — only part of the view would show mid-slide.
+        const vh=canvas.clientHeight;
+        const w=content.clientWidth-padL-padR, h=vh-padT-padB;
         const order=tabOrder(), oi=order.indexOf(oldView.dataset.view), ni=order.indexOf(newView.dataset.view);
         const dir=(oi<0||ni<0)?1:(ni>oi?1:-1);   // +1 = new tab is to the right → enters from the right; -1 = from the left
         const dist=Math.min(64, Math.round(w*0.07));
 
-        (content.closest('.ctx-canvas')||content).scrollTop=0;   // reset the real scroll viewport (.ctx-canvas), not the non-scrolling #content
+        canvas.scrollTop=0;                       // reset the real scroll viewport
         content.classList.add('fx-scene');
+        content.style.height=vh+'px';             // pin the scene to the viewport so the absolute faces keep a full-height box
         [oldView,newView].forEach(f=>{ f.classList.add('fx-face'); f.style.left=padL+'px'; f.style.top=padT+'px'; f.style.width=w+'px'; f.style.height=h+'px'; });
         newView.classList.add('active');
         renderChartsIn(newView); runCounters(newView);
@@ -292,6 +298,7 @@ import { icons, hydrateIcons } from './icons.js';
           oldView.classList.remove('active');
           newView.classList.add('active');
           content.classList.remove('fx-scene');
+          content.style.height='';
           fxAnimating=false;
         };
       }
@@ -346,9 +353,6 @@ import { icons, hydrateIcons } from './icons.js';
         if(typeof def.render==='function'){ try{ def.render(viewEl); }catch(e){ console.error('[views] render failed for '+id,e); } }
         return viewEl;
       }
-
-      /* sidebar tree collapse */
-      document.querySelectorAll('.tree-head').forEach(h=>h.addEventListener('click',()=>h.classList.toggle('collapsed')));
 
       /* Edit mode + Components panel */
       const COMP={'KPIs':['KPI Card','KPI IList'],'Process Visualizations':['BPM Model','Business Rule','Case Explorer','Network Explorer','Process Explorer'],'Tables':['Table'],'Category Charts':['Bar Chart','Grouped Bar Chart','Bubble chart','Pie Chart','Columns & Line Ch…','Columns Chart','Grouped Columns…','Line Chart']};
@@ -413,17 +417,16 @@ import { icons, hydrateIcons } from './icons.js';
       }
       hueInput.addEventListener('input',()=>{ customHue=hueInput.value; applyHue(); });
       hueReset.addEventListener('click',()=>{ customHue=null; applyHue(); });
-      /* brand / accent colour: overrides --accent (and derives --accent-glow). null = use the token default (black ink). */
+      /* brand / accent colour: overrides --accent. null = use the token default (black ink). */
       const brandInput=document.getElementById('brand-color-input'), brandReset=document.getElementById('brand-color-reset');
       let brandColor=null;
       function brandLum(hex){ const {r,g,b}=toRGB(hex); const f=c=>{c/=255; return c<=0.03928?c/12.92:Math.pow((c+0.055)/1.055,2.4);}; return 0.2126*f(r)+0.7152*f(g)+0.0722*f(b); }
       function applyBrand(){
-        if(brandColor==null){ root.style.removeProperty('--accent'); root.style.removeProperty('--accent-glow'); root.style.removeProperty('--accent-text'); return; }
+        if(brandColor==null){ root.style.removeProperty('--accent'); root.style.removeProperty('--accent-text'); return; }
         const dark = root.getAttribute('data-mode')!=='light';
         // a near-black brand would disappear on the dark shell — lighten it toward white for legibility.
         const c = (dark && brandLum(brandColor) < 0.22) ? shadeC(brandColor, 0.82) : brandColor;
         root.style.setProperty('--accent', c);
-        root.style.setProperty('--accent-glow', rgbaC(c, dark?0.45:0.30));
         // legible label colour on accent-filled buttons (white on dark accents, ink on light ones)
         root.style.setProperty('--accent-text', brandLum(c) > 0.5 ? '#15161a' : '#ffffff');
       }
@@ -628,9 +631,6 @@ import { icons, hydrateIcons } from './icons.js';
       cards.forEach(card=>{
         card.addEventListener('mousemove',e=>{ const r=card.getBoundingClientRect(); card.style.setProperty('--mx',(e.clientX-r.left)+'px'); card.style.setProperty('--my',(e.clientY-r.top)+'px'); });
       });
-      /* ambient follows cursor */
-      const content=document.getElementById('content'); let frame=null;
-      content.addEventListener('mousemove',e=>{ if(frame)return; frame=requestAnimationFrame(()=>{ const r=content.getBoundingClientRect(); root.style.setProperty('--gx',((e.clientX-r.left)/r.width*100)+'%'); root.style.setProperty('--gy',((e.clientY-r.top)/r.height*100)+'%'); frame=null; }); });
       /* click radiate */
       function dist(a,b){const dx=a.cx-b.cx,dy=a.cy-b.cy;return Math.sqrt(dx*dx+dy*dy);}
       cards.forEach(card=>card.addEventListener('click',ev=>{ if(ev.target.closest('[data-card-ignore]'))return;

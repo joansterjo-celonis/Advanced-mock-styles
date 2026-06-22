@@ -6,12 +6,8 @@
   .sidebar { width:248px; flex:0 0 248px; background:var(--chrome-side); border-right:1px solid var(--chrome-border); display:flex; flex-direction:column; overflow:hidden; }
   /* legacy .side-top/.side-scroll sidebar chrome removed (live tree is #l1 .l1-*) */
 
-  .tree-head { display:flex; align-items:center; gap:9px; height:34px; padding:0 10px; border-radius:8px; cursor:pointer; font-size:13px; color:var(--chrome-text); transition:background .15s; }
-  .tree-head:hover { background:var(--chrome-hover); }
-  .tree-head .chev { width:14px; height:14px; color:var(--chrome-faint); transition:transform .18s; }
-  .tree-head.collapsed .chev { transform:rotate(-90deg); }
-  .tree-head.collapsed + .tree-body { display:none; }
-  /* legacy .nav-leaf editor nav removed — the live shell uses #l1 .l1-leaf (components.css). */
+  /* legacy monolith sidebar tree (.tree-head/.tree-body) + .nav-leaf editor nav removed —
+     the live context tree is #l1 .l1-group/.l1-children/.l1-leaf (components.css). */
 
   .main { flex:1; display:flex; flex-direction:column; min-width:0; background:var(--chrome-0); }
   .header-tools { display:none; align-items:center; gap:4px; position:relative; }
@@ -32,12 +28,7 @@
      header would scroll away). Keep only position:relative so the slide-transition
      fx-face overlay anchors to #content. Padding + background come from .ctx-canvas. */
   .content { position:relative; }
-  .rrail { width:44px; flex:0 0 44px; background:transparent; display:flex; flex-direction:column; align-items:center; padding:12px 0; gap:6px; }
-  .rrail .ico { width:32px; height:32px; border-radius:9px; display:grid; place-items:center; color:var(--chrome-dim); cursor:pointer; }
-  .rrail .ico:hover { background:var(--chrome-hover); color:var(--chrome-text); }
-  .rrail .ico.green { color:var(--celo-green); }
-  .rrail .ico.spark svg { filter: drop-shadow(0 0 5px rgba(120,150,255,0.55)) drop-shadow(0 0 9px rgba(255,130,90,0.30)); transition: filter .2s, transform .2s; }
-  .rrail .ico.spark:hover svg { filter: drop-shadow(0 0 8px rgba(120,150,255,0.8)) drop-shadow(0 0 14px rgba(255,130,90,0.45)); transform: scale(1.08); }
+  /* legacy monolith right rail (.rrail/.ico/.spark) removed */
 
   /* The active app's L0 is #l0 + .ia-l0-* (see components.css). The legacy .l0-* flyout
      chrome (head/search/nav/foot/item) was dead and has been removed. */
@@ -154,26 +145,12 @@
   .asset-bar .dash-head, .asset-bar .subtabs { background:transparent; }
 
   /* one continuous gray overarches everything — internal panels go transparent */
-  [data-layout="flowy"] .rail,
   [data-layout="flowy"] .sidebar,
   [data-layout="flowy"] .main,
   [data-layout="flowy"] .content,
-  [data-layout="flowy"] .topbar,
   [data-layout="flowy"] .tabbar { background: transparent; }
   [data-layout="flowy"] .sidebar { border-right: 0; }
-  [data-layout="flowy"] .topbar, [data-layout="flowy"] .tabbar { border-bottom: 0; }
-
-  /* L0 rail becomes a floating pill */
-  [data-layout="flowy"] .rail {
-    margin: 12px 6px 12px 12px; padding: 14px 0; border-radius: 32px;
-    background: var(--chrome-rail); border: 1px solid var(--chrome-border);
-    box-shadow: 0 20px 44px -22px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.07);
-  }
-  [data-mode="light"][data-layout="flowy"] .rail {
-    background:#fff; border-color: rgba(0,0,0,0.07);
-    box-shadow: 0 16px 36px -20px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.85);
-  }
-  [data-layout="flowy"] .rail .ico.active::before { display:none; }  /* marker would float outside the pill */
+  [data-layout="flowy"] .tabbar { border-bottom: 0; }
 
   /* the view itself sits inside an elevated rounded body floating on the gray */
   [data-layout="flowy"] .content { padding: 12px 12px 22px; }   /* authoritative value lives in components.css ([data-layout=flowy] .ctx-canvas #content) which wins on specificity */
@@ -202,9 +179,8 @@
   /* ===== slider-driven corner radii =====
      Interactive radii unique to the shell chrome. The shared control + surface lists
      (.ptool/.gchip/.toggle/.card/.proto/...) are owned by views.css to avoid duplication. */
-  .btn-ghost,.btn-deploy,.btn-validate,.hbtn,.toggle button,.ch .icon,
-  .subtab .x,.subtab .dots,.subtab-add,
-  .rail .ico,.rrail .ico,.l0-item,.l0-collapse,.l0-gear,.side-top .mini { border-radius: var(--r-interactive); }
+  .btn-validate,.hbtn,.toggle button,.ch .icon,
+  .subtab .x,.subtab .dots,.subtab-add { border-radius: var(--r-interactive); }
 
   /* range sliders in the prototype panel */
   .proto .slider { -webkit-appearance:none; appearance:none; width:100%; height:4px; border-radius:3px; background:rgba(255,255,255,0.16); outline:none; margin-top:10px; }
@@ -254,6 +230,18 @@
   [data-tabs="underline"] .subtab.on::after,
   [data-tabs="underline"] .ep-tab.on::after,
   [data-tabs="underline"] #route-context .ia-tab.active::after { background:var(--tab-color); box-shadow:none; }
+
+  /* ----- Overview section tabs (.sp-tab) ride the same knob, mirroring .subtab ----- */
+  [data-tabs="filled"] .sp-tab,
+  [data-tabs="color"] .sp-tab { padding:0 12px; border-radius:var(--r-interactive); }
+  [data-tabs="filled"] .sp-tab:hover,
+  [data-tabs="color"] .sp-tab:hover { background:var(--card-strong); color:var(--text); }
+  [data-tabs="filled"] .sp-tab.active { background:rgba(255,255,255,0.10); color:var(--text); font-weight:700; }
+  [data-mode="light"][data-tabs="filled"] .sp-tab.active { background:#e6e8ee; color:#15161a; }
+  [data-tabs="color"] .sp-tab.active { background:var(--tab-color); color:var(--tab-text); font-weight:700; }
+  [data-tabs="filled"] .sp-tab.active::after,
+  [data-tabs="color"] .sp-tab.active::after { display:none; }
+  [data-tabs="underline"] .sp-tab.active::after { background:var(--tab-color); box-shadow:none; }
 
   /* ----- Flowy: the filled/color active tab floats as a centered chip (top/bottom
      inset) rather than filling the whole 54px bar, and the inter-tab dividers are
