@@ -202,7 +202,7 @@
   /* selected/open state must recolour its icon + chevron (esp. dark mode, where the muted tone is too dim) */
   .sb-item.active-pop .icon,.sb-item.active-pop .ia-chev{color:var(--ia-ink);}
   /* surface (background/border/blur) comes from .glass; this keeps only structure */
-  .sb-pop{position:absolute;bottom:calc(100% + 10px);left:0;color:var(--ia-ink);border-radius:12px;box-shadow:var(--ia-shadow-pop);padding:8px;min-width:268px;display:none;z-index:120;}
+  .sb-pop{position:absolute;bottom:calc(100% + 10px);left:0;color:var(--ia-ink);border-radius:var(--r-surface);box-shadow:var(--ia-shadow-pop);padding:8px;min-width:268px;display:none;z-index:120;}
   .sb-pop.open{display:block;animation:ia_popIn .14s ease;}
   @keyframes ia_popIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
   .pop-item{display:flex;align-items:flex-start;gap:13px;padding:10px 12px;border-radius:9px;width:100%;text-align:left;font-size:14px;color:var(--ia-ink);}
@@ -248,7 +248,7 @@
   .gsearch-overlay.open{display:flex;animation:ia_gsFade .14s ease;}
   @keyframes ia_gsFade{from{opacity:0}to{opacity:1}}
   /* surface (background/blur/border) comes from the glass manifest in effects.css */
-  .gsearch{width:min(780px,95vw);max-height:82vh;border-radius:18px;box-shadow:0 28px 80px rgba(15,31,61,.40);display:flex;flex-direction:column;overflow:hidden;animation:ia_gsPop .17s cubic-bezier(.32,.72,0,1);}
+  .gsearch{width:min(780px,95vw);max-height:82vh;border-radius:calc(var(--r-surface) + 6px);box-shadow:0 28px 80px rgba(0,0,0,.40);display:flex;flex-direction:column;overflow:hidden;animation:ia_gsPop .17s cubic-bezier(.32,.72,0,1);}
   @keyframes ia_gsPop{from{opacity:0;transform:translateY(-12px) scale(.99)}to{opacity:1;transform:none}}
   .gs-top{padding:18px 18px 0;flex:none;}
   .gs-inputwrap{display:flex;align-items:center;gap:11px;height:52px;border:2px solid var(--ia-blue);border-radius:12px;padding:0 14px;box-shadow:0 0 0 4px rgba(47,109,246,.10);}
@@ -288,7 +288,7 @@
   .brand#wbSwitch{width:100%;text-align:left;cursor:pointer;border-radius:8px;padding:2px 6px;margin:-2px -6px;}
   .brand#wbSwitch:hover{background:var(--ia-hover);}
   /* surface (background/border/blur) comes from .glass; this keeps only structure */
-  .wb-menu{position:absolute;top:calc(100% + 7px);left:0;min-width:214px;color:var(--ia-ink);border-radius:12px;box-shadow:var(--ia-shadow-pop);padding:6px;display:none;z-index:95;animation:ia_popIn .14s ease;}
+  .wb-menu{position:absolute;top:calc(100% + 7px);left:0;min-width:214px;color:var(--ia-ink);border-radius:var(--r-surface);box-shadow:var(--ia-shadow-pop);padding:6px;display:none;z-index:95;animation:ia_popIn .14s ease;}
   .wb-menu.open{display:block;}
   .wb-item{display:flex;align-items:center;gap:11px;width:100%;padding:10px 11px;border-radius:8px;font-size:14px;color:var(--ia-ink);text-align:left;}
   .wb-item:hover{background:var(--ia-hover);}
@@ -304,7 +304,7 @@
   .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.42);z-index:215;display:none;align-items:flex-start;justify-content:center;padding:7vh 20px 24px;}
   .modal-overlay.open{display:flex;animation:ia_gsFade .14s ease;}
   /* surface (background/blur/border) comes from the glass manifest in effects.css */
-  .modal-card{position:relative;width:min(720px,95vw);max-height:82vh;border-radius:16px;box-shadow:0 28px 80px rgba(15,31,61,.40);display:flex;flex-direction:column;overflow:hidden;animation:ia_gsPop .17s cubic-bezier(.32,.72,0,1);}
+  .modal-card{position:relative;width:min(720px,95vw);max-height:82vh;border-radius:calc(var(--r-surface) + 4px);box-shadow:0 28px 80px rgba(0,0,0,.40);display:flex;flex-direction:column;overflow:hidden;animation:ia_gsPop .17s cubic-bezier(.32,.72,0,1);}
   .modal-head{display:flex;align-items:center;gap:13px;padding:18px 20px;border-bottom:1px solid var(--ia-line);flex:none;}
   .modal-head .hic{width:34px;height:34px;border-radius:9px;background:var(--ia-hover);display:flex;align-items:center;justify-content:center;color:var(--ia-navy);flex:none;}
   .modal-head .hic .icon{width:20px;height:20px;}
@@ -373,7 +373,7 @@
   .vh-kebab .icon{width:18px;height:18px;}
   /* glass via tokens (not the .glass class): many per-row instances live inside the already-glass history modal, so we route the surface through the slider here to avoid per-instance markup */
   /* surface (background/blur/border) comes from the glass manifest in effects.css */
-  .vh-menu{position:absolute;right:14px;top:42px;border-radius:11px;box-shadow:var(--ia-shadow-pop);padding:7px;min-width:194px;display:none;z-index:6;}
+  .vh-menu{position:absolute;right:14px;top:42px;border-radius:var(--r-surface);box-shadow:var(--ia-shadow-pop);padding:7px;min-width:194px;display:none;z-index:6;}
   .vh-menu.open{display:block;}
   .vh-mi{display:flex;align-items:center;gap:11px;padding:9px 11px;border-radius:8px;font-size:14px;color:var(--ia-ink);width:100%;text-align:left;}
   .vh-mi:hover{background:var(--ia-hover);}
@@ -470,7 +470,7 @@
 
   /* ===== Package context menu ===== */
   /* Canonical context-menu container (surface = .glass). Both the package menu (#pkg-ctxmenu, .ctxmenu-item) and the JS chart-style menu (.ctx-i) share this. */
-  .ctxmenu{position:fixed;z-index:300;color:var(--text);border-radius:11px;box-shadow:var(--ia-shadow-pop);padding:7px;min-width:212px;display:none;}
+  .ctxmenu{position:fixed;z-index:300;color:var(--text);border-radius:var(--r-surface);box-shadow:var(--ia-shadow-pop);padding:7px;min-width:212px;display:none;}
   .ctxmenu.open{display:block;animation:ia_gsFade .12s ease;}
   .ctxmenu-item{display:flex;align-items:center;gap:12px;padding:9px 11px;border-radius:8px;font-size:14px;color:var(--ia-ink);width:100%;text-align:left;}
   .ctxmenu-item:hover{background:var(--ia-hover);}

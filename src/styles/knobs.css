@@ -49,12 +49,17 @@
   [data-mode="light"][data-shell="contrast"] #main { background:#15161a; }
   [data-mode="light"][data-shell="contrast"] .ctx-canvas { background:var(--chrome-0); border-radius:14px; margin:8px; }
 
-  /* The overview + the search/modal overlays must also stay light. Left alone they
-     inherit the dark chrome --ia-* tokens from :root and render light-text-on-light-glass
-     (unreadable). Re-assert the content tokens (mirrors #main) so they stay readable. */
+  /* The overview, the search/modal overlays, and every chrome-anchored popover/menu (statusbar
+     package/branch/version popovers, workbench + version-history menus) must stay light. Left alone
+     they inherit the dark-chrome --ia-* tokens from :root and render light-text-on-light-glass
+     (unreadable). The --ia-* aliases are computed at :root, so re-asserting --chrome-* on a descendant
+     won't reach them — they must be redeclared DIRECTLY here (mirrors #main) to stay readable. */
   [data-mode="light"][data-shell="contrast"] .ctx-overview,
   [data-mode="light"][data-shell="contrast"] .gsearch-overlay,
-  [data-mode="light"][data-shell="contrast"] .modal-overlay {
+  [data-mode="light"][data-shell="contrast"] .modal-overlay,
+  [data-mode="light"][data-shell="contrast"] .sb-pop,
+  [data-mode="light"][data-shell="contrast"] .wb-menu,
+  [data-mode="light"][data-shell="contrast"] .vh-menu {
     --ia-text:var(--text); --ia-ink:var(--text); --ia-muted:var(--text-dim); --ia-muted-2:var(--text-faint);
     --ia-bg:var(--bg-1); --ia-panel:var(--bg-1); --ia-canvas:var(--chrome-0);
     --ia-line:var(--border); --ia-line-soft:var(--border); --ia-hover:var(--card-strong); --ia-active:var(--card-strong);

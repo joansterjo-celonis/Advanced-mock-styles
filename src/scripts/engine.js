@@ -403,16 +403,16 @@ import { icons, hydrateIcons } from './icons.js';
       const hueInput=document.getElementById('theme-hue-input'), hueReset=document.getElementById('theme-hue-reset');
       function rgbToHue(hex){ const n=parseInt(hex.slice(1),16); let r=(n>>16&255)/255,g=(n>>8&255)/255,b=(n&255)/255; const mx=Math.max(r,g,b),mn=Math.min(r,g,b),d=mx-mn; let h=0; if(d){ if(mx===r)h=((g-b)/d)%6; else if(mx===g)h=(b-r)/d+2; else h=(r-g)/d+4; h*=60; if(h<0)h+=360; } return h; }
       function applyHue(){
-        const props=['--cstop-1a','--cstop-1b','--cstop-2a','--cstop-2b','--cstop-3a','--cstop-3b','--cstop-4a','--cstop-4b','--area-top','--area-mid','--line-2','--bar-1','--bar-2','--legend-1','--legend-2','--legend-3','--legend-4','--legend-5','--ring-from','--ring-to','--pulse-color','--success'];
+        const props=['--cstop-1a','--cstop-1b','--cstop-2a','--cstop-3a','--cstop-4a','--area-top','--area-mid','--line-2','--legend-1','--legend-2','--legend-3','--legend-4','--success'];
         if(!(root.getAttribute('data-theme')==='color' && customHue)){ props.forEach(p=>root.style.removeProperty(p)); renderChartsIn(document.querySelector('.view.active')); return; }
         const h=Math.round(rgbToHue(customHue)), light=root.getAttribute('data-mode')==='light', S=52;
         const Ls= light?[20,34,44,56,64,74,82,89]:[98,84,76,60,52,40,30,20];
         const hsl=l=>'hsl('+h+' '+S+'% '+l+'%)', set=(k,v)=>root.style.setProperty(k,v);
-        set('--cstop-1a',hsl(Ls[0]));set('--cstop-1b',hsl(Ls[1]));set('--cstop-2a',hsl(Ls[2]));set('--cstop-2b',hsl(Ls[3]));set('--cstop-3a',hsl(Ls[4]));set('--cstop-3b',hsl(Ls[5]));set('--cstop-4a',hsl(Ls[6]));set('--cstop-4b',hsl(Ls[7]));
+        set('--cstop-1a',hsl(Ls[0]));set('--cstop-1b',hsl(Ls[1]));set('--cstop-2a',hsl(Ls[2]));set('--cstop-3a',hsl(Ls[4]));set('--cstop-4a',hsl(Ls[6]));
         set('--area-top','hsl('+h+' '+S+'% '+(light?46:62)+'% / '+(light?0.2:0.42)+')'); set('--area-mid','hsl('+h+' '+S+'% 50% / 0)');
-        set('--line-2',hsl(light?42:70)); set('--bar-1',hsl(Ls[0])); set('--bar-2',hsl(Ls[3]));
-        set('--legend-1',hsl(Ls[0]));set('--legend-2',hsl(Ls[3]));set('--legend-3',hsl(Ls[4]));set('--legend-4',hsl(Ls[6]));set('--legend-5',hsl(light?42:70));
-        set('--ring-from',hsl(light?42:72));set('--ring-to',hsl(light?58:46));set('--pulse-color',hsl(light?46:64));set('--success',hsl(light?42:64));
+        set('--line-2',hsl(light?42:70));
+        set('--legend-1',hsl(Ls[0]));set('--legend-2',hsl(Ls[3]));set('--legend-3',hsl(Ls[4]));set('--legend-4',hsl(Ls[6]));
+        set('--success',hsl(light?42:64));
         renderChartsIn(document.querySelector('.view.active'));
       }
       hueInput.addEventListener('input',()=>{ customHue=hueInput.value; applyHue(); });

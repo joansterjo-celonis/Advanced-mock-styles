@@ -70,7 +70,8 @@ const definedVars = uniq([...cssText.matchAll(/(--[\w-]+)\s*:/g)].map((m) => m[1
 
 const deadClasses = definedClasses.filter((c) => !used(c)).sort();
 const deadIds = definedIds.filter((i) => !used(i)).sort();
-const deadVars = definedVars.filter((v) => !new RegExp('var\\(\\s*' + v.replace(/-/g, '\\-') + '\\b').test(cssText + jsText)).sort();
+// A var is live if it's read via var() anywhere — CSS, JS, OR inline style="" in the HTML.
+const deadVars = definedVars.filter((v) => !new RegExp('var\\(\\s*' + v.replace(/-/g, '\\-') + '\\b').test(cssText + jsText + html)).sort();
 
 if (deadClasses.length) { warnings++; console.log('  classes (' + deadClasses.length + '):\n' + bullet(deadClasses.map((c) => '.' + c))); }
 if (deadIds.length) { warnings++; console.log('  ids (' + deadIds.length + '):\n' + bullet(deadIds.map((i) => '#' + i))); }

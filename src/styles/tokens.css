@@ -33,12 +33,11 @@
     --accent:#eef1f6; --accent-text:#15161a; --success:#5cf55c; --danger:#ef4444;
     /* --brand-fixed = the Celonis logo + active-tab icon ink; intentionally NOT affected by the Brand color knob */
     --brand-fixed:#eef1f6;
-    --cstop-1a:#ffffff; --cstop-1b:#cfcfcf; --cstop-2a:#bdbdbd; --cstop-2b:#8f8f8f;
-    --cstop-3a:#7d7d7d; --cstop-3b:#5a5a5a; --cstop-4a:#454545; --cstop-4b:#2b2b2b;
+    --cstop-1a:#ffffff; --cstop-1b:#cfcfcf; --cstop-2a:#bdbdbd;
+    --cstop-3a:#7d7d7d; --cstop-4a:#454545;
     --area-top: rgba(255,255,255,0.18); --area-mid: rgba(255,255,255,0);
-    --line-2:#5cf55c; --bar-1:#cfcfcf; --bar-2:#8f8f8f;
-    --legend-1:#ffffff; --legend-2:#bdbdbd; --legend-3:#7d7d7d; --legend-4:#454545; --legend-5:#5cf55c;
-    --ring-from:#7cff7c; --ring-to:#3ad94a; --pulse-color:#5cf55c;
+    --line-2:#5cf55c;
+    --legend-1:#ffffff; --legend-2:#bdbdbd; --legend-3:#7d7d7d; --legend-4:#454545;
 
     --mx:50%; --my:50%;
 
@@ -64,19 +63,17 @@
   /* COLOR theme: recolors ONLY charts/visualizations — surfaces stay identical */
   [data-theme="color"] {
     --accent:#8b8cf8; --success:#34d399;
-    --cstop-1a:#a78bfa; --cstop-1b:#7c3aed; --cstop-2a:#6ee7b7; --cstop-2b:#10b981;
-    --cstop-3a:#fde68a; --cstop-3b:#f59e0b; --cstop-4a:#f9a8d4; --cstop-4b:#ec4899;
+    --cstop-1a:#a78bfa; --cstop-1b:#7c3aed; --cstop-2a:#6ee7b7;
+    --cstop-3a:#fde68a; --cstop-4a:#f9a8d4;
     --area-top: rgba(139,140,248,0.5); --area-mid: rgba(139,140,248,0);
-    --line-2:#34d399; --bar-1:#8b8cf8; --bar-2:#6366f1;
-    --legend-1:#a78bfa; --legend-2:#34d399; --legend-3:#fbbf24; --legend-4:#f472b6; --legend-5:#22d3ee;
-    --ring-from:#a78bfa; --ring-to:#34d399; --pulse-color:#34d399;
+    --line-2:#34d399;
+    --legend-1:#a78bfa; --legend-2:#34d399; --legend-3:#fbbf24; --legend-4:#f472b6;
   }
 
   /* VIVID theme: each chart gets its own colour (applied per-chart in JS); these drive the donut + ring */
   [data-theme="vivid"] {
-    --legend-1:#6366f1; --legend-2:#10b981; --legend-3:#f59e0b; --legend-4:#ec4899; --legend-5:#06b6d4;
-    --cstop-1a:#6366f1; --cstop-1b:#4338ca; --cstop-2a:#10b981; --cstop-2b:#059669; --cstop-3a:#f59e0b; --cstop-3b:#d97706; --cstop-4a:#ec4899; --cstop-4b:#db2777;
-    --ring-from:#6366f1; --ring-to:#ec4899; --pulse-color:#10b981;
+    --legend-1:#6366f1; --legend-2:#10b981; --legend-3:#f59e0b; --legend-4:#ec4899;
+    --cstop-1a:#6366f1; --cstop-1b:#4338ca; --cstop-2a:#10b981; --cstop-3a:#f59e0b; --cstop-4a:#ec4899;
   }
 
   [data-density="compact"] { --gap:6px; --pad:10px; --row-metric:268px; --row-tall:150px; --row-mid:120px; }
@@ -96,8 +93,8 @@
   body { font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; background:#000; color:var(--chrome-text); letter-spacing:-0.005em; overflow:hidden; padding:12px; }
 
   /* SVG stop classes */
-  /* gradient stop classes — only 1a/1b + area are emitted by charts (engine.js); the
-     2a..4b cstop colours are consumed directly via var() (worldmap, slice palettes) */
+  /* gradient stop classes — only 1a/1b + area are emitted as <stop> elements by charts (engine.js).
+     The remaining a-stops (2a,3a,4a) are consumed directly via var() (worldmap, slice palettes). */
   .stop-1a{stop-color:var(--cstop-1a)} .stop-1b{stop-color:var(--cstop-1b)}
   .stop-area-top{stop-color:var(--area-top)} .stop-area-mid{stop-color:var(--area-mid)}
 
@@ -113,12 +110,12 @@
     --text:#1b1c20; --text-dim: rgba(27,28,32,0.64); --text-faint: rgba(27,28,32,0.44);
     --track: rgba(0,0,0,0.07);
     /* base (Mono) charts darkened so they read on white surfaces */
-    --cstop-1a:#2b2b2b; --cstop-1b:#555; --cstop-2a:#6a6a6a; --cstop-2b:#8f8f8f;
-    --cstop-3a:#a0a0a0; --cstop-3b:#bcbcbc; --cstop-4a:#cfcfcf; --cstop-4b:#e2e2e2;
+    --cstop-1a:#2b2b2b; --cstop-1b:#555; --cstop-2a:#6a6a6a;
+    --cstop-3a:#a0a0a0; --cstop-4a:#cfcfcf;
     --area-top: rgba(0,0,0,0.10); --area-mid: rgba(0,0,0,0);
-    --bar-1:#2f2f2f; --bar-2:#6a6a6a; --line-2:#1f9d2f;
-    --legend-1:#2b2b2b; --legend-2:#6a6a6a; --legend-3:#a0a0a0; --legend-4:#cfcfcf; --legend-5:#1f9d2f;
-    --ring-from:#3fbf3f; --ring-to:#1f9d2f; --pulse-color:#1f9d2f; --success:#1f9d2f;
+    --line-2:#1f9d2f;
+    --legend-1:#2b2b2b; --legend-2:#6a6a6a; --legend-3:#a0a0a0; --legend-4:#cfcfcf;
+    --success:#1f9d2f;
     /* brand/accent default in light mode = near-black ink */
     --accent:#15161a; --accent-text:#ffffff; --brand-fixed:#15161a;
     /* glass surfaces go white-tinted with a dark hairline in light mode */
@@ -131,18 +128,16 @@
   /* COLOR theme in light mode: recolor charts only */
   [data-mode="light"][data-theme="color"] {
     --accent:#8b8cf8; --success:#10b981;
-    --cstop-1a:#a78bfa; --cstop-1b:#7c3aed; --cstop-2a:#6ee7b7; --cstop-2b:#10b981;
-    --cstop-3a:#fde68a; --cstop-3b:#f59e0b; --cstop-4a:#f9a8d4; --cstop-4b:#ec4899;
+    --cstop-1a:#a78bfa; --cstop-1b:#7c3aed; --cstop-2a:#6ee7b7;
+    --cstop-3a:#fde68a; --cstop-4a:#f9a8d4;
     --area-top: rgba(124,58,237,0.42); --area-mid: rgba(124,58,237,0);
-    --line-2:#7c3aed; --bar-1:#8b8cf8; --bar-2:#6366f1;
-    --legend-1:#7c3aed; --legend-2:#10b981; --legend-3:#f59e0b; --legend-4:#ec4899; --legend-5:#06b6d4;
-    --ring-from:#a78bfa; --ring-to:#10b981; --pulse-color:#10b981;
+    --line-2:#7c3aed;
+    --legend-1:#7c3aed; --legend-2:#10b981; --legend-3:#f59e0b; --legend-4:#ec4899;
   }
   /* VIVID in light mode: keep the multi-colour donut/ring (override the darkened base) */
   [data-mode="light"][data-theme="vivid"] {
-    --legend-1:#6366f1; --legend-2:#10b981; --legend-3:#f59e0b; --legend-4:#ec4899; --legend-5:#06b6d4;
-    --cstop-1a:#6366f1; --cstop-1b:#4338ca; --cstop-2a:#10b981; --cstop-2b:#059669; --cstop-3a:#f59e0b; --cstop-3b:#d97706; --cstop-4a:#ec4899; --cstop-4b:#db2777;
-    --ring-from:#6366f1; --ring-to:#ec4899; --pulse-color:#10b981;
+    --legend-1:#6366f1; --legend-2:#10b981; --legend-3:#f59e0b; --legend-4:#ec4899;
+    --cstop-1a:#6366f1; --cstop-1b:#4338ca; --cstop-2a:#10b981; --cstop-3a:#f59e0b; --cstop-4a:#ec4899;
   }
   [data-mode="light"] .app { border-color: rgba(0,0,0,0.10); box-shadow: 0 40px 90px -50px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.7); }
   [data-mode="light"] .card { background:#fff; box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 14px 30px -20px rgba(0,0,0,0.16), 0 0 calc(8px + var(--card-glow)*26px) -6px rgba(0,0,0, calc(var(--card-glow)*0.18)); }
@@ -157,7 +152,7 @@
   [data-mode="light"] .data-table thead th { background:#f6f7f9; }
   [data-mode="light"] .data-table tbody tr:hover { background: rgba(0,0,0,0.03); }
   [data-mode="light"] .proto { background:#fff; border-color: rgba(0,0,0,0.12); box-shadow: 0 24px 60px -20px rgba(0,0,0,0.3); color:#1b1c20; }
-  /* the controls panel + context menu are their own light surfaces — re-assert light-on-chrome vars so the Contrast shell's inverted vars don't bleed into them */
+  /* the controls panel + context menu are their own light surfaces — re-assert light-on-chrome vars so the Contrast shell's inverted vars don't bleed into them (statusbar popovers + wb/vh menus use --ia-* and are handled in knobs.css instead) */
   [data-mode="light"] .proto, [data-mode="light"] .ctxmenu {
     --chrome-text:#1b1c20; --chrome-dim:rgba(27,28,32,0.62); --chrome-faint:rgba(27,28,32,0.42);
     --chrome-border:rgba(0,0,0,0.10); --chrome-border-soft:rgba(0,0,0,0.06);
