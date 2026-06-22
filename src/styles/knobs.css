@@ -40,8 +40,15 @@
     --chrome-hover:rgba(255,255,255,0.06); --chrome-active:rgba(255,255,255,0.10);
   }
   [data-shell="contrast"]:not([data-mode="light"]) { --chrome-rail:#000; --chrome-side:#050507; --chrome-panel:#000; --chrome-border:rgba(255,255,255,0.10); }
-  /* make the shell chrome cohesive — the editor tab bar matches the dark panel */
-  [data-shell="contrast"] .tabbar { background:var(--chrome-panel); }
+  /* Contrast relies on a SOLID dark shell for separation, so keep the glass-chrome tier opaque.
+     Otherwise the Global glass slider drops --glass-fill-chrome (to ~0.69 at 100%) and the light
+     workspace bleeds through the blur, washing the rail/tab-bar/status-bar to a muddy gray. The
+     overlay tier (menus / modals / the controls panel) still glassifies via --glass-fill. */
+  [data-shell="contrast"] { --glass-fill-chrome:1; }
+  /* make the shell chrome cohesive — the editor tab bar matches the dark panel, and the
+     tab-bar / status-bar dividers drop so the dark shell reads as one seamless surface */
+  [data-shell="contrast"] .tabbar { background:var(--chrome-panel); border-bottom-color:transparent; }
+  [data-shell="contrast"] .statusbar { border-top-color:transparent; }
 
   /* Contrast (light) inverts ONLY the shell chrome (L0/L1/tabbar/statusbar) to dark.
      The content region stays LIGHT and floats as an inset, all-four-rounded card framed
@@ -145,4 +152,25 @@
     background:#15161a; color:#ffffff; border-color:rgba(255,255,255,0.12);
     box-shadow:0 26px 54px -22px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.08); }
   .card[data-inverted] .gloss, .card[data-inverted] .sheen, .card[data-inverted] .rim { display:none; }
+
+  /* The flip must also reach the chart palette + the accent button, but only where they're
+     mode-dependent: Mono greys are tied to the mode (white-ish on dark, dark-grey on light),
+     so an inverted card borrows the OPPOSITE mode's greys. Mono + Vivid accents inherit the
+     mode ink, so they're flipped too. (Color theme's chart palette + accent read on either
+     surface, so they're deliberately left untouched.) Flat charts + the button consume these
+     via live var() and recolour instantly; 3D/baked charts are re-rendered from the card in JS. */
+  /* dark app → inverted card is a LIGHT surface: use light-mono greys + dark accent */
+  html:not([data-mode="light"]):not([data-theme]) .card[data-inverted] {
+    --cstop-1a:#2b2b2b; --cstop-1b:#555; --cstop-2a:#6a6a6a; --cstop-3a:#a0a0a0; --cstop-4a:#cfcfcf;
+    --area-top:rgba(0,0,0,0.10); --area-mid:rgba(0,0,0,0); --line-2:#1f9d2f; --success:#1f9d2f;
+    --legend-1:#2b2b2b; --legend-2:#6a6a6a; --legend-3:#a0a0a0; --legend-4:#cfcfcf; }
+  html:not([data-mode="light"]):not([data-theme]) .card[data-inverted],
+  html:not([data-mode="light"])[data-theme="vivid"] .card[data-inverted] { --accent:#15161a; --accent-text:#ffffff; }
+  /* light app → inverted card is a DARK surface: use dark-mono palette + light accent */
+  [data-mode="light"]:not([data-theme]) .card[data-inverted] {
+    --cstop-1a:#ffffff; --cstop-1b:#cfcfcf; --cstop-2a:#bdbdbd; --cstop-3a:#7d7d7d; --cstop-4a:#454545;
+    --area-top:rgba(255,255,255,0.18); --area-mid:rgba(255,255,255,0); --line-2:#5cf55c; --success:#5cf55c;
+    --legend-1:#ffffff; --legend-2:#bdbdbd; --legend-3:#7d7d7d; --legend-4:#454545; }
+  [data-mode="light"]:not([data-theme]) .card[data-inverted],
+  [data-mode="light"][data-theme="vivid"] .card[data-inverted] { --accent:#eef1f6; --accent-text:#15161a; }
 

@@ -10,10 +10,6 @@
      the live context tree is #l1 .l1-group/.l1-children/.l1-leaf (components.css). */
 
   .main { flex:1; display:flex; flex-direction:column; min-width:0; background:var(--chrome-0); }
-  .header-tools { display:none; align-items:center; gap:4px; position:relative; }
-  [data-rightpanel="header"] .header-tools { display:flex; }
-  .hmore { width:32px; height:32px; border-radius:9px; display:grid; place-items:center; color:var(--chrome-dim); cursor:pointer; }
-  .hmore:hover { background:var(--chrome-hover); color:var(--chrome-text); }
   /* legacy monolith topbar chrome (.topbar/.crumb/.btn-ghost/.btn-deploy/.ai-spark[2]) removed */
 
   .tabbar { height:42px; flex:0 0 42px; display:flex; align-items:stretch; border-bottom:1px solid var(--chrome-border); padding:0 6px; gap:2px; }
@@ -122,7 +118,9 @@
   .proto.open { display:block; }
   .proto::-webkit-scrollbar { width:9px; } .proto::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.16); border-radius:8px; } .proto::-webkit-scrollbar-track { background:transparent; }
   [data-mode="light"] .proto::-webkit-scrollbar-thumb { background:rgba(0,0,0,0.18); }
-  .proto h4 { position:sticky; top:-16px; margin:-16px -16px 4px; padding:16px 16px 8px; background:inherit; z-index:1; }
+  /* opaque panel tint (not background:inherit) — inherit re-paints the translucent --glass-bg
+     on top of the already-glassy panel, doubling the tint into a visible band in dark mode. */
+  .proto h4 { position:sticky; top:-16px; margin:-16px -16px 4px; padding:16px 16px 8px; background:var(--glass-tint); z-index:1; }
   .proto h4 { font-size:12px; text-transform:uppercase; letter-spacing:.08em; color:var(--chrome-faint); margin-bottom:4px; }
   .proto .grp { margin-top:14px; }
   .proto .grp:first-of-type { margin-top:8px; }
@@ -138,8 +136,13 @@
   /* Sticky asset header — the view title + sub-tabs stay pinned while charts scroll
      under it (both layouts), so context isn't lost. The opaque bg occludes the
      scrolling content; --ia-canvas blends it into the Default canvas at rest. */
-  .asset-bar { display:block; position:sticky; top:0; z-index:6; background:var(--ia-canvas); transition:box-shadow .2s ease; }
-  .ctx-canvas.is-scrolled .view.active .asset-bar { box-shadow:0 10px 22px -16px rgba(0,0,0,0.5); }
+  .asset-bar { display:block; position:sticky; top:0; z-index:6; background:var(--ia-canvas); }
+  /* Separating shadow once content slides under the pinned header. A downward-only ::after
+     gradient (not a box-shadow) so the shadow can never leak past the bar's left/right edges. */
+  .asset-bar::after { content:""; position:absolute; left:0; right:0; top:100%; height:14px;
+    background:linear-gradient(to bottom, rgba(0,0,0,0.16), rgba(0,0,0,0));
+    opacity:0; transition:opacity .2s ease; pointer-events:none; }
+  .ctx-canvas.is-scrolled .view.active .asset-bar::after { opacity:1; }
   /* Only .asset-bar carries the occluding surface; its children stay transparent so the
      pinned header reads as one clean band while charts scroll under it. */
   .asset-bar .dash-head, .asset-bar .subtabs { background:transparent; }
@@ -152,23 +155,26 @@
   [data-layout="flowy"] .sidebar { border-right: 0; }
   [data-layout="flowy"] .tabbar { border-bottom: 0; }
 
-  /* the view itself sits inside an elevated rounded body floating on the gray */
-  [data-layout="flowy"] .content { padding: 12px 12px 22px; }   /* authoritative value lives in components.css ([data-layout=flowy] .ctx-canvas #content) which wins on specificity */
+  /* The .view card is a self-contained scroll pane: it fills the canvas viewport (see
+     components.css [data-layout=flowy] .ctx-canvas / #content) and scrolls INTERNALLY, so its
+     asset header pins to the card's top edge (charts scroll under it) and the card always
+     reaches the bottom of the canvas even when the content is short. */
+  [data-layout="flowy"] .content { display:flex; flex-direction:column; min-height:0; }
   [data-layout="flowy"] .view.active {
     --flowy-surface:#08090b; background: var(--flowy-surface); border: 1px solid var(--border); border-radius: calc(var(--r-surface) + 8px);
-    padding: 18px 20px 24px; flex:1 0 auto; min-height: 0;
+    flex:1 1 auto; min-height:0; overflow-y:auto; overflow-x:hidden;
+    padding: 0 20px 24px;        /* no top padding — the sticky header supplies the top inset */
     box-shadow: 0 28px 60px -30px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.05);
   }
-  [data-layout="flowy"] .content { display:flex; flex-direction:column; min-height:0; }
   [data-mode="light"][data-layout="flowy"] .view.active {
     --flowy-surface:#ffffff; border-color: rgba(0,0,0,0.07);
     box-shadow: 0 24px 52px -28px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.9);
   }
 
-  /* header + tabs flush inside the body, separated by a divider. The sticky bar
-     inherits --flowy-surface from the card so it stays seamless at rest and
-     occludes content once pinned. */
-  [data-layout="flowy"] .asset-bar { background:var(--flowy-surface); border:0; border-radius:0; box-shadow:none; padding:0 2px 6px; margin-bottom:16px; border-bottom:1px solid var(--border); }
+  /* header + tabs flush inside the body, separated by a divider. The sticky bar inherits
+     --flowy-surface from the card so it stays seamless at rest and occludes content once
+     pinned. Its top padding gives the title room since the card itself carries none. */
+  [data-layout="flowy"] .asset-bar { background:var(--flowy-surface); border:0; border-radius:0; box-shadow:none; padding:16px 2px 6px; margin-bottom:16px; border-bottom:1px solid var(--border); }
   [data-layout="flowy"] .asset-bar .dash-head { margin-bottom: 6px; }
   [data-layout="flowy"] .asset-bar .subtabs { margin: 0; border-bottom: 0; }
 
@@ -256,17 +262,49 @@
     width:1px; height:20px; background:var(--ia-line-soft); pointer-events:none;
   }
 
-  /* colour picker row — shared by Color + Underline */
-  .tabcolor-row { display:none; align-items:center; gap:8px; margin-top:8px; }
+  /* =====================================================================
+     Colour picker field — shared by the Palette "Single hue", Brand colour
+     and Tab colour rows. Styled like the .toggle groups: a rounded hairline
+     field wrapping a rounded swatch, its label and a ghost reset. The field +
+     swatch corner radii ride the control-radius slider (final pass in
+     views.css), so the picker stays inline with every other control.
+     ===================================================================== */
+  .tabcolor-row, .huecolor-row {
+    display:none; align-items:center; gap:10px; margin-top:8px; padding:5px 6px;
+    background:rgba(255,255,255,0.05); border:1px solid var(--chrome-border);
+  }
+  [data-mode="light"] .tabcolor-row, [data-mode="light"] .huecolor-row { background:rgba(0,0,0,0.03); }
   [data-tabs="color"] .tabcolor-row,
   [data-tabs="underline"] .tabcolor-row { display:flex; }
-  .tabcolor-row input[type=color] { width:36px; height:24px; padding:0; border:1px solid var(--chrome-border); border-radius:6px; background:transparent; cursor:pointer; }
-  .tabcolor-row .tcl { font-size:12px; color:var(--chrome-dim); }
-  .huecolor-row { display:none; align-items:center; gap:8px; margin-top:8px; }
   [data-theme="color"] .huecolor-row { display:flex; }
-  .huecolor-row input[type="color"] { width:36px; height:24px; padding:0; border:1px solid var(--chrome-border); border-radius:6px; background:transparent; cursor:pointer; }
-  .hue-reset { margin-left:auto; appearance:none; border:1px solid var(--chrome-border); background:transparent; color:var(--chrome-dim); font:inherit; font-size:11.5px; padding:4px 10px; border-radius:7px; cursor:pointer; }
-  .hue-reset:hover { color:var(--chrome-text); border-color:var(--border-strong); }
+
+  .tabcolor-row input[type=color], .huecolor-row input[type=color] {
+    -webkit-appearance:none; appearance:none; flex:none; width:30px; height:26px;
+    padding:0; border:0; background:transparent; cursor:pointer;
+    box-shadow:0 0 0 1px var(--chrome-border), 0 1px 2px rgba(0,0,0,0.2);
+  }
+  .tabcolor-row input[type=color]::-webkit-color-swatch-wrapper,
+  .huecolor-row input[type=color]::-webkit-color-swatch-wrapper { padding:0; }
+  .tabcolor-row input[type=color]::-webkit-color-swatch,
+  .huecolor-row input[type=color]::-webkit-color-swatch { border:0; border-radius:inherit; }
+  .tabcolor-row input[type=color]::-moz-color-swatch,
+  .huecolor-row input[type=color]::-moz-color-swatch { border:0; border-radius:inherit; }
+  .tabcolor-row .tcl, .huecolor-row .tcl { font-size:12px; font-weight:500; color:var(--chrome-dim); }
+
+  /* Brand colour knob (sits under Palette): only meaningful when accents carry hue (Color + Vivid).
+     In Mono the accent auto-resolves to ink, so the whole group is hidden. The Palette's own "Single hue"
+     row stays Color-only (it doesn't apply to the fixed Vivid palette), so the Vivid reveal is scoped here. */
+  #grp-brand { display:none; }
+  [data-theme="color"] #grp-brand, [data-theme="vivid"] #grp-brand { display:block; }
+  [data-theme="vivid"] #grp-brand .huecolor-row { display:flex; }
+
+  .hue-reset {
+    margin-left:auto; appearance:none; border:0; background:transparent; color:var(--chrome-faint);
+    font:inherit; font-size:11.5px; font-weight:500; padding:4px 9px; border-radius:7px; cursor:pointer;
+    transition:color .16s, background .16s;
+  }
+  .hue-reset:hover { color:var(--chrome-text); background:rgba(255,255,255,0.08); }
+  [data-mode="light"] .hue-reset:hover { background:rgba(0,0,0,0.06); }
   .toggle.wrap { flex-wrap:wrap; }
   .toggle.wrap button { flex:1 1 auto; }
 

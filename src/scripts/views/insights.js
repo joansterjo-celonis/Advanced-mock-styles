@@ -5,6 +5,7 @@
 // adding more views.
 import { registerView } from '../engine.js';
 import { icon as iconFor } from '../icons.js';
+import { buildAssetHeader } from '../components/asset-header.js';
 
 // Same shared "view" glyph as every other context view (single source: src/icons.js).
 const icon = iconFor('view') + ' ';
@@ -13,15 +14,8 @@ registerView({
   id: 'insights',
   label: 'Insights',
   icon,
-  html: `
-    <div class="asset-bar">
-      <div class="dash-head">
-        <h1>Insights</h1>
-        <div class="actions">
-          <button class="hbtn edit-btn" title="Edit" aria-label="Edit Insights"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button>
-        </div>
-      </div>
-    </div>
+  // Header comes from the shared component — Insights only needs the edit action.
+  html: buildAssetHeader({ title: 'Insights', actions: ['edit'] }) + `
 
     <div class="bento">
       <section class="card span-12 kpi-strip" data-card style="min-height:auto;">

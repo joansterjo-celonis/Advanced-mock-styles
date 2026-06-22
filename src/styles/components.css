@@ -162,7 +162,7 @@
   .ia-tab:hover .ia-x, .ia-tab.active .ia-x{width:16px;opacity:1;margin-left:0;}
   .ia-tab .ia-x:hover{background:var(--ia-hover);color:var(--ia-ink);}
   .ia-tab.active{color:var(--ia-ink);background:var(--ia-panel);}
-  .ia-tab.active::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:2px;background:var(--ia-navy);}
+  .ia-tab.active::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:2.5px;background:var(--ia-navy);}
   .ia-tab.active .icon{color:var(--brand-fixed);}
   .ia-tab-add{width:34px;display:flex;align-items:center;justify-content:center;color:var(--ia-muted);flex:none;}
   .ia-tab-add:hover{color:var(--ia-ink);}
@@ -222,7 +222,7 @@
   .pkg-search{display:flex;align-items:center;gap:8px;height:40px;border:1px solid var(--ia-line);border-radius:9px;padding:0 12px;color:var(--ia-muted-2);font-size:14px;margin-bottom:12px;}
   .pkg-search .icon{color:var(--ia-muted);}
   /* legacy pkg tag/sort chrome removed (pkg-tags, pkg-tag, pkg-arrow, pkg-sortrow, sortic, icon-only) */
-  .pkg-new{display:flex;align-items:center;gap:11px;padding:9px 8px;font-size:14px;font-weight:500;color:var(--ia-ink);border-radius:8px;width:100%;}
+  .pkg-new{display:flex;align-items:center;gap:10px;padding:10px 12px;font-size:14px;font-weight:500;color:var(--ia-ink);border-radius:8px;width:100%;}
   .pkg-new:hover{background:var(--ia-hover);}
   .pkg-new .icon{color:var(--ia-ink);}
   .pkg-list{max-height:330px;overflow-y:auto;}
@@ -231,7 +231,7 @@
   .pkg-space .nm{flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
   .pkg-space .goto{color:var(--ia-blue);font-size:13px;font-weight:500;text-decoration:none;flex:none;}
   .pkg-space .goto:hover{text-decoration:underline;}
-  .pkg-row{display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:8px;font-size:14px;color:var(--ia-ink);width:100%;text-align:left;}
+  .pkg-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;font-size:14px;color:var(--ia-ink);width:100%;text-align:left;}
   .pkg-row:hover{background:var(--ia-hover);}
   .pkg-row.active{background:#cfe0fb;color:#1e3a8a;font-weight:500;}
   .pkg-row .pcube{color:var(--ia-navy);width:18px;height:18px;flex:none;}
@@ -323,7 +323,7 @@
   .btn.primary:hover{background:color-mix(in srgb, var(--accent) 85%, #000);}
   .btn.primary .icon{color:var(--accent-text,#fff);}
   .spacer-fill{flex:1;}
-  .pkg-overview{display:flex;align-items:center;gap:11px;width:100%;padding:10px 10px;border-radius:9px;font-size:14px;font-weight:600;color:var(--ia-ink);margin-bottom:10px;background:var(--ia-hover);}
+  .pkg-overview{display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;border-radius:9px;font-size:14px;font-weight:600;color:var(--ia-ink);margin-bottom:10px;background:var(--ia-hover);}
   .pkg-overview:hover{background:var(--ia-active);}
   .pkg-overview .icon{color:var(--ia-navy);width:18px;height:18px;}
   .pkg-overview .arr{margin-left:auto;color:var(--ia-muted);width:16px;height:16px;}
@@ -497,10 +497,12 @@
 /* Flowy: the rail terminates above the 40px statusbar (10px margins top+bottom + 40px bar = 60px)
    so its rounded bottom corners and drop shadow read over the bottom bar instead of being clipped behind it. */
 [data-layout="flowy"] #l1{margin:10px 8px;border:1px solid var(--chrome-border);border-radius:calc(var(--r-surface) + 4px);height:calc(100vh - 60px);box-shadow:0 22px 48px -26px rgba(0,0,0,.45);overflow:hidden;}
-/* Flowy: the canvas is a pure scroll viewport (no surface, no asymmetric margin) so #main's gray is the single backdrop behind the one floating .view card */
-[data-layout="flowy"] .ctx-canvas{background:transparent;margin:0;}
-/* the inner .view card is the single frame (its radius follows the corner-radius knob); a symmetric content gap floats it on the gray, with extra bottom room so its drop shadow isn't clipped by the scroll container */
-[data-layout="flowy"] .ctx-canvas #content{padding:12px 12px 22px;}
+/* Flowy: the canvas becomes a fixed frame — the inner .view card fills it and owns the scroll
+   (so the asset header can pin INSIDE the card). #main's gray is the single backdrop behind it. */
+[data-layout="flowy"] .ctx-canvas{background:transparent;margin:0;overflow:hidden;}
+/* the inner .view card is the single frame (its radius follows the corner-radius knob), fills the
+   canvas height, and a symmetric content gap floats it on the gray (extra bottom room for its shadow) */
+[data-layout="flowy"] .ctx-canvas #content{padding:12px 12px 22px;height:100%;}
 [data-layout="flowy"] .tabbar{background:transparent;border-bottom-color:var(--chrome-border-soft);}
 [data-layout="flowy"].l0-open #l0,[data-layout="flowy"].pinned #l0{margin:10px;border-radius:18px;height:calc(100vh - 20px);border:1px solid var(--chrome-border);box-shadow:0 28px 70px -28px rgba(0,0,0,.55);}
 [data-layout="flowy"] .home-topbar{padding-top:8px;}

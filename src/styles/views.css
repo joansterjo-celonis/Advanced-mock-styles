@@ -118,11 +118,11 @@
   /* ===== FINAL slider-radius pass — wins over every component default (keep last) ===== */
   .btn-validate,.hbtn,.toggle button,.ch .icon,
   .tab .x,.tab .dots,.subtab .x,.subtab .dots,.subtab-add,
-  .nav-leaf,.hmore,
+  .nav-leaf,
   .ptool,.gchip,.gctrl-sel,.pbar .pb,.ch2 .add,.ch2 .dim-sel,.elabel,.otd-settings,
-  .ep-search,.tabcolor-row input[type="color"],.fab { border-radius: var(--r-interactive); }
-  .toggle { border-radius: calc(var(--r-interactive) + 3px); }
-  .card,.hmore-menu,.proto,.asset-bar,.pnode,.gctrl,.pbar,.ep-card { border-radius: var(--r-surface); }
+  .ep-search,.tabcolor-row input[type="color"],.huecolor-row input[type="color"],.hue-reset,.fab { border-radius: var(--r-interactive); }
+  .toggle,.tabcolor-row,.huecolor-row { border-radius: calc(var(--r-interactive) + 3px); }
+  .card,.proto,.asset-bar,.pnode,.gctrl,.pbar,.ep-card { border-radius: var(--r-surface); }
   [data-layout="flowy"] .edit-panel { border-radius: var(--r-surface); }
   [data-layout="flowy"] .asset-bar { border-radius: 0; }
 

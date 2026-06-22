@@ -1,11 +1,39 @@
 import { PALETTE, rng, series, N, RQ_BARS, RQ_PIE, RQ_CASES, RQ_ACTIVITIES } from '../data/data.js';
 import { E, svgText, chartMode, cssVar, toRGB, shadeC, rgbaC, resolveColor, ensureSoftShadow, sheenGrad, sphere, bar3dV, bar3dH, nextGid } from './effects.js';
 import { icons, hydrateIcons } from './icons.js';
+import { buildAssetHeader } from './components/asset-header.js';
 
       const root = document.documentElement;
       // Swap static [data-icon] placeholders for real <svg> before anything reads
       // or clones them (tab cloning, view indexing). Single source = src/icons.js.
       hydrateIcons();
+
+      /* ===== Unified view header (single source: components/asset-header.js) =====
+         Markup-defined views declare only their title + sub-tabs here; the header
+         structure and buttons live in ONE component, so a change there propagates to
+         every view. This runs before the sub-tab / edit wiring below so the generated
+         controls receive their listeners. Registered views (src/scripts/views/*.js)
+         call buildAssetHeader() themselves. */
+      const MARKUP_HEADERS = {
+        'order-management': { title:'Order Management', subtabs:{ attr:'data-sub', items:[
+          { id:'ops', label:'Operations View', on:true },
+          { id:'process', label:'Process Explorer' },
+          { id:'otd', label:'On-Time Delivery' },
+        ]}},
+        'purchase-order': { title:'Purchase Order' },
+        'rework-quality': { title:'Rework and Quality', subtabs:{ attr:'data-rqsub', items:[
+          { id:'charts', label:'Charts', on:true },
+          { id:'more', label:'More charts' },
+          { id:'even', label:'Even more charts' },
+          { id:'evencopy', label:'Even more charts Copy' },
+          { id:'play', label:'Playground' },
+        ]}},
+      };
+      Object.keys(MARKUP_HEADERS).forEach(id=>{
+        const v=document.querySelector('.view[data-view="'+id+'"]'); if(!v) return;
+        const old=v.querySelector(':scope > .asset-bar'); if(old) old.remove();
+        v.insertAdjacentHTML('afterbegin', buildAssetHeader(MARKUP_HEADERS[id]));
+      });
 
       /* ===== TUNABLE LAYOUT CONFIG — edit these numbers to taste ===== */
       const CONFIG = {
@@ -52,7 +80,7 @@ import { icons, hydrateIcons } from './icons.js';
         defs.appendChild(g); svg.appendChild(defs);
         [0,0.5,1].forEach(f=>{ const y=padT+innerH*f; svg.appendChild(E('line',{x1:padL,x2:padL+innerW,y1:y,y2:y,stroke:'rgba(128,128,128,0.18)','stroke-dasharray':'2 4'})); });
         const step=innerW/N, bw=step*0.6;
-        const m3=chartMode(wrap), barCol = tint || cssVar('--cstop-1a');
+        const m3=chartMode(wrap), barCol = tint || cssVar('--cstop-1a', wrap);
         bars.forEach((v,i)=>{ const h=Math.max(2,(v/barMax)*innerH); const x=padL+step*i+(step-bw)/2; const y=padT+innerH-h;
           if(m3){ bar3dV(svg,x,y,bw,h,barCol,m3); }
           else svg.appendChild(E('rect',{x:x.toFixed(1),y:y.toFixed(1),width:bw.toFixed(1),height:h.toFixed(1),rx:1.5,fill:`url(#cb_${key})`})); });
@@ -75,7 +103,7 @@ import { icons, hydrateIcons } from './icons.js';
         const svg=E('svg',{viewBox:`0 0 ${W} ${H}`});
         function ring(target, cyy, shadeAmt, op){ let off=0; segs.forEach(s=>{ const len=C*s.p/100;
           const cir=E('circle',{cx:cx,cy:cyy,r:r,fill:'none','stroke-width':sw,'stroke-dasharray':`${len.toFixed(2)} ${(C-len).toFixed(2)}`,'stroke-dashoffset':(-off).toFixed(2),transform:`rotate(-90 ${cx} ${cyy})`});
-          cir.style.stroke = shadeAmt!=null ? shadeC(resolveColor(s.c),shadeAmt) : s.c; if(op!=null) cir.style.strokeOpacity=op; target.appendChild(cir); off+=len; }); }
+          cir.style.stroke = shadeAmt!=null ? shadeC(resolveColor(s.c, wrap),shadeAmt) : s.c; if(op!=null) cir.style.strokeOpacity=op; target.appendChild(cir); off+=len; }); }
         if(m3){
           const tilt = m3==='iso'?0.58:0.86, depth = m3==='iso'?9:3;
           const fid=ensureSoftShadow(svg, m3==='iso'?5:3, m3==='iso'?5:4, 0.30);
@@ -110,7 +138,7 @@ import { icons, hydrateIcons } from './icons.js';
         [0,0.5,1].forEach(f=>{ const y=padT+innerH*f; svg.appendChild(E('line',{x1:padL,x2:padL+innerW,y1:y,y2:y,stroke:'rgba(128,128,128,0.16)','stroke-dasharray':'2 4'})); });
         const step=innerW/(pts.length-1); let d='';
         pts.forEach((v,i)=>{ const x=padL+step*i, y=padT+innerH-(v/mx)*innerH; d+=(i?'L':'M')+x.toFixed(1)+','+y.toFixed(1); });
-        const m3=chartMode(wrap), glassCol = tint || cssVar('--cstop-1a');
+        const m3=chartMode(wrap), glassCol = tint || cssVar('--cstop-1a', wrap);
         if(m3){
           // frosted fill in the chart primary colour
           const fg=svg.querySelector('#ar_'+key); if(fg){ fg.innerHTML=''; fg.appendChild(E('stop',{offset:'0%','stop-color':rgbaC(glassCol,0.55)})); fg.appendChild(E('stop',{offset:'100%','stop-color':rgbaC(glassCol,0.05)})); }
@@ -143,7 +171,7 @@ import { icons, hydrateIcons } from './icons.js';
         const svg=E('svg',{viewBox:`0 0 ${W} ${H}`,preserveAspectRatio:'none'});
         [0,0.5,1].forEach(f=>{ const y=padT+innerH*f; svg.appendChild(E('line',{x1:padL,x2:padL+innerW,y1:y,y2:y,stroke:'rgba(128,128,128,0.22)','stroke-dasharray':'1 4'})); });
         const step=innerW/n;
-        const m3=chartMode(wrap), hiCol = tint || cssVar('--cstop-1a');
+        const m3=chartMode(wrap), hiCol = tint || cssVar('--cstop-1a', wrap);
         vals.forEach((v,i)=>{ const x=+(padL+step*i+step/2).toFixed(1); const y=+(padT+innerH-(v/mx)*innerH).toFixed(1); const rad=i===6?4:2.6;
           if(m3){ sphere(svg,x,y, i===6?4.6:2.9, i===6?hiCol:'rgb(150,150,156)'); }
           else { const c=E('circle',{cx:x,cy:y,r:rad}); c.style.fill = i===6?hi:'rgba(128,128,128,0.7)'; svg.appendChild(c); } });
@@ -163,7 +191,7 @@ import { icons, hydrateIcons } from './icons.js';
         const mx=80, svg=E('svg',{viewBox:`0 0 ${W} ${H}`,preserveAspectRatio:'none'});
         [0,0.25,0.5,0.75,1].forEach(f=>{ const y=padT+innerH*(1-f); svg.appendChild(E('line',{x1:padL,x2:padL+innerW,y1:y,y2:y,stroke:'rgba(128,128,128,0.16)','stroke-dasharray':'2 4'})); svg.appendChild(svgText(E,padL-4,y+3,(f*80)+'K','end')); });
         const step=innerW/vals.length, bw=step*0.6;
-        const m3p=chartMode(wrap), colp=cssVar('--cstop-1a');
+        const m3p=chartMode(wrap), colp=cssVar('--cstop-1a', wrap);
         vals.forEach((v,i)=>{ const h=(v/mx)*innerH, x=padL+step*i+(step-bw)/2, y=padT+innerH-h;
           if(m3p){ bar3dV(svg,x,y,bw,Math.max(1,h),colp,m3p); }
           else { const r=E('rect',{x:x.toFixed(1),y:y.toFixed(1),width:bw.toFixed(1),height:Math.max(1,h).toFixed(1),rx:1.5}); r.style.fill='var(--cstop-1a)'; svg.appendChild(r); } });
@@ -180,7 +208,7 @@ import { icons, hydrateIcons } from './icons.js';
         [0,100000,200000,300000].forEach(g=>{ const x=padL+(g/mx)*innerW; svg.appendChild(E('line',{x1:x,x2:x,y1:padT,y2:padT+innerH,stroke:'rgba(128,128,128,0.16)','stroke-dasharray':'2 4'})); svg.appendChild(svgText(E,x,padT+innerH+14,(g/1000)+'K','middle')); });
         const m3c=chartMode(wrap);
         rows.forEach((r,i)=>{ const cy=padT+rh*i+rh/2, bw=(r.v/mx)*innerW, bh=Math.min(40,rh*0.5);
-          if(m3c){ bar3dH(svg,padL,(cy-bh/2),Math.max(2,bw),bh,resolveColor(r.c),m3c); }
+          if(m3c){ bar3dH(svg,padL,(cy-bh/2),Math.max(2,bw),bh,resolveColor(r.c, wrap),m3c); }
           else { const rect=E('rect',{x:padL,y:(cy-bh/2).toFixed(1),width:Math.max(2,bw).toFixed(1),height:bh.toFixed(1),rx:3}); rect.style.fill=r.c; svg.appendChild(rect); }
           svg.appendChild(svgText(E,padL-8,cy+3,r.l,'end')); });
         rows.forEach((r,i)=>{ hitRect(svg,0,padT+rh*i,padL+innerW,rh,r.l,[['Orders',fmt(r.v)]]); });
@@ -197,7 +225,7 @@ import { icons, hydrateIcons } from './icons.js';
         const m3h=chartMode(wrap);
         bars.forEach((b,i)=>{ const h=(b[1]/mx)*innerH, x=padL+step*i+(step-bw)/2, y=padT+innerH-h;
           const cvar = b[2]==='l'?'--cstop-1a':b[2]==='d'?'--cstop-1b':'--cstop-3a';
-          if(m3h){ bar3dV(svg,x,y,bw,Math.max(1,h),cssVar(cvar),m3h); }
+          if(m3h){ bar3dV(svg,x,y,bw,Math.max(1,h),cssVar(cvar, wrap),m3h); }
           else { const r=E('rect',{x:x.toFixed(1),y:y.toFixed(1),width:bw.toFixed(1),height:Math.max(1,h).toFixed(1),rx:1}); r.style.fill='var('+cvar+')'; svg.appendChild(r); }
           if(b[0]%2===0) svg.appendChild(svgText(E,x+bw/2,padT+innerH+12,String(b[0]),'middle')); });
         bars.forEach((b,i)=>{ hitRect(svg,padL+step*i,padT,step,innerH,'Deviation '+b[0]+(Math.abs(b[0])===1?' day':' days'),[['Count',fmt(b[1])]]); });
@@ -211,7 +239,7 @@ import { icons, hydrateIcons } from './icons.js';
         [0,0.25,0.5,0.75,1].forEach(f=>{ const y=padT+innerH*(1-f); svg.appendChild(E('line',{x1:padL,x2:padL+innerW,y1:y,y2:y,stroke:'rgba(128,128,128,0.16)','stroke-dasharray':'2 4'})); svg.appendChild(svgText(E,padL-4,y+3,(f*800)+(f>0?'K':''),'end')); svg.appendChild(svgText(E,W-padR+4,y+3,(f*50)+'%','start')); });
         const bx=padL+innerW*0.18, bw=innerW*0.64, bh=innerH*0.95, by=padT+innerH-bh;
         const m3d=chartMode(wrap);
-        if(m3d){ bar3dV(svg,bx,by,bw,bh,cssVar('--cstop-1a'),m3d); }
+        if(m3d){ bar3dV(svg,bx,by,bw,bh,cssVar('--cstop-1a', wrap),m3d); }
         else { const rect=E('rect',{x:bx.toFixed(1),y:by.toFixed(1),width:bw.toFixed(1),height:bh.toFixed(1),rx:3}); rect.style.fill='var(--cstop-1a)'; rect.style.opacity='0.9'; svg.appendChild(rect); }
         const c=E('circle',{cx:(bx+bw/2).toFixed(1),cy:(by+5).toFixed(1),r:3}); c.style.fill='var(--bg-1)'; c.style.stroke='var(--cstop-1b)'; c.style.strokeWidth='1.5'; svg.appendChild(c);
         svg.appendChild(svgText(E,bx+bw/2,padT+innerH+12,'1970-01','middle'));
@@ -282,7 +310,8 @@ import { icons, hydrateIcons } from './icons.js';
         const dir=(oi<0||ni<0)?1:(ni>oi?1:-1);   // +1 = new tab is to the right → enters from the right; -1 = from the left
         const dist=Math.min(64, Math.round(w*0.07));
 
-        canvas.scrollTop=0;                       // reset the real scroll viewport
+        canvas.scrollTop=0;                       // reset the real scroll viewport (default layout)
+        canvas.classList.remove('is-scrolled');   // new view starts at top → drop the pinned-header shadow
         content.classList.add('fx-scene');
         content.style.height=vh+'px';             // pin the scene to the viewport so the absolute faces keep a full-height box
         [oldView,newView].forEach(f=>{ f.classList.add('fx-face'); f.style.left=padL+'px'; f.style.top=padT+'px'; f.style.width=w+'px'; f.style.height=h+'px'; });
@@ -299,6 +328,7 @@ import { icons, hydrateIcons } from './icons.js';
           newView.classList.add('active');
           content.classList.remove('fx-scene');
           content.style.height='';
+          newView.scrollTop=0;                    // flowy: the card owns the scroll — start it at the top
           fxAnimating=false;
         };
       }
@@ -362,10 +392,11 @@ import { icons, hydrateIcons } from './icons.js';
         let idx=0; for(const sec in COMP){ h+='<div class="ep-sec">'+sec+'</div><div class="ep-grid">'; COMP[sec].forEach(n=>{ h+='<div class="ep-card" draggable="true" style="--i:'+(idx++)+'"><span class="ep-ic"></span>'+n+'</div>'; }); h+='</div>'; }
         a.innerHTML=h; return a; }
       document.querySelectorAll('.view').forEach(v=>v.appendChild(buildEditPanel()));
-      const editBtns=document.querySelectorAll('.edit-btn');
-      function setEdit(on){ if(on) root.setAttribute('data-edit','on'); else root.removeAttribute('data-edit'); editBtns.forEach(b=>b.classList.toggle('on',on)); renderChartsIn(document.querySelector('.view.active')); }
-      editBtns.forEach(b=>b.addEventListener('click',()=>setEdit(root.getAttribute('data-edit')!=='on')));
-      document.addEventListener('click',e=>{ if(e.target.closest('.ep-close')) setEdit(false); const t=e.target.closest('.ep-tab'); if(t){ t.parentElement.querySelectorAll('.ep-tab').forEach(x=>x.classList.remove('on')); t.classList.add('on'); } });
+      // Edit button lives in the shared header component, so wire it by DELEGATION —
+      // every view's edit button works, including views registered after boot. Re-query
+      // on toggle so newly added headers reflect the pressed state too.
+      function setEdit(on){ if(on) root.setAttribute('data-edit','on'); else root.removeAttribute('data-edit'); document.querySelectorAll('.edit-btn').forEach(b=>b.classList.toggle('on',on)); renderChartsIn(document.querySelector('.view.active')); }
+      document.addEventListener('click',e=>{ if(e.target.closest('.edit-btn')){ setEdit(root.getAttribute('data-edit')!=='on'); return; } if(e.target.closest('.ep-close')) setEdit(false); const t=e.target.closest('.ep-tab'); if(t){ t.parentElement.querySelectorAll('.ep-tab').forEach(x=>x.classList.remove('on')); t.classList.add('on'); } });
       document.addEventListener('dragstart',e=>{ const c=e.target.closest('.ep-card'); if(c){ c.classList.add('dragging'); e.dataTransfer.setData('text/plain',c.textContent.trim()); } });
       document.addEventListener('dragend',e=>{ const c=e.target.closest('.ep-card'); if(c) c.classList.remove('dragging'); });
 
@@ -385,7 +416,12 @@ import { icons, hydrateIcons } from './icons.js';
       /* sticky asset header: flag the scroll container once content slides under the
          pinned header so it gains a separating shadow (CSS: .ctx-canvas.is-scrolled). */
       const ctxCanvasEl=document.querySelector('.ctx-canvas');
-      if(ctxCanvasEl) ctxCanvasEl.addEventListener('scroll',()=>{ ctxCanvasEl.classList.toggle('is-scrolled', ctxCanvasEl.scrollTop>2); }, {passive:true});
+      if(ctxCanvasEl){
+        /* Default layout scrolls .ctx-canvas; flowy scrolls the inner .view card. Capture phase
+           catches both (scroll events don't bubble), so the pinned asset header gains its
+           separating shadow regardless of which element actually owns the scroll. */
+        ctxCanvasEl.addEventListener('scroll',e=>{ const t=e.target; if(t!==ctxCanvasEl && !(t.classList&&t.classList.contains('view'))) return; ctxCanvasEl.classList.toggle('is-scrolled', (t.scrollTop||0)>2); }, {passive:true, capture:true});
+      }
 
       /* ---- prototype controls ---- */
       const proto=document.getElementById('proto');
@@ -398,7 +434,7 @@ import { icons, hydrateIcons } from './icons.js';
       const bColor=document.getElementById('theme-color'),bMono=document.getElementById('theme-mono'),bVivid=document.getElementById('theme-vivid');
       function setTheme(m){ if(m==='mono')root.removeAttribute('data-theme'); else root.setAttribute('data-theme',m);
         bMono.classList.toggle('on',m==='mono'); bColor.classList.toggle('on',m==='color'); bVivid.classList.toggle('on',m==='vivid');
-        applyHue(); }
+        applyHue(); applyBrand(); }
       bColor.onclick=()=>setTheme('color'); bMono.onclick=()=>setTheme('mono'); bVivid.onclick=()=>setTheme('vivid');
       const hueInput=document.getElementById('theme-hue-input'), hueReset=document.getElementById('theme-hue-reset');
       function rgbToHue(hex){ const n=parseInt(hex.slice(1),16); let r=(n>>16&255)/255,g=(n>>8&255)/255,b=(n&255)/255; const mx=Math.max(r,g,b),mn=Math.min(r,g,b),d=mx-mn; let h=0; if(d){ if(mx===r)h=((g-b)/d)%6; else if(mx===g)h=(b-r)/d+2; else h=(r-g)/d+4; h*=60; if(h<0)h+=360; } return h; }
@@ -422,7 +458,8 @@ import { icons, hydrateIcons } from './icons.js';
       let brandColor=null;
       function brandLum(hex){ const {r,g,b}=toRGB(hex); const f=c=>{c/=255; return c<=0.03928?c/12.92:Math.pow((c+0.055)/1.055,2.4);}; return 0.2126*f(r)+0.7152*f(g)+0.0722*f(b); }
       function applyBrand(){
-        if(brandColor==null){ root.style.removeProperty('--accent'); root.style.removeProperty('--accent-text'); return; }
+        // Mono is monochrome — the accent auto-resolves to ink, so a custom brand never applies (its knob is hidden too).
+        if(brandColor==null || !root.getAttribute('data-theme')){ root.style.removeProperty('--accent'); root.style.removeProperty('--accent-text'); return; }
         const dark = root.getAttribute('data-mode')!=='light';
         // a near-black brand would disappear on the dark shell — lighten it toward white for legibility.
         const c = (dark && brandLum(brandColor) < 0.22) ? shadeC(brandColor, 0.82) : brandColor;
@@ -509,12 +546,6 @@ import { icons, hydrateIcons } from './icons.js';
       root.setAttribute('data-3dscope','accent');   // default: reserve 3D for the hero card
       root.setAttribute('data-coloruse','strategic'); // default intensity: balanced in-between
 
-      /* right panel: side panel vs in-header */
-      const bRpPanel=document.getElementById('rp-panel'), bRpHeader=document.getElementById('rp-header');
-      function setRightPanel(m){ if(m==='header')root.setAttribute('data-rightpanel','header'); else root.removeAttribute('data-rightpanel');
-        bRpPanel.classList.toggle('on',m!=='header'); bRpHeader.classList.toggle('on',m==='header'); if(m!=='header') hmoreMenu.classList.remove('open'); }
-      bRpPanel.onclick=()=>setRightPanel('panel'); bRpHeader.onclick=()=>setRightPanel('header');
-
       /* tab style: underline vs filled */
       const bTabU=document.getElementById('tabs-underline'), bTabF=document.getElementById('tabs-filled'), bTabC=document.getElementById('tabs-color');
       // Underline now owns the colour picker (the old "Underline color" is merged in):
@@ -536,7 +567,6 @@ import { icons, hydrateIcons } from './icons.js';
         'tabfx-flat':()=>setTabFx('flat'), 'tabfx-slide':()=>setTabFx('slide'),
         'c3d-default':()=>setCharts3d('default'), 'c3d-iso':()=>setCharts3d('iso'), 'c3d-glass':()=>setCharts3d('glass'),
         'kf-sans':()=>setKpiFont('sans'), 'kf-mono':()=>setKpiFont('mono'), 'kf-serif':()=>setKpiFont('serif'),
-        'rp-panel':()=>setRightPanel('panel'), 'rp-header':()=>setRightPanel('header'),
         'tabs-underline':()=>setTabStyle('underline'), 'tabs-filled':()=>setTabStyle('filled'), 'tabs-color':()=>setTabStyle('color')
       };
       KNOB_GROUPS.forEach(g=>g.buttons.forEach(b=>{ BTN_ACTIONS[b.id]=()=>g.set(b.val); }));
@@ -547,7 +577,7 @@ import { icons, hydrateIcons } from './icons.js';
           const toggles = Array.from(document.querySelectorAll('.proto .toggle button[id]'));
           const orphanControls = toggles.filter(b => !BTN_ACTIONS[b.id]).map(b => b.id);
           const cssAttrs = ['data-mode','data-theme','data-density','data-layout','data-charts3d','data-coloruse',
-            'data-shell','data-composition','data-tabmodel','data-tables','data-rightpanel','data-tabs','data-surfacefx'];
+            'data-shell','data-composition','data-tabmodel','data-tables','data-tabs','data-surfacefx'];
           const jsAttrs = ['data-3dscope','data-tabfx']; // consumed in chartMode() / view-switch, not CSS
           let cssText = '';
           for (const s of Array.from(document.styleSheets)) {
@@ -611,11 +641,6 @@ import { icons, hydrateIcons } from './icons.js';
         toggleBtns.forEach(b => mo.observe(b, { attributes:true, attributeFilter:['class'] }));
       })();
 
-      /* header "more" dropdown */
-      const hmore=document.getElementById('hmore'), hmoreMenu=document.getElementById('hmore-menu')||{classList:{add:function(){},remove:function(){},toggle:function(){}}};
-      if(hmore) hmore.onclick=e=>{ e.stopPropagation(); hmoreMenu.classList.toggle('open'); };
-      document.addEventListener('click',e=>{ if(!e.target.closest('.header-tools')) hmoreMenu.classList.remove('open'); });
-
       /* corner-radius sliders */
       const rS=document.getElementById('r-surface'), rI=document.getElementById('r-interactive'),
             rsv=document.getElementById('rs-val'), riv=document.getElementById('ri-val');
@@ -665,7 +690,7 @@ import { icons, hydrateIcons } from './icons.js';
         // x gridlines + ticks at 0,20,40
         [0,20,40].forEach(g=>{ const x=labelW+(g/mx)*innerW; svg.appendChild(E('line',{x1:x,x2:x,y1:padT,y2:padT+RQ_BARS.length*rowH,stroke:'rgba(128,128,128,0.16)','stroke-dasharray':'2 4'}));
           const t=svgText(E,x,H-7,String(g),'middle'); t.setAttribute('class','rq-axis'); svg.appendChild(t); });
-        const m3=chartMode(wrap), barCol=cssVar('--cstop-1a');
+        const m3=chartMode(wrap), barCol=cssVar('--cstop-1a', wrap);
         RQ_BARS.forEach((row,i)=>{ const cy=padT+rowH*i+rowH/2;
           const lt=svgText(E,labelW-8,cy+4,row[0],'end'); lt.setAttribute('class','rq-bar-label'); svg.appendChild(lt);
           const bw=Math.max(2,(row[1]/mx)*innerW); const bh=rowH*0.62;
@@ -688,7 +713,7 @@ import { icons, hydrateIcons } from './icons.js';
         const depth = m3==='iso'?22 : m3==='glass'?5 : 0;       // extrusion thickness
         const svg=E('svg',{viewBox:`0 0 ${W} ${H}`,preserveAspectRatio:'xMidYMid meet'});
         svg.style.width='100%'; svg.style.height='100%';
-        const colOf=(s,i)=> s.other ? 'rgba(140,142,150,0.85)' : resolveColor(sliceColors[i]||'var(--cstop-1a)');
+        const colOf=(s,i)=> s.other ? 'rgba(140,142,150,0.85)' : resolveColor(sliceColors[i]||'var(--cstop-1a)', wrap);
         function slicePath(a0,a1,yy){ const large=(a1-a0)>Math.PI?1:0;
           const x0=cx+r*Math.cos(a0), y0=yy+r*Math.sin(a0)*yS, x1=cx+r*Math.cos(a1), y1=yy+r*Math.sin(a1)*yS;
           return `M${cx},${yy} L${x0.toFixed(2)},${y0.toFixed(2)} A${r},${(r*yS).toFixed(2)} 0 ${large} 1 ${x1.toFixed(2)},${y1.toFixed(2)} Z`; }
@@ -823,6 +848,8 @@ import { icons, hydrateIcons } from './icons.js';
             const inv=card.hasAttribute('data-inverted');
             menu.appendChild(item(inv?'Reset surface':'Invert surface', inv, ()=>{
               if(inv) card.removeAttribute('data-inverted'); else card.setAttribute('data-inverted','');
+              // re-render so baked colours (3D bars, pie slices, value labels) pick up the card's flipped tokens
+              card.querySelectorAll('[data-chart]').forEach(buildChart);
             }));
           }
           menu.classList.add('open');
@@ -844,13 +871,13 @@ import { icons, hydrateIcons } from './icons.js';
         const $=id=>document.getElementById(id);
         const DEFAULTS=[
           { id:'preset-enterprise-calm', name:'Enterprise Calm',
-            state:{ buttons:['mode-light','theme-mono','color-calm','shell-contrast','layout-default','rp-panel','tabm-seg','tabs-filled','tabfx-flat','comp-bento','density-spacious','kf-sans','c3d-default','d3-accent'],
+            state:{ buttons:['mode-light','theme-mono','color-calm','shell-contrast','layout-default','tabm-seg','tabs-filled','tabfx-flat','comp-bento','density-spacious','kf-sans','c3d-default','d3-accent'],
               sliders:{'r-surface':'10','r-interactive':'8','kpi-weight':'300'}, hue:'#6366f1', hueActive:false, tab:'#6366f1' } },
           { id:'preset-bento-bold', name:'Bento Bold',
-            state:{ buttons:['mode-light','theme-mono','color-strategic','shell-tinted','layout-default','rp-panel','tabm-seg','tabs-filled','tabfx-flat','comp-hero','density-spacious','kf-sans','c3d-iso','d3-accent'],
+            state:{ buttons:['mode-light','theme-mono','color-strategic','shell-tinted','layout-default','tabm-seg','tabs-filled','tabfx-flat','comp-hero','density-spacious','kf-sans','c3d-iso','d3-accent'],
               sliders:{'r-surface':'14','r-interactive':'9','kpi-weight':'200'}, hue:'#6366f1', hueActive:false, tab:'#6366f1' } },
           { id:'preset-exec-dark', name:'Executive Dark',
-            state:{ buttons:['mode-dark','theme-color','color-strategic','shell-contrast','layout-default','rp-panel','tabm-seg','tabs-filled','tabfx-slide','comp-bento','density-compact','kf-sans','c3d-glass','d3-accent'],
+            state:{ buttons:['mode-dark','theme-color','color-strategic','shell-contrast','layout-default','tabm-seg','tabs-filled','tabfx-slide','comp-bento','density-compact','kf-sans','c3d-glass','d3-accent'],
               sliders:{'r-surface':'12','r-interactive':'9','kpi-weight':'300'}, hue:'#6366f1', hueActive:false, tab:'#6366f1' } }
         ];
         function load(){ try{ const r=JSON.parse(localStorage.getItem(LS)); if(r&&Array.isArray(r.presets)) return r; }catch(e){} return { presets: JSON.parse(JSON.stringify(DEFAULTS)), selected:'' }; }

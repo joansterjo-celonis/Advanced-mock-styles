@@ -30,7 +30,10 @@ export function chartMode(wrap){ // returns 'iso'|'glass'|null
   if(scope==='accent') return (wrap && wrap.closest && wrap.closest('[data-hero]')) ? look : null;
   return look; // 'full'
 }
-export function cssVar(name){ return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+// Resolve a CSS custom property. Pass `el` (e.g. a chart container) to read its
+// cascaded value — this lets per-card overrides (right-click → Invert) reach baked
+// chart colours; defaults to :root so existing callers are unaffected.
+export function cssVar(name, el){ return getComputedStyle(el||document.documentElement).getPropertyValue(name).trim(); }
 const _ccx = (function(){ try { return document.createElement('canvas').getContext('2d'); } catch(e){ return null; } })();
 export function toRGB(c){ // resolve any CSS colour string -> {r,g,b}
   if(!_ccx) return {r:128,g:128,b:128};
@@ -41,7 +44,7 @@ export function toRGB(c){ // resolve any CSS colour string -> {r,g,b}
 }
 export function shadeC(c,amt){ const {r,g,b}=toRGB(c); const t=amt<0?0:255,p=Math.abs(amt); const f=v=>Math.round((t-v)*p+v); return `rgb(${f(r)},${f(g)},${f(b)})`; }
 export function rgbaC(c,a){ const {r,g,b}=toRGB(c); return `rgba(${r},${g},${b},${a})`; }
-export function resolveColor(c){ const m=/var\((--[^),]+)\)/.exec(c||''); return m?cssVar(m[1]):c; }
+export function resolveColor(c, el){ const m=/var\((--[^),]+)\)/.exec(c||''); return m?cssVar(m[1], el):c; }
 // soft drop-shadow filter (added once per svg) — id returned
 export function ensureSoftShadow(svg, dy, blur, alpha){
   let defs=svg.querySelector('defs'); if(!defs){ defs=E('defs',{}); svg.insertBefore(defs, svg.firstChild); }
