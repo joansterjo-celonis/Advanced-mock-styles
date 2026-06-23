@@ -1136,7 +1136,9 @@ import { getThemes, syncOwnerThemes, getAuthor, ensureAuthor, isCloudEnabled } f
         const sel=document.getElementById('preset-select'); if(!sel) return;
         const $=id=>document.getElementById(id);
         const proto=document.getElementById('proto');
-        const flag=$('preset-flag');
+        const track=$('preset-track'), dots=$('preset-dots');
+        const prevBtn=$('preset-prev'), nextBtn=$('preset-next');
+        let customCard=null;
         const editRow=$('preset-edit'), nameInp=$('preset-name');
         const confirmRow=$('preset-confirm'), confirmText=$('preset-confirm-text');
         const DEFAULTS=[
@@ -1247,24 +1249,137 @@ import { getThemes, syncOwnerThemes, getAuthor, ensureAuthor, isCloudEnabled } f
           }catch(e){ console.error('[themes] migration failed', e); }
         }
 
+        /* ---- carousel: tiny DOM builder + an abstract mini-mock "preview" generated
+           straight from a preset's saved knobs (mode, palette, corners, composition,
+           density, glass) so each card visualises what the theme actually does. ---- */
+        const elc=(tag,cls,style)=>{ const n=document.createElement(tag); if(cls) n.className=cls; if(style) n.setAttribute('style',style); return n; };
+        const hasBtn=(st,id)=>!!(st&&st.buttons&&st.buttons.includes(id));
+        const pickBtn=(st,ids,fb)=>{ for(const id of ids) if(hasBtn(st,id)) return id; return fb; };
+        const clampn=(v,a,b)=>Math.max(a,Math.min(b,v));
+        const VIVID=['#6366f1','#10b981','#f59e0b','#ec4899'];
+
+        function previewSpec(st){
+          st=st||{};
+          const dark=hasBtn(st,'mode-dark');
+          const palette=pickBtn(st,['theme-vivid','theme-color','theme-mono'],'theme-mono');
+          const comp=pickBtn(st,['comp-hero','comp-uniform','comp-bento'],'comp-bento');
+          const density=pickBtn(st,['density-dense','density-compact','density-spacious'],'density-spacious');
+          const intensity=pickBtn(st,['color-expressive','color-calm','color-strategic'],'color-strategic');
+          const tabs=pickBtn(st,['tabs-color','tabs-underline','tabs-filled'],'tabs-filled');
+          const sl=st.sliders||{};
+          const rSurf=clampn(+sl['r-surface']||0,0,28), rInt=clampn(+sl['r-interactive']||0,0,20);
+          const glass=clampn(+sl['r-glass']||0,0,100);
+          let accent;
+          if(palette==='theme-mono') accent=dark?'#cbd0d9':'#3b3e45';
+          else if(palette==='theme-color') accent=(st.brandActive&&st.brand)?st.brand:((st.hueActive&&st.hue)?st.hue:'#6366f1');
+          else accent=VIVID[0];
+          return { dark, palette, comp, density, tabs, accent,
+            tileR:Math.round(rSurf*0.32), tabR:Math.round(rInt*0.35), glass,
+            gap: density==='density-dense'?2:density==='density-compact'?3:5,
+            pad: density==='density-dense'?5:density==='density-compact'?7:9,
+            shadow: intensity==='color-expressive'?0.5:intensity==='color-calm'?0.12:0.28 };
+        }
+        function themePreview(st){
+          const s=previewSpec(st);
+          const bg=s.dark?'#0e0f13':'#eef0f4', tile=s.dark?'#1b1e25':'#ffffff';
+          const line=s.dark?'rgba(255,255,255,0.10)':'rgba(0,0,0,0.08)', faint=s.dark?'rgba(255,255,255,0.18)':'rgba(0,0,0,0.13)';
+          const wrap=elc('div','tp-preview',`background:${bg};border-radius:${s.tileR+3}px;padding:${s.pad}px;gap:${s.gap}px`);
+          // mini tab row — active tab carries the picked tab style (filled · underline · color)
+          const bar=elc('div','tp-pv-bar',`gap:${s.gap}px`);
+          for(let i=0;i<3;i++){ const on=i===0; let cs=`border-radius:${s.tabR}px`;
+            if(on){ if(s.tabs==='tabs-color') cs+=`;background:${s.accent}`;
+              else if(s.tabs==='tabs-underline') cs+=`;background:transparent;box-shadow:inset 0 -2px 0 ${s.accent}`;
+              else cs+=`;background:${faint}`; }
+            else cs+=`;background:${line}`;
+            bar.appendChild(elc('span','tp-pv-tab'+(on?' on':''),cs)); }
+          wrap.appendChild(bar);
+          // mini card grid — arrangement = composition, gap = density, corners = surface radius
+          const grid=elc('div','tp-pv-grid tp-'+s.comp,`gap:${s.gap}px`);
+          const tShadow=`box-shadow:0 ${1+Math.round(s.shadow*4)}px ${2+Math.round(s.shadow*8)}px -2px rgba(0,0,0,${((s.dark?0.5:0.18)+s.shadow*0.2).toFixed(2)})`;
+          const mkTile=(extra,accentFill,ci)=>{
+            const fill=accentFill?(s.palette==='theme-vivid'?VIVID[ci%VIVID.length]:s.accent):tile;
+            const t=elc('span','tp-pv-tile'+(extra?' '+extra:''),`background:${fill};border-radius:${s.tileR}px;${tShadow}`);
+            if(!accentFill){ const dc=s.palette==='theme-vivid'?VIVID[(ci+1)%VIVID.length]:s.accent; t.appendChild(elc('i','tp-pv-dot',`background:${dc}`)); }
+            return t;
+          };
+          if(s.comp==='comp-hero'){ grid.appendChild(mkTile('big',true,0)); grid.appendChild(mkTile('',false,1)); grid.appendChild(mkTile('',false,2)); }
+          else if(s.comp==='comp-uniform'){ grid.appendChild(mkTile('',true,0)); grid.appendChild(mkTile('',false,1)); grid.appendChild(mkTile('',false,2)); grid.appendChild(mkTile('',false,3)); }
+          else { grid.appendChild(mkTile('wide',true,0)); grid.appendChild(mkTile('',false,1)); grid.appendChild(mkTile('',false,2)); }
+          wrap.appendChild(grid);
+          if(s.glass>0) wrap.appendChild(elc('div','tp-pv-frost',`opacity:${(0.10+s.glass/100*0.45).toFixed(2)}`));
+          return wrap;
+        }
+        function metaLine(st){
+          const s=previewSpec(st);
+          const pal={'theme-mono':'Mono','theme-color':'Color','theme-vivid':'Vivid'}[s.palette];
+          const comp={'comp-bento':'Bento','comp-uniform':'Uniform','comp-hero':'Hero'}[s.comp];
+          const dens={'density-spacious':'Spacious','density-compact':'Compact','density-dense':'Dense'}[s.density];
+          return [s.dark?'Dark':'Light',pal,comp,dens].join(' \u00B7 ');
+        }
+        function buildCard(id,name,state,owner,me){
+          const card=elc('button','tp-card'); card.type='button'; card.dataset.id=id||''; card.setAttribute('role','tab');
+          const head=elc('div','tp-card-head');
+          const nm=elc('span','tp-name'); nm.textContent=name; head.appendChild(nm);
+          const badge=elc('span','tp-badge'); badge.textContent='Modified'; badge.hidden=true; badge.title='Current settings differ from this preset'; head.appendChild(badge);
+          card.appendChild(head); card.appendChild(themePreview(state));
+          const meta=elc('div','tp-meta'); meta.textContent=metaLine(state); card.appendChild(meta);
+          if(owner&&owner!==me){ const ow=elc('div','tp-owner'); ow.textContent='by '+owner; card.appendChild(ow); }
+          return card;
+        }
+        const cardEls=()=> track?[...track.children]:[];
+        function centerCard(card,smooth){ if(!track||!card) return; const left=card.offsetLeft-(track.clientWidth-card.clientWidth)/2; track.scrollTo({left:Math.max(0,left),behavior:smooth?'smooth':'auto'}); }
+        function markActive(){ const cur=store.selected||''; let act=null;
+          cardEls().forEach(c=>{ const on=(c.dataset.id||'')===cur; c.classList.toggle('is-active',on); c.setAttribute('aria-selected',on?'true':'false'); if(on) act=c; });
+          if(dots){ const idx=cardEls().indexOf(act); [...dots.children].forEach((d,i)=>d.classList.toggle('on',i===idx)); }
+          return act; }
+        function orderIds(){ return ['',...store.presets.map(p=>p.id)]; }
+        // every nav action also selects → applies, matching "switch between themes"
+        function selectId(id,smooth){ sel.value=id||''; sel.dispatchEvent(new Event('change')); const act=markActive(); if(act) centerCard(act,smooth!==false); }
+        function step(dir){ const ids=orderIds(); let i=ids.indexOf(store.selected||''); i=clampn(i+dir,0,ids.length-1); selectId(ids[i],true); }
+
         function render(){
+          // hidden <select> stays the selection source of truth (unchanged data path)
           sel.innerHTML='';
           const me=getAuthor();
-          const ph=document.createElement('option'); ph.value=''; ph.textContent='— Custom —'; sel.appendChild(ph);
+          const ph=document.createElement('option'); ph.value=''; ph.textContent='\u2014 Custom \u2014'; sel.appendChild(ph);
           store.presets.forEach(p=>{ const o=document.createElement('option'); o.value=p.id;
-            o.textContent = (p.owner && p.owner!==me) ? (p.name+' · '+p.owner) : p.name; sel.appendChild(o); });
+            o.textContent = (p.owner && p.owner!==me) ? (p.name+' \u00B7 '+p.owner) : p.name; sel.appendChild(o); });
           sel.value=store.selected||'';
+          // visible carousel: a leading live "Custom" card, then one card per preset
+          if(track){
+            track.innerHTML='';
+            customCard=buildCard('','Custom',captureState(),null,me); customCard.classList.add('tp-custom');
+            track.appendChild(customCard);
+            store.presets.forEach(p=> track.appendChild(buildCard(p.id,p.name,p.state,p.owner,me)) );
+            if(dots){ dots.innerHTML=''; const n=track.children.length;
+              for(let i=0;i<n;i++){ const d=elc('button','tp-dot'); d.type='button'; d.dataset.idx=i; d.setAttribute('aria-label','Theme '+(i+1)); dots.appendChild(d); } }
+            const act=markActive(); if(act) centerCard(act,false);
+          }
         }
         function current(){ return store.presets.find(p=>p.id===sel.value); }
 
         function refresh(){
           const p=current();
           const dirty = !!p && sig(captureState())!==lastSnap;
-          if(flag) flag.hidden=!dirty;
+          // keep the live "Custom" card mirroring the current (unsaved) settings
+          if(customCard){ const cs=captureState(); const old=customCard.querySelector('.tp-preview'); if(old) old.replaceWith(themePreview(cs));
+            const m=customCard.querySelector('.tp-meta'); if(m) m.textContent=metaLine(cs); }
+          // "Modified" badge now lives inside the active preset card
+          cardEls().forEach(c=>{ const b=c.querySelector('.tp-badge'); if(b) b.hidden = !((c.dataset.id||'')===(store.selected||'') && dirty); });
           $('preset-save').disabled   = p ? !dirty : false;   // Custom → enabled (acts as "New"); preset → only when drifted
           $('preset-rename').disabled = !p;                    // nothing to rename on "— Custom —"
           $('preset-del').disabled    = !p;
+          markActive();
         }
+
+        // ---- carousel navigation (click card · chevrons · dots) ----
+        if(track) track.addEventListener('click', e=>{ const c=e.target.closest('.tp-card'); if(!c) return; selectId(c.dataset.id,true); });
+        if(dots) dots.addEventListener('click', e=>{ const d=e.target.closest('.tp-dot'); if(!d) return; const ids=orderIds(); selectId(ids[clampn(+d.dataset.idx,0,ids.length-1)],true); });
+        if(prevBtn) prevBtn.onclick=()=>step(-1);
+        if(nextBtn) nextBtn.onclick=()=>step(1);
+        // center the active card the first time the panel opens (its width is 0 while hidden)
+        if(proto){ const mo=new MutationObserver(()=>{ if(proto.classList.contains('open')){ const act=markActive(); if(act) centerCard(act,false); } });
+          mo.observe(proto,{attributes:true,attributeFilter:['class']}); }
 
         function closeRows(){ editMode=null; if(editRow) editRow.hidden=true; if(confirmRow) confirmRow.hidden=true; }
         function openEdit(mode, value){

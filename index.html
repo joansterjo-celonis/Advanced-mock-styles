@@ -3783,10 +3783,15 @@
 
     <div class="proto-sec" style="border-top:0;padding-top:0;margin-top:4px">Presets</div>
     <div class="grp preset-grp">
-      <div class="preset-applyrow">
-        <select id="preset-select" class="preset-sel" title="Apply a saved preset"></select>
-        <span class="preset-flag" id="preset-flag" title="Current settings differ from this preset" hidden>Modified</span>
+      <!-- card carousel (built by engine.js render()) — the visible theme switcher -->
+      <div class="tp-carousel">
+        <button type="button" class="tp-nav tp-prev" id="preset-prev" aria-label="Previous theme" title="Previous theme"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m15 18-6-6 6-6"/></svg></button>
+        <div class="tp-track" id="preset-track" role="tablist" aria-label="Theme presets"></div>
+        <button type="button" class="tp-nav tp-next" id="preset-next" aria-label="Next theme" title="Next theme"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m9 18 6-6-6-6"/></svg></button>
       </div>
+      <div class="tp-dots" id="preset-dots" aria-hidden="true"></div>
+      <!-- visually-hidden select stays the selection source of truth (read by sel.value + change) -->
+      <select id="preset-select" class="tp-select-sr" title="Apply a saved preset" aria-label="Apply a saved preset"></select>
       <div class="preset-actions">
         <button id="preset-save" title="Update the selected preset with the current settings">Save</button>
         <button id="preset-new" title="Save current settings as a new preset">New</button>
