@@ -1,0 +1,183 @@
+/* ============================================================
+   ACCESS GATE — a self-contained overlay layer that sits ON TOP
+   of the prototype. It never touches the proto's own markup or
+   logic; it only covers the screen until the user authenticates.
+   Driven by src/scripts/auth-gate.js.
+   ============================================================ */
+
+.auth-gate {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  color: var(--chrome-text, #e9eaee);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  letter-spacing: -0.005em;
+  /* Opaque, lightly-tinted backdrop so the proto behind is never legible. */
+  background:
+    radial-gradient(1100px circle at 12% -10%, rgba(123, 107, 255, 0.18), transparent 45%),
+    radial-gradient(900px circle at 110% 115%, rgba(200, 80, 224, 0.16), transparent 45%),
+    var(--chrome-0, #050506);
+  -webkit-backdrop-filter: blur(18px) saturate(1.2);
+  backdrop-filter: blur(18px) saturate(1.2);
+  opacity: 1;
+  transition: opacity .42s ease;
+}
+.auth-gate.is-leaving { opacity: 0; pointer-events: none; }
+
+.auth-card {
+  position: relative;
+  width: min(420px, 100%);
+  border-radius: 18px;
+  padding: 32px 30px 26px;
+  background: var(--glass-bg, rgba(22, 24, 29, 0.9));
+  border: 1px solid var(--chrome-border, rgba(255, 255, 255, 0.1));
+  box-shadow:
+    0 40px 90px -30px rgba(0, 0, 0, 0.7),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  -webkit-backdrop-filter: blur(26px) saturate(1.4);
+  backdrop-filter: blur(26px) saturate(1.4);
+  animation: auth-pop .3s cubic-bezier(.32, .72, 0, 1);
+}
+@keyframes auth-pop {
+  from { opacity: 0; transform: translateY(10px) scale(.98); }
+  to   { opacity: 1; transform: none; }
+}
+
+.auth-logo {
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  border-radius: 13px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--chrome-border, rgba(255, 255, 255, 0.1));
+  color: var(--brand-fixed, #eef1f6);
+  margin-bottom: 18px;
+}
+.auth-logo svg { width: 26px; height: 26px; }
+
+.auth-title {
+  font-size: 21px;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  color: var(--chrome-text, #fff);
+}
+.auth-sub {
+  margin-top: 6px;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--chrome-dim, rgba(233, 234, 238, 0.6));
+}
+
+.auth-form { margin-top: 22px; display: flex; flex-direction: column; gap: 10px; }
+
+.auth-field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 46px;
+  padding: 0 14px;
+  border-radius: 11px;
+  background: var(--chrome-panel, rgba(255, 255, 255, 0.04));
+  border: 1px solid var(--chrome-border, rgba(255, 255, 255, 0.1));
+  transition: border-color .16s ease, box-shadow .16s ease;
+}
+.auth-field:focus-within {
+  border-color: var(--accent, #7b6bff);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent, #7b6bff) 22%, transparent);
+}
+.auth-field svg { width: 18px; height: 18px; color: var(--chrome-faint, rgba(233, 234, 238, 0.4)); flex: none; }
+.auth-field input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--chrome-text, #fff);
+  font-family: inherit;
+  font-size: 14.5px;
+  letter-spacing: 0.02em;
+}
+.auth-field input::placeholder { color: var(--chrome-faint, rgba(233, 234, 238, 0.4)); letter-spacing: 0; }
+.auth-reveal {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--chrome-faint, rgba(233, 234, 238, 0.4));
+  cursor: pointer;
+  padding: 4px;
+  display: grid;
+  place-items: center;
+  border-radius: 6px;
+}
+.auth-reveal:hover { color: var(--chrome-text, #fff); }
+
+.auth-btn {
+  height: 46px;
+  border: 0;
+  border-radius: 11px;
+  background: var(--accent, #eef1f6);
+  color: var(--accent-text, #15161a);
+  font-family: inherit;
+  font-size: 14.5px;
+  font-weight: 650;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: filter .15s ease, transform .08s ease, opacity .15s ease;
+}
+.auth-btn:hover { filter: brightness(.94); }
+.auth-btn:active { transform: translateY(1px); }
+.auth-btn:disabled { opacity: .55; cursor: default; }
+
+.auth-error {
+  font-size: 12.5px;
+  color: var(--danger, #ef4444);
+  min-height: 16px;
+  opacity: 0;
+  transform: translateY(-2px);
+  transition: opacity .16s ease, transform .16s ease;
+}
+.auth-error.show { opacity: 1; transform: none; }
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 20px 0 16px;
+  color: var(--chrome-faint, rgba(233, 234, 238, 0.4));
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+.auth-divider::before,
+.auth-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--chrome-border, rgba(255, 255, 255, 0.1));
+}
+
+/* Wrapper for the Google Identity Services button (it renders its own iframe). */
+.auth-google { display: flex; justify-content: center; min-height: 44px; }
+.auth-google:empty { display: none; }
+.auth-google:empty + .auth-divider,
+.auth-divider:has(+ .auth-google:empty) { display: none; }
+
+.auth-foot {
+  margin-top: 20px;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--chrome-faint, rgba(233, 234, 238, 0.4));
+  text-align: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-gate, .auth-card { transition: none; animation: none; }
+}

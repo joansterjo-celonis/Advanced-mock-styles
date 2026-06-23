@@ -4,6 +4,25 @@
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>Celonis — Merged Prototype</title>
+<!-- Access gate (separate layer): set your Google OAuth Web client ID here to enable
+     "Sign in with Google". Leave blank to use the password only. -->
+<meta name="google-client-id" content=""/>
+<!-- Runs before the body paints so the prototype never flashes before the gate mounts. -->
+<style id="auth-gate-critical">
+  html.auth-locked, html.auth-locked body { overflow: hidden !important; }
+  html.auth-locked #app { visibility: hidden !important; pointer-events: none !important; }
+</style>
+<script>
+  (function () {
+    try {
+      if (localStorage.getItem('proto-access-granted') !== 'yes') {
+        document.documentElement.classList.add('auth-locked');
+      }
+    } catch (e) {
+      document.documentElement.classList.add('auth-locked');
+    }
+  })();
+</script>
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><linearGradient id="aiGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff5db1"/><stop offset=".5" stop-color="#c850e0"/><stop offset="1" stop-color="#7b6bff"/></linearGradient></defs></svg>

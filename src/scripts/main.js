@@ -7,6 +7,10 @@ import '../styles/charts.css';
 import '../styles/knobs.css';
 import '../styles/components.css';
 import '../styles/effects.css';
+// Access gate is a separate layer on top of the proto (does not touch its logic).
+import '../styles/auth-gate.css';
+import { initAuthGate } from './auth-gate.js';
+initAuthGate();
 
 import './engine.js';
 import './shell.js';
