@@ -336,16 +336,33 @@ import { getThemes, syncOwnerThemes, getAuthor, ensureAuthor, isCloudEnabled } f
         const padL=pct?34:46,padR=8,padT=8,padB=22, innerW=W-padL-padR, innerH=H-padT-padB;
         const svg=E('svg',{viewBox:`0 0 ${W} ${H}`,preserveAspectRatio:'none'});
         [0,0.5,1].forEach(f=>{ const y=padT+innerH*(1-f); svg.appendChild(E('line',{x1:padL,x2:padL+innerW,y1:y,y2:y,stroke:'rgba(128,128,128,0.16)','stroke-dasharray':'2 4'})); svg.appendChild(svgText(E,padL-4,y+3,pct?Math.round(ymax*f)+'%':fmt(ymax*f),'end')); });
+        const m3=chartMode(wrap);                                  // honor the Charts-look (iso / glass) knob
         const r=rng(seed), step=innerW/n, bw=step*0.74, last=series.length-1, tops=[];
+        const isoD=Math.max(2,Math.min(bw*0.5,10)), dvx=isoD*0.82, dvy=-isoD*0.5;
+        const _defs=()=>{ let d=svg.querySelector('defs'); if(!d){ d=E('defs',{}); svg.insertBefore(d,svg.firstChild);} return d; };
+        const _cc={}, _cv=cv=>(_cc[cv]||(_cc[cv]=cssVar(cv,wrap)));   // cache resolved colours (per series colour var)
+        const _gc={}, _grad=(cv,glass)=>{ const k=(glass?'g':'i')+cv; if(_gc[k])return _gc[k]; const col=_cv(cv),gid=(glass?'sbg':'sbv')+nextGid(),lg=E('linearGradient',{id:gid,x1:0,y1:0,x2:0,y2:1});
+          if(glass){ lg.appendChild(E('stop',{offset:'0%','stop-color':rgbaC(col,0.95)})); lg.appendChild(E('stop',{offset:'100%','stop-color':rgbaC(col,0.6)})); }
+          else { lg.appendChild(E('stop',{offset:'0%','stop-color':shadeC(col,0.12)})); lg.appendChild(E('stop',{offset:'100%','stop-color':shadeC(col,-0.14)})); }
+          _defs().appendChild(lg); return (_gc[k]=gid); };
         for(let i=0;i<n;i++){ const t=n>1?i/(n-1):0;
           const profile=shape==='grow'?(0.12+0.85*t)*(0.85+r()*0.2):shape==='rand'?(0.2+r()*0.78):Math.pow(Math.sin(Math.min(1,t*1.12)*Math.PI),0.7);
           const total=full?ymax*(0.9+r()*0.08):ymax*(0.30+0.62*profile)*(0.82+r()*0.3);
           const finalAllLast=bias&&i===n-1;
           const shares=series.map((s,si)=>{ if(finalAllLast) return si===last?1:0.0001; let base=(s.w||1)*(0.55+0.9*r()); if(bias&&si===last) base*=(0.1+t*t*4); return base; });
           const sum=shares.reduce((a,b)=>a+b,0);
-          let yb=padT+innerH; const x=padL+step*i+(step-bw)/2;
-          series.forEach((s,si)=>{ const h=(shares[si]/sum)*(Math.min(total,ymax)/ymax)*innerH, y=yb-h;
-            const rect=E('rect',{x:x.toFixed(1),y:y.toFixed(1),width:bw.toFixed(1),height:Math.max(0.4,h).toFixed(1)}); rect.style.fill='var('+(s.c||'--cstop-1a')+')'; svg.appendChild(rect); yb=y; });
+          let yb=padT+innerH; const x=padL+step*i+(step-bw)/2, x2=x+bw; let topCol=null;
+          series.forEach((s,si)=>{ const h=(shares[si]/sum)*(Math.min(total,ymax)/ymax)*innerH; if(h<=0)return; const y=yb-h, cv=s.c||'--cstop-1a';
+            if(m3==='iso'){ const col=_cv(cv);
+              svg.appendChild(E('path',{d:`M${x2.toFixed(1)},${y.toFixed(1)} L${(x2+dvx).toFixed(1)},${(y+dvy).toFixed(1)} L${(x2+dvx).toFixed(1)},${(yb+dvy).toFixed(1)} L${x2.toFixed(1)},${yb.toFixed(1)} Z`,fill:shadeC(col,-0.26)}));   // right side wall
+              svg.appendChild(E('rect',{x:x.toFixed(1),y:y.toFixed(1),width:bw.toFixed(1),height:h.toFixed(1),fill:`url(#${_grad(cv,false)})`}));   // front face
+              topCol=col; }
+            else if(m3==='glass'){ const col=_cv(cv);
+              const fr=E('rect',{x:x.toFixed(1),y:y.toFixed(1),width:bw.toFixed(1),height:h.toFixed(1),fill:`url(#${_grad(cv,true)})`}); fr.style.stroke=rgbaC(col,0.85); fr.style.strokeWidth='0.5'; svg.appendChild(fr); }
+            else { const rect=E('rect',{x:x.toFixed(1),y:y.toFixed(1),width:bw.toFixed(1),height:Math.max(0.4,h).toFixed(1)}); rect.style.fill='var('+cv+')'; svg.appendChild(rect); }
+            yb=y; });
+          if(m3==='iso' && topCol!=null){ svg.appendChild(E('path',{d:`M${x.toFixed(1)},${yb.toFixed(1)} L${(x+dvx).toFixed(1)},${(yb+dvy).toFixed(1)} L${(x2+dvx).toFixed(1)},${(yb+dvy).toFixed(1)} L${x2.toFixed(1)},${yb.toFixed(1)} Z`,fill:shadeC(topCol,0.34)})); }  // single top face (lightest)
+          else if(m3==='glass'){ const cb=padT+innerH; if(cb-yb>1){ svg.appendChild(E('rect',{x:x.toFixed(1),y:yb.toFixed(1),width:bw.toFixed(1),height:(cb-yb).toFixed(1),fill:`url(#${sheenGrad(svg,true)})`,'pointer-events':'none'})); svg.appendChild(E('rect',{x:x.toFixed(1),y:yb.toFixed(1),width:bw.toFixed(1),height:Math.min(2.2,cb-yb).toFixed(1),rx:1,fill:'rgba(255,255,255,0.55)'})); } }
           tops.push((x+bw/2).toFixed(1)+','+yb.toFixed(1)); }
         if(line){ svg.appendChild(E('polyline',{points:tops.join(' '),fill:'none',stroke:'var('+line+')','stroke-width':1.6,'stroke-linejoin':'round'})); }
         if(xl.length){ xl.forEach((lab,idx)=>{ const x=padL+(xl.length===1?innerW/2:innerW*idx/(xl.length-1)); const tx=svgText(E,Math.max(padL+8,Math.min(padL+innerW-8,x)),padT+innerH+12,lab,'middle'); tx.setAttribute('font-size','8'); svg.appendChild(tx); }); }
@@ -363,14 +380,32 @@ import { getThemes, syncOwnerThemes, getAuthor, ensureAuthor, isCloudEnabled } f
         const padL=labelW,padR=8,padT=6,padB=18, innerW=W-padL-padR, innerH=H-padT-padB;
         const svg=E('svg',{viewBox:`0 0 ${W} ${H}`,preserveAspectRatio:'none'});
         ticks.forEach(tk=>{ const x=padL+(tk/xmax)*innerW; svg.appendChild(E('line',{x1:x.toFixed(1),x2:x.toFixed(1),y1:padT,y2:padT+innerH,stroke:'rgba(128,128,128,0.16)','stroke-dasharray':'2 4'})); svg.appendChild(svgText(E,x,padT+innerH+11,tk+'%','middle')); });
-        const m=Math.max(1,cats.length), rh=innerH/m, bh=Math.min(13,rh*0.7), r=rng(seed), cap=Math.max(4,Math.floor(labelW/5));
+        const m3=chartMode(wrap);                                  // honor the Charts-look (iso / glass) knob
+        const m=Math.max(1,cats.length), rh=innerH/m, bh=Math.min(13,rh*0.7), r=rng(seed), labCap=Math.max(4,Math.floor(labelW/5));
+        const hD=Math.max(2,Math.min(bh*0.5,8)), hdx=hD*0.82, hdy=-hD*0.5;
+        const _defs=()=>{ let d=svg.querySelector('defs'); if(!d){ d=E('defs',{}); svg.insertBefore(d,svg.firstChild);} return d; };
+        const _cc={}, _cv=cv=>(_cc[cv]||(_cc[cv]=cssVar(cv,wrap)));
+        const _gc={}, _grad=(cv,glass)=>{ const k=(glass?'g':'i')+cv; if(_gc[k])return _gc[k]; const col=_cv(cv),gid=(glass?'hsg':'hsv')+nextGid(),lg=E('linearGradient',{id:gid,x1:0,y1:0,x2:0,y2:1});
+          if(glass){ lg.appendChild(E('stop',{offset:'0%','stop-color':rgbaC(col,0.95)})); lg.appendChild(E('stop',{offset:'100%','stop-color':rgbaC(col,0.62)})); }
+          else { lg.appendChild(E('stop',{offset:'0%','stop-color':shadeC(col,0.12)})); lg.appendChild(E('stop',{offset:'100%','stop-color':shadeC(col,-0.14)})); }
+          _defs().appendChild(lg); return (_gc[k]=gid); };
         cats.forEach((cat,i)=>{ const cy=padT+rh*i+rh/2, y=cy-bh/2; const t=m>1?i/(m-1):0;
-          const shown=(String(cat).length>cap)?String(cat).slice(0,cap-1)+'\u2026':String(cat);
+          const shown=(String(cat).length>labCap)?String(cat).slice(0,labCap-1)+'\u2026':String(cat);
           const lt=svgText(E,padL-5,cy+3,shown,'end'); lt.setAttribute('font-size','8.5'); svg.appendChild(lt);
           const total=(0.34+0.62*t)*(0.9+r()*0.2)*100;
           const shares=series.map(s=>(s.w||1)*(0.45+0.95*r())), sum=shares.reduce((a,b)=>a+b,0);
-          let x=padL;
-          series.forEach((s,si)=>{ const w=(shares[si]/sum)*(Math.min(total,xmax)/xmax)*innerW; if(w<=0)return; const rect=E('rect',{x:x.toFixed(1),y:y.toFixed(1),width:Math.max(0.4,w).toFixed(1),height:bh.toFixed(1)}); rect.style.fill='var('+(s.c||'--cstop-1a')+')'; svg.appendChild(rect); x+=w; });
+          let x=padL, lastCol=null;
+          series.forEach((s,si)=>{ const w=(shares[si]/sum)*(Math.min(total,xmax)/xmax)*innerW; if(w<=0)return; const cv=s.c||'--cstop-1a';
+            if(m3==='iso'){ const col=_cv(cv);
+              svg.appendChild(E('path',{d:`M${x.toFixed(1)},${y.toFixed(1)} L${(x+hdx).toFixed(1)},${(y+hdy).toFixed(1)} L${(x+w+hdx).toFixed(1)},${(y+hdy).toFixed(1)} L${(x+w).toFixed(1)},${y.toFixed(1)} Z`,fill:shadeC(col,0.30)}));   // top face (tiles along length)
+              svg.appendChild(E('rect',{x:x.toFixed(1),y:y.toFixed(1),width:Math.max(0.4,w).toFixed(1),height:bh.toFixed(1),fill:`url(#${_grad(cv,false)})`}));
+              lastCol=col; }
+            else if(m3==='glass'){ const col=_cv(cv);
+              const fr=E('rect',{x:x.toFixed(1),y:y.toFixed(1),width:Math.max(0.4,w).toFixed(1),height:bh.toFixed(1),fill:`url(#${_grad(cv,true)})`}); fr.style.stroke=rgbaC(col,0.85); fr.style.strokeWidth='0.5'; svg.appendChild(fr); }
+            else { const rect=E('rect',{x:x.toFixed(1),y:y.toFixed(1),width:Math.max(0.4,w).toFixed(1),height:bh.toFixed(1)}); rect.style.fill='var('+cv+')'; svg.appendChild(rect); }
+            x+=w; });
+          if(m3==='iso' && lastCol!=null){ svg.appendChild(E('path',{d:`M${x.toFixed(1)},${y.toFixed(1)} L${(x+hdx).toFixed(1)},${(y+hdy).toFixed(1)} L${(x+hdx).toFixed(1)},${(y+bh+hdy).toFixed(1)} L${x.toFixed(1)},${(y+bh).toFixed(1)} Z`,fill:shadeC(lastCol,-0.26)})); }  // right end cap (rightmost only)
+          else if(m3==='glass' && x>padL){ svg.appendChild(E('rect',{x:padL.toFixed(1),y:y.toFixed(1),width:(x-padL).toFixed(1),height:Math.min(2,bh).toFixed(1),rx:1,fill:'rgba(255,255,255,0.5)','pointer-events':'none'})); }
           hitRect(svg,padL,padT+rh*i,innerW,rh,String(cat),[['Total',Math.round(total)+'%']]); });
         wrap.appendChild(svg);
       }
