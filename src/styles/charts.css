@@ -132,6 +132,9 @@
   .preset-sel:focus { outline:none; border-color:var(--chrome-text); }
   /* "Modified" pill — current settings drifted from the applied preset */
   .preset-flag { flex:none; display:inline-flex; align-items:center; gap:5px; font-size:10px; font-weight:600; letter-spacing:.05em; text-transform:uppercase; color:#f5b14a; border:1px solid rgba(245,177,74,0.5); border-radius:999px; padding:3px 8px; white-space:nowrap; }
+  /* author display:inline-flex outranks the UA [hidden]{display:none}, so the JS-driven
+     flag.hidden toggle is ignored without this explicit override (flag would always show) */
+  .preset-flag[hidden] { display:none; }
   .preset-flag::before { content:""; width:6px; height:6px; border-radius:50%; background:#f5b14a; }
 
   .preset-actions { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
@@ -139,6 +142,8 @@
   .preset-actions button:hover { background:var(--chrome-hover); border-color:var(--chrome-text); }
   /* "Save" lights up white when there is something to commit (dirty / Custom) */
   .preset-actions button#preset-save:not(:disabled) { border-color:rgba(255,255,255,0.5); color:#fff; }
+  /* light mode: white-on-white would vanish — use ink + dark border for the same primary lift */
+  [data-mode="light"] .preset-actions button#preset-save:not(:disabled) { border-color:rgba(0,0,0,0.45); color:#15161a; }
   .preset-actions button#preset-del:not(:disabled):hover { color:#e5484d; border-color:#e5484d; background:transparent; }
   .preset-actions button:disabled { opacity:.34; cursor:default; }
   .preset-actions button:disabled:hover { background:transparent; border-color:var(--chrome-border); color:var(--chrome-text); }
@@ -151,7 +156,9 @@
   .preset-inline button { flex:none; height:32px; padding:0 12px; border-radius:var(--r-interactive); border:1px solid var(--chrome-border); background:transparent; color:var(--chrome-text); font:inherit; font-size:12px; cursor:pointer; transition:background .15s,border-color .15s,color .15s; }
   .preset-inline button:hover { border-color:var(--chrome-text); }
   .preset-inline .pi-ok { border-color:rgba(255,255,255,0.55); color:#fff; }
+  [data-mode="light"] .preset-inline .pi-ok { border-color:rgba(0,0,0,0.45); color:#15161a; }
   .preset-inline .pi-ok:hover { background:#fff; color:#15161a; border-color:#fff; }
+  [data-mode="light"] .preset-inline .pi-ok:hover { background:#15161a; color:#fff; border-color:#15161a; }
   .preset-inline .pi-danger { border-color:rgba(229,72,77,0.6); color:#ff6b6f; }
   .preset-inline .pi-danger:hover { background:#e5484d; color:#fff; border-color:#e5484d; }
   .preset-confirm .pc-text { flex:1 1 auto; min-width:0; font-size:12px; color:var(--chrome-dim); }

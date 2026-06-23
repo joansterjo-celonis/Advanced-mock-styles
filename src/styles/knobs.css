@@ -128,6 +128,13 @@
   [data-tabmodel="seg"] .subtab.on::after { display:none; }
   [data-tabmodel="seg"] .subtab .x, [data-tabmodel="seg"] .subtab .dots { display:none !important; }
   [data-tabmodel="seg"] .subtab-add { display:none; }
+  /* OCPM strips overflow (10+ tabs), so the segmented pill must fold like the default model:
+     fill the bar (block-level flex) and let .ocpm-view's overflow-x:auto scroll the tabs with
+     the ‹ › ☰ nav pinned right — NOT inline-flex, which balloons to max-content and spills the
+     pill past the bar (and under the open edit panel). Blend the sticky nav with the pill track. */
+  [data-tabmodel="seg"] .ocpm-view .subtabs { display:flex; align-self:stretch; max-width:100%; }
+  [data-tabmodel="seg"] .ocpm-view .ocpm-tabnav,
+  [data-layout="flowy"][data-tabmodel="seg"] .ocpm-view .ocpm-tabnav { background:var(--track); }
 
   /* ---- Tables ---- (row TREATMENT only; spacing is owned by the Density knob) */
   /* Lined: zebra striping for scannability */

@@ -496,17 +496,32 @@
 /* ===== mount tweaks ===== */
 #app{height:calc(100vh - 0px);} body{overflow:hidden;padding:0;background:var(--chrome-0);}
 .ctx-canvas{overflow:auto;}
-.ctx-canvas #content{padding:18px clamp(12px,2vw,24px) 60px;}
+/* No top padding: the .asset-bar must sit flush at the scrollport's top so the sticky header
+   has no gap to travel through before it pins (the bar supplies its own top inset). Otherwise
+   the header visibly slides up by this padding on the first scroll. */
+.ctx-canvas #content{padding:0 clamp(12px,2vw,24px) 60px;}
 #route-context.mode-overview #main{display:none;}
 #route-context.mode-editor .ctx-overview{display:none;}
 /* ===== Layers knob (Default / Flowy) → also treats the L0 + L1 shell ===== */
-[data-layout="flowy"] #main{background:var(--chrome-0);}
+/* overflow:visible (base #main is hidden) is the LAST clip between the floating card and the
+   bar: .ctx-canvas + .ctx-body already let the shadow through, but #main sits between them and
+   would still sever it at its bottom edge. With this, the card's drop shadow bleeds down past
+   #main and reads through the transparent statusbar (a later, transparent sibling). #main is a
+   row flex item (min-width:0 already set) so visible can't restore an auto min-HEIGHT here; the
+   view-switch slide is still clipped by .content.fx-scene, so nothing leaks sideways. */
+[data-layout="flowy"] #main{background:var(--chrome-0);overflow:visible;}
 /* Flowy: the rail terminates above the 40px statusbar (10px margins top+bottom + 40px bar = 60px)
    so its rounded bottom corners and drop shadow read over the bottom bar instead of being clipped behind it. */
 [data-layout="flowy"] #l1{margin:10px 8px;border:1px solid var(--chrome-border);border-radius:calc(var(--r-surface) + 4px);height:calc(100vh - 60px);box-shadow:0 22px 48px -26px rgba(0,0,0,.45);overflow:hidden;}
-/* Flowy: the canvas becomes a fixed frame — the inner .view card fills it and owns the scroll
-   (so the asset header can pin INSIDE the card). #main's gray is the single backdrop behind it. */
-[data-layout="flowy"] .ctx-canvas{background:transparent;margin:0;overflow:hidden;}
+/* Flowy: the canvas is a frame the inner .view card fills and scrolls INSIDE (so the asset
+   header can pin INSIDE the card). #main's gray is the single backdrop behind it.
+   overflow:visible (NOT hidden) so the card's drop shadow bleeds DOWN over the transparent
+   statusbar instead of being severed at the canvas/bar seam — the same trick the .ctx-body
+   rule below uses for the #l1 rail. The card still owns the only scroll (.view.active is the
+   overflow-y:auto pane), and the view-switch slide is clipped separately by .content.fx-scene
+   (charts.css), so nothing leaks sideways during transitions. min-height:0 keeps this flex
+   item from claiming its content's intrinsic height. */
+[data-layout="flowy"] .ctx-canvas{background:transparent;margin:0;overflow:visible;min-height:0;}
 /* the inner .view card is the single frame (its radius follows the corner-radius knob), fills the
    canvas height, and a tight content gap floats it on the gray. The bottom gap is small because the
    statusbar below is transparent (nothing scrolls under it) — the card's drop shadow reads through it. */

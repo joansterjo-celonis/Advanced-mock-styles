@@ -524,8 +524,19 @@ import { buildAssetHeader } from './components/asset-header.js';
       // Edit button lives in the shared header component, so wire it by DELEGATION —
       // every view's edit button works, including views registered after boot. Re-query
       // on toggle so newly added headers reflect the pressed state too.
-      function setEdit(on){ if(on) root.setAttribute('data-edit','on'); else root.removeAttribute('data-edit'); document.querySelectorAll('.edit-btn').forEach(b=>b.classList.toggle('on',on)); renderChartsIn(document.querySelector('.view.active')); }
-      document.addEventListener('click',e=>{ if(e.target.closest('.edit-btn')){ setEdit(root.getAttribute('data-edit')!=='on'); return; } if(e.target.closest('.ep-close')) setEdit(false); const t=e.target.closest('.ep-tab'); if(t){ t.parentElement.querySelectorAll('.ep-tab').forEach(x=>x.classList.remove('on')); t.classList.add('on'); } });
+      function closeFbar(){ document.querySelectorAll('.ocpm2-body[data-fbar="open"]').forEach(b=>b.setAttribute('data-fbar','closed')); document.querySelectorAll('.fbar-btn.on').forEach(b=>b.classList.remove('on')); }
+      function setEdit(on){ if(on){ root.setAttribute('data-edit','on'); closeFbar(); } else root.removeAttribute('data-edit'); document.querySelectorAll('.edit-btn').forEach(b=>b.classList.toggle('on',on)); renderChartsIn(document.querySelector('.view.active')); }
+      // Filter drawer (.ocpm2-fbar) toggle — the shared header panel button (.fbar-btn) drives it
+      // in any view that ships a drawer (.ocpm2-body); a no-op elsewhere. Mutually exclusive with
+      // edit mode (both are right-side panels). Re-render so charts reflow to the new content width.
+      function setFbar(open){ const v=document.querySelector('.view.active'); if(!v) return; const body=v.querySelector('.ocpm2-body'); if(!body) return; if(open) setEdit(false); body.setAttribute('data-fbar', open?'open':'closed'); v.querySelectorAll('.fbar-btn').forEach(b=>b.classList.toggle('on',open)); renderChartsIn(v); }
+      document.addEventListener('click',e=>{
+        if(e.target.closest('.edit-btn')){ setEdit(root.getAttribute('data-edit')!=='on'); return; }
+        if(e.target.closest('.ep-close')){ setEdit(false); return; }
+        if(e.target.closest('.fbar-btn')){ const v=document.querySelector('.view.active'); const body=v&&v.querySelector('.ocpm2-body'); setFbar(!(body&&body.getAttribute('data-fbar')==='open')); return; }
+        if(e.target.closest('.ocpm2-fbar-head .x')){ setFbar(false); return; }
+        const t=e.target.closest('.ep-tab'); if(t){ t.parentElement.querySelectorAll('.ep-tab').forEach(x=>x.classList.remove('on')); t.classList.add('on'); }
+      });
       document.addEventListener('dragstart',e=>{ const c=e.target.closest('.ep-card'); if(c){ c.classList.add('dragging'); e.dataTransfer.setData('text/plain',c.textContent.trim()); } });
       document.addEventListener('dragend',e=>{ const c=e.target.closest('.ep-card'); if(c) c.classList.remove('dragging'); });
 

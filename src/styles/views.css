@@ -76,9 +76,9 @@
 
   /* ===== Edit mode + Components panel (animated) ===== */
   .view { position:relative; transition: padding .38s cubic-bezier(.22,.61,.36,1); }
-  .edit-btn { transition: background .18s ease, border-color .18s ease, color .18s ease, transform .12s ease; }
-  .edit-btn.on { background:var(--card-strong); border-color:var(--border-strong); color:var(--text); }
-  .edit-btn:active { transform:scale(.92); }
+  .edit-btn, .fbar-btn { transition: background .18s ease, border-color .18s ease, color .18s ease, transform .12s ease; }
+  .edit-btn.on, .fbar-btn.on { background:var(--card-strong); border-color:var(--border-strong); color:var(--text); }
+  .edit-btn:active, .fbar-btn:active { transform:scale(.92); }
   .edit-panel { position:absolute; top:0; right:0; bottom:0; width:312px; overflow-y:auto; padding:14px; z-index:6;
     background:transparent; border-left:1px solid var(--border);
     opacity:0; visibility:hidden; transform:translateX(20px); pointer-events:none;
@@ -122,9 +122,10 @@
   .ptool,.gchip,.gctrl-sel,.pbar .pb,.ch2 .add,.ch2 .dim-sel,.elabel,.otd-settings,
   .ep-search,.tabcolor-row input[type="color"],.huecolor-row input[type="color"],.hue-reset,.fab { border-radius: var(--r-interactive); }
   .toggle,.tabcolor-row,.huecolor-row { border-radius: calc(var(--r-interactive) + 3px); }
-  .card,.proto,.asset-bar,.pnode,.gctrl,.pbar,.ep-card { border-radius: var(--r-surface); }
+  .card,.proto,.pnode,.gctrl,.pbar,.ep-card { border-radius: var(--r-surface); }
   [data-layout="flowy"] .edit-panel { border-radius: var(--r-surface); }
-  [data-layout="flowy"] .asset-bar { border-radius: 0; }
+  /* .asset-bar is a full-bleed pinned band in every layout — never rounded (rounded
+     corners would expose the white cards scrolling under the gray bar). */
 
   /* Legacy standalone Homepage screen (the old home- and hc- prefixed rules) removed —
      the live welcome header is .ia-home-hero in the overview; no #home-screen exists. */
@@ -188,11 +189,9 @@
   .tr-emptybox .tr-emt { font-size:15px; font-weight:600; color:var(--text); }
 
   /* ===== OCPM adoption view ===== */
-  /* title-side "last modified" pill + a bell + the blue action button */
+  /* title-side "last modified" age pill (the bell + blue button were removed in favour of the
+     shared header's standard Filters / panel / Edit buttons) */
   .ocpm-age { display:inline-flex; align-items:center; gap:4px; font-size:11px; color:var(--text-dim); }
-  .ocpm-bell { position:relative; }
-  .ocpm-bell .ocpm-badge { position:absolute; top:2px; right:2px; min-width:13px; height:13px; padding:0 3px; border-radius:7px; background:var(--accent); color:var(--accent-text,#fff); font-size:8.5px; font-weight:700; display:grid; place-items:center; }
-  .ocpm-bluebtn { width:30px; height:30px; display:grid; place-items:center; border:0; border-radius:var(--r-interactive); background:var(--accent); color:var(--accent-text,#fff); cursor:pointer; }
 
   /* tab strip: many tabs scroll horizontally; trailing ‹ › ☰ controls stay pinned right */
   .ocpm-view .subtabs { overflow-x:auto; flex-wrap:nowrap; scrollbar-width:none; }
@@ -245,11 +244,17 @@
   .ocpm-errdot { width:22px; height:22px; border-radius:50%; background:#e5484d; color:#fff; font-size:14px; font-weight:700; display:grid; place-items:center; box-shadow:0 4px 12px -3px rgba(229,72,77,0.6); }
 
   /* ===== OCPM adoption view — activity breakdown (filter-panel variant) ===== */
-  /* body splits into the dashboard + a right filter drawer toggled from the header */
-  .ocpm2-body { display:flex; gap:16px; align-items:flex-start; }
-  .ocpm2-main { flex:1 1 auto; min-width:0; }
-  .ocpm2-fbar { flex:0 0 238px; }
-  .ocpm2-body:not([data-fbar="open"]) .ocpm2-fbar { display:none; }
+  /* body = the dashboard + a right filter drawer toggled from the header's panel button.
+     The drawer slides in from the right and the main column animates its right padding to make
+     room — the SAME motion/easing as edit mode (see .edit-panel above). */
+  .ocpm2-body { position:relative; }
+  .ocpm2-main { min-width:0; transition:padding .38s cubic-bezier(.22,.61,.36,1); }
+  .ocpm2-fbar { position:absolute; top:0; right:0; width:238px;
+    opacity:0; visibility:hidden; transform:translateX(20px); pointer-events:none;
+    transition:opacity .26s ease, transform .38s cubic-bezier(.22,.61,.36,1), visibility 0s linear .34s; }
+  .ocpm2-body[data-fbar="open"] .ocpm2-fbar { opacity:1; visibility:visible; transform:none; pointer-events:auto;
+    transition:opacity .3s ease, transform .44s cubic-bezier(.22,.61,.36,1), visibility 0s; }
+  .ocpm2-body[data-fbar="open"] .ocpm2-main { padding-right:254px; }
 
   .ocpm2-fbar-inner { border:1px solid var(--border); border-radius:var(--r-surface); background:var(--bg-1); overflow:hidden; }
   .ocpm2-fbar-head { display:flex; align-items:center; justify-content:space-between; padding:9px 12px; border-bottom:1px solid var(--border); font-size:12px; font-weight:600; color:var(--text-dim); }

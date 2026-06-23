@@ -24,8 +24,6 @@ const KEBAB = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColo
 
 /* ---- header extras (same family as the other OCPM views) ---- */
 const ageBadge = '<span class="ocpm-age">' + s(13, 1.8, '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>') + '5 days</span>';
-const bell = '<span class="dh-ic ocpm-bell" title="Notifications">' + s(16, 1.8, '<path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6"/><path d="M10 20a2 2 0 0 0 4 0"/>') + '<span class="ocpm-badge">3</span></span>';
-const blueBtn = '<button class="ocpm-bluebtn" title="Present">' + s(15, 2, '<rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4"/>') + '</button>';
 const tabNav = '<div class="ocpm-tabnav"><button class="ocpm-tnav" data-dir="-1" title="Scroll left">' + s(14, 2.2, '<path d="m15 6-6 6 6 6"/>') + '</button><button class="ocpm-tnav" data-dir="1" title="Scroll right">' + s(14, 2.2, '<path d="m9 6 6 6-6 6"/>') + '</button><button class="ocpm-tnav" title="All tabs">' + s(14, 2, '<path d="M4 6h16M4 12h16M4 18h16"/>') + '</button></div>';
 
 const info = tip => '<span class="i" tabindex="0" data-tip="' + tip + '">i</span>';
@@ -169,7 +167,6 @@ registerView({
       { k: 'Predefined filter', v: 'exclude PoV' },
       { k: 'Predefined filter', v: 'Direct Customers' },
     ],
-    actions: [bell, blueBtn],
     subtabs: {
       attr: 'data-shsub',
       trailing: tabNav,

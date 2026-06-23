@@ -145,8 +145,15 @@
   /* ===== FLOWY LAYERS layout ===== */
   /* Sticky asset header — the view title + sub-tabs stay pinned while charts scroll
      under it (both layouts), so context isn't lost. The opaque bg occludes the
-     scrolling content; --ia-canvas blends it into the Default canvas at rest. */
-  .asset-bar { display:block; position:sticky; top:0; z-index:6; background:var(--ia-canvas); }
+     scrolling content; --ia-canvas blends it into the Default canvas at rest.
+     The bar carries its OWN divider + bottom padding + margin (and the sub-tabs drop
+     their bottom margin) so the background covers the whole header with nothing escaping
+     below it — otherwise the sub-tabs' bottom margin collapses out of the bar and content
+     bleeds through that strip while scrolling. (Flowy refines the bg + top inset below.) */
+  /* padding-top is the header's OWN top inset (Default #content no longer supplies it) so the
+     bar is flush with the scrollport top and never pre-rolls before pinning. Flowy overrides it. */
+  .asset-bar { display:block; position:sticky; top:0; z-index:6; background:var(--ia-canvas);
+    padding:18px 0 6px; margin-bottom:16px; border-bottom:1px solid var(--border); }
   /* Separating shadow once content slides under the pinned header. A downward-only ::after
      gradient (not a box-shadow) so the shadow can never leak past the bar's left/right edges. */
   .asset-bar::after { content:""; position:absolute; left:0; right:0; top:100%; height:14px;
@@ -156,6 +163,9 @@
   /* Only .asset-bar carries the occluding surface; its children stay transparent so the
      pinned header reads as one clean band while charts scroll under it. */
   .asset-bar .dash-head, .asset-bar .subtabs { background:transparent; }
+  /* sub-tabs sit flush inside the bar: keep the top gap, drop the escaping bottom margin
+     and the per-strip divider (the bar's own border-bottom is the divider now). */
+  .asset-bar .subtabs { margin-bottom:0; border-bottom:0; }
 
   /* one continuous gray overarches everything — internal panels go transparent */
   [data-layout="flowy"] .sidebar,
