@@ -238,7 +238,8 @@ import { icons } from './icons.js';
     var content=document.getElementById('content');
     function tabsEl(){ return document.querySelector('.tabbar .tabs'); }
     function tabFor(v){ return document.querySelector('.tabbar .tabs .ia-tab[data-view="'+v+'"]'); }
-    function activateTab(v){ document.querySelectorAll('.tabbar .tabs .ia-tab[data-view]').forEach(function(x){ x.classList.toggle('active', x.dataset.view===v); }); }
+    function scrollTabIntoView(v){ var t=tabFor(v); if(t&&t.scrollIntoView) t.scrollIntoView({inline:'nearest',block:'nearest'}); }
+    function activateTab(v){ document.querySelectorAll('.tabbar .tabs .ia-tab[data-view]').forEach(function(x){ x.classList.toggle('active', x.dataset.view===v); }); scrollTabIntoView(v); }
     function showEmpty(){ document.querySelectorAll('#content .view').forEach(function(v){ v.classList.remove('active'); }); if(content) content.classList.add('is-empty'); }
     function hideEmpty(){ if(content) content.classList.remove('is-empty'); }
     // (re)create a tab chip for a view, reusing the matching L1 leaf's icon + label
@@ -250,7 +251,8 @@ import { icons } from './icons.js';
       var label=((leaf?leaf.textContent:'')||v||'').trim()||v;
       var tab=document.createElement('div');
       tab.className='ia-tab'; tab.setAttribute('data-view',v);
-      tab.innerHTML=ic+' '+label+CLOSE_SVG;
+      // label MUST live in .ia-tab-lbl so it truncates with an ellipsis (a bare text node wraps).
+      tab.innerHTML=ic+'<span class="ia-tab-lbl">'+label+'</span>'+CLOSE_SVG;
       tabs.insertBefore(tab, tabs.querySelector('.ia-tab-add')||null);
       return tab;
     }
@@ -282,6 +284,11 @@ import { icons } from './icons.js';
         var t=e.target.closest('.ia-tab[data-view]');
         if(t){ hideEmpty(); activateTab(t.dataset.view); selectView(t.dataset.view); }
       });
+      // let a vertical mouse wheel scroll the tab strip horizontally (trackpads already do this)
+      tabs.addEventListener('wheel',function(e){
+        if(e.deltaY===0 || tabs.scrollWidth<=tabs.clientWidth) return;
+        tabs.scrollLeft+=e.deltaY; e.preventDefault();
+      },{passive:false});
     }
 
     // L1 leaves + overview rows open (and reopen) the editor on the right dashboard

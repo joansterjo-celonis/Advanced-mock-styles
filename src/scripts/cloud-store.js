@@ -8,7 +8,7 @@
 //  small group using this access-gated prototype.
 //
 //  Config (see .env.example):
-//    VITE_JSONBIN_KEY           – X-Master-Key (or read+write Access Key)
+//    VITE_JSONBIN_KEY           – JSONBin Access Key (read+write to both bins)
 //    VITE_JSONBIN_FEEDBACK_BIN  – feedback bin id  (defaulted below)
 //    VITE_JSONBIN_THEMES_BIN    – themes bin id    (defaulted below)
 //
@@ -38,13 +38,35 @@ function lsWrite(bin, doc) {
   try { localStorage.setItem(lsKey(bin), JSON.stringify(doc)); return true; } catch (e) { return false; }
 }
 
+/* ---------- pending (unsynced) write queue ----------
+   When the cloud is enabled but a write fails (offline, transient error),
+   the entry is parked here so it survives reloads and is retried on the
+   next read — instead of silently vanishing. */
+function pendKey(bin) { return 'cloud-pending-' + bin; }
+function pendRead(bin) {
+  try { const r = JSON.parse(localStorage.getItem(pendKey(bin))); return Array.isArray(r) ? r : []; }
+  catch (e) { return []; }
+}
+function pendWrite(bin, arr) {
+  try { localStorage.setItem(pendKey(bin), JSON.stringify(arr || [])); } catch (e) { /* noop */ }
+}
+function pendAdd(bin, entry) {
+  const arr = pendRead(bin);
+  if (!arr.some(e => e && e.id === entry.id)) arr.push(entry);
+  pendWrite(bin, arr);
+}
+function pendRemove(bin, ids) {
+  const set = new Set(ids);
+  pendWrite(bin, pendRead(bin).filter(e => e && !set.has(e.id)));
+}
+
 /** Read a bin's document ({ items, updatedAt }). Falls back to localStorage. */
 export async function getBin(bin) {
   if (!KEY) return lsRead(bin);
   try {
     const res = await fetch(API + '/' + bin + '/latest', {
       method: 'GET',
-      headers: { 'X-Master-Key': KEY, 'X-Bin-Meta': 'false' },
+      headers: { 'X-Access-Key': KEY, 'X-Bin-Meta': 'false' },
       cache: 'no-store',
     });
     if (!res.ok) throw new Error('GET ' + res.status);
@@ -67,7 +89,7 @@ export async function putBin(bin, doc) {
   try {
     const res = await fetch(API + '/' + bin, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json', 'X-Master-Key': KEY },
+      headers: { 'Content-Type': 'application/json', 'X-Access-Key': KEY },
       body: JSON.stringify(payload),
     });
     if (!res.ok) throw new Error('PUT ' + res.status);
@@ -80,20 +102,46 @@ export async function putBin(bin, doc) {
 
 /* ---------- feedback collection ---------- */
 
-export async function getFeedback() {
-  const doc = await getBin(FEEDBACK_BIN);
-  return Array.isArray(doc.items) ? doc.items : [];
+/** Read a collection's items, retrying any unsynced local writes and
+ *  unioning ones not yet on the server so nothing is lost on reload. */
+async function readItemsResilient(bin) {
+  const doc = await getBin(bin);
+  const cloudItems = Array.isArray(doc.items) ? doc.items : [];
+  // Local-only mode: getBin already returned the local cache, which holds everything.
+  if (!KEY) return cloudItems;
+
+  const pending = pendRead(bin);
+  if (!pending.length) return cloudItems;
+
+  const cloudIds = new Set(cloudItems.map(e => e && e.id));
+  const missing = pending.filter(e => e && !cloudIds.has(e.id));
+  if (!missing.length) { pendRemove(bin, pending.map(e => e.id)); return cloudItems; }
+
+  // Retry flushing the unsynced entries onto the server.
+  const merged = [...cloudItems, ...missing];
+  const ok = await putBin(bin, { items: merged });
+  if (ok) pendRemove(bin, pending.map(e => e.id));
+  // Either way, surface them so the author never sees their note disappear.
+  return merged;
 }
 
-/** Append one feedback entry (read-modify-write to avoid clobbering peers). */
+export async function getFeedback() {
+  return readItemsResilient(FEEDBACK_BIN);
+}
+
+/** Append one feedback entry (read-modify-write to avoid clobbering peers).
+ *  If the cloud write fails, the entry is queued for retry on next read. */
 export async function addFeedback(entry) {
   const doc = await getBin(FEEDBACK_BIN);
   const items = Array.isArray(doc.items) ? doc.items : [];
   items.push(entry);
-  return putBin(FEEDBACK_BIN, { items });
+  const ok = await putBin(FEEDBACK_BIN, { items });
+  if (!ok && KEY) pendAdd(FEEDBACK_BIN, entry);
+  return ok;
 }
 
 export async function deleteFeedback(id) {
+  pendRemove(FEEDBACK_BIN, [id]); // never resurrect an explicitly deleted note
   const doc = await getBin(FEEDBACK_BIN);
   const items = (Array.isArray(doc.items) ? doc.items : []).filter(e => e && e.id !== id);
   return putBin(FEEDBACK_BIN, { items });

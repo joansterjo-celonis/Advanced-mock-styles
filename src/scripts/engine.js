@@ -2,6 +2,7 @@ import { PALETTE, rng, series, N, RQ_BARS, RQ_PIE, RQ_CASES, RQ_ACTIVITIES } fro
 import { E, svgText, chartMode, cssVar, toRGB, shadeC, rgbaC, resolveColor, ensureSoftShadow, sheenGrad, sphere, bar3dV, bar3dH, nextGid } from './effects.js';
 import { icons, hydrateIcons } from './icons.js';
 import { buildAssetHeader } from './components/asset-header.js';
+import { getThemes, syncOwnerThemes, getAuthor, ensureAuthor } from './cloud-store.js';
 
       const root = document.documentElement;
       // Swap static [data-icon] placeholders for real <svg> before anything reads
@@ -405,6 +406,8 @@ import { buildAssetHeader } from './components/asset-header.js';
       // keep the editor top tabs' active state in sync with the shown view
       function setNavTabActive(v){
         document.querySelectorAll('.tabbar .tabs .ia-tab[data-view]').forEach(t=>t.classList.toggle('active', t.dataset.view===v));
+        const a=document.querySelector('.tabbar .tabs .ia-tab[data-view="'+v+'"]');
+        if(a&&a.scrollIntoView) a.scrollIntoView({inline:'nearest',block:'nearest'});
       }
       function selectView(v){
         if(fxAnimating) return;
@@ -1103,10 +1106,43 @@ import { buildAssetHeader } from './components/asset-header.js';
             ga:!!st.glassAdv, go:st.glassAdv?String(st.glassOp):null, gb:st.glassAdv?String(st.glassBl):null }); }
         function snap(){ lastSnap=sig(captureState()); }   // record the baseline right after apply/save
 
+        /* ---- shared theme library (auto-sync to the cloud themes bin) ----
+           Built-in DEFAULTS stay local; user-made presets sync, tagged by owner.
+           Reading other people's presets needs no name; pushing mine prompts once. */
+        const DEFAULT_IDS = new Set(DEFAULTS.map(d=>d.id));
+        const isMine = (p, me)=> me ? p.owner===me : (!DEFAULT_IDS.has(p.id) && !p.owner);
+        const myPresets = (me)=> store.presets.filter(p=>!DEFAULT_IDS.has(p.id) && isMine(p,me));
+        let pushT;
+        function pushMine(){
+          clearTimeout(pushT);
+          pushT=setTimeout(async ()=>{
+            try{
+              const me = await ensureAuthor();
+              if(!me) return;
+              let changed=false;
+              store.presets.forEach(p=>{ if(!DEFAULT_IDS.has(p.id) && !p.owner){ p.owner=me; changed=true; } });
+              if(changed) persist();
+              await syncOwnerThemes(me, myPresets(me));
+            }catch(e){ console.error('[themes] sync failed', e); }
+          }, 250);
+        }
+        function mergeShared(shared){
+          const arr = Array.isArray(shared)?shared:[];
+          if(!arr.length) return;
+          const me = getAuthor();
+          const keep = store.presets.filter(p => DEFAULT_IDS.has(p.id) || isMine(p, me));
+          const keepIds = new Set(keep.map(p=>p.id));
+          const others = arr.filter(p => p && p.id && !DEFAULT_IDS.has(p.id) && !(me && p.owner===me) && !keepIds.has(p.id));
+          store.presets = [...keep, ...others];
+          persist(); render(); refresh();
+        }
+
         function render(){
           sel.innerHTML='';
+          const me=getAuthor();
           const ph=document.createElement('option'); ph.value=''; ph.textContent='— Custom —'; sel.appendChild(ph);
-          store.presets.forEach(p=>{ const o=document.createElement('option'); o.value=p.id; o.textContent=p.name; sel.appendChild(o); });
+          store.presets.forEach(p=>{ const o=document.createElement('option'); o.value=p.id;
+            o.textContent = (p.owner && p.owner!==me) ? (p.name+' · '+p.owner) : p.name; sel.appendChild(o); });
           sel.value=store.selected||'';
         }
         function current(){ return store.presets.find(p=>p.id===sel.value); }
@@ -1128,8 +1164,8 @@ import { buildAssetHeader } from './components/asset-header.js';
         }
         function commitEdit(){
           const name=(nameInp.value||'').trim(); if(!name){ nameInp.focus(); return; }
-          if(editMode==='new'){ const p={id:uid(),name,state:captureState()}; store.presets.push(p); store.selected=p.id; persist(); render(); snap(); }
-          else if(editMode==='rename'){ const p=current(); if(p){ p.name=name; persist(); render(); } }
+          if(editMode==='new'){ const p={id:uid(),name,state:captureState()}; store.presets.push(p); store.selected=p.id; persist(); render(); snap(); pushMine(); }
+          else if(editMode==='rename'){ const p=current(); if(p){ p.name=name; persist(); render(); pushMine(); } }
           closeRows(); refresh();
         }
         function openConfirm(text){ if(editRow) editRow.hidden=true; confirmText.textContent=text; confirmRow.hidden=false; }
@@ -1137,16 +1173,16 @@ import { buildAssetHeader } from './components/asset-header.js';
         // ---- consume: applying a preset is the primary "use" path ----
         sel.addEventListener('change', ()=>{ store.selected=sel.value; persist(); closeRows(); const p=current(); if(p) applyState(p.state); snap(); refresh(); });
         // ---- create / update ----
-        $('preset-save').onclick=()=>{ const p=current(); if(p){ p.state=captureState(); persist(); snap(); refresh(); } else { openEdit('new','My preset'); } };
+        $('preset-save').onclick=()=>{ const p=current(); if(p){ p.state=captureState(); persist(); snap(); refresh(); pushMine(); } else { openEdit('new','My preset'); } };
         $('preset-new').onclick=()=>{ openEdit('new','My preset'); };
-        $('preset-dup').onclick=()=>{ const p=current(); if(!p){ openEdit('new','My preset'); return; } const c={id:uid(),name:p.name+' copy',state:JSON.parse(JSON.stringify(p.state))}; store.presets.push(c); store.selected=c.id; persist(); render(); snap(); refresh(); };
+        $('preset-dup').onclick=()=>{ const p=current(); if(!p){ openEdit('new','My preset'); return; } const c={id:uid(),name:p.name+' copy',state:JSON.parse(JSON.stringify(p.state))}; delete c.owner; store.presets.push(c); store.selected=c.id; persist(); render(); snap(); refresh(); pushMine(); };
         $('preset-rename').onclick=()=>{ const p=current(); if(!p) return; openEdit('rename',p.name); };
         $('preset-del').onclick=()=>{ const p=current(); if(!p) return; openConfirm('Delete \u201C'+p.name+'\u201D?'); };
         // ---- inline editor / confirm wiring ----
         $('preset-ok').onclick=commitEdit;
         $('preset-cancel').onclick=closeRows;
         nameInp.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); commitEdit(); } else if(e.key==='Escape'){ e.preventDefault(); closeRows(); } });
-        $('preset-confirm-ok').onclick=()=>{ const p=current(); if(p){ store.presets=store.presets.filter(x=>x.id!==p.id); store.selected=''; persist(); render(); } closeRows(); snap(); refresh(); };
+        $('preset-confirm-ok').onclick=()=>{ const p=current(); if(p){ store.presets=store.presets.filter(x=>x.id!==p.id); store.selected=''; persist(); render(); pushMine(); } closeRows(); snap(); refresh(); };
         $('preset-confirm-cancel').onclick=closeRows;
 
         // ---- live drift tracking: any knob change re-evaluates the Modified flag ----
@@ -1157,6 +1193,13 @@ import { buildAssetHeader } from './components/asset-header.js';
         render();
         if(store.selected){ const p=current(); if(p) applyState(p.state); }   // restore last-applied preset
         snap(); refresh();
+
+        // Snapshot bridge for the feedback feature (built on top, never touches the proto).
+        window.IA = window.IA || {};
+        window.IA.captureState = captureState;
+        window.IA.applyState = applyState;
+        // Pull the shared theme library in (read-only path — no name prompt on boot).
+        getThemes().then(mergeShared).catch(()=>{});
       })();
 
 export { selectView, renderChartsIn, runCounters, registerView, getViews };

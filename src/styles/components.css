@@ -157,8 +157,13 @@
   .tab-tool{width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:7px;color:var(--ia-muted);flex:none;}
   .tab-tool:hover{background:var(--ia-hover);color:var(--ia-ink);}
   .tab-sep{width:1px;height:22px;background:var(--ia-line);margin:0 8px;flex:none;}
-  .tabs{display:flex;align-items:stretch;height:100%;flex:1;min-width:0;overflow:hidden;}
-  .ia-tab{display:flex;align-items:center;gap:8px;padding:0 14px;height:100%;font-size:13.5px;color:var(--ia-muted);position:relative;border-right:1px solid var(--ia-line-soft);max-width:200px;cursor:pointer;transition:color .2s ease, background .2s ease;}
+  /* horizontally scrollable when tabs overflow (scrollbar hidden — trackpad/wheel scroll it).
+     min-width:0 lets the flex strip shrink below content so overflow-x can engage. */
+  .tabs{display:flex;align-items:stretch;height:100%;flex:1;min-width:0;overflow-x:auto;overflow-y:hidden;scroll-behavior:smooth;scrollbar-width:none;-ms-overflow-style:none;}
+  .tabs::-webkit-scrollbar{display:none;height:0;}
+  /* flex:0 0 auto so tabs keep their width (capped at max-width) and overflow into a scroll
+     instead of squashing; white-space:nowrap is a safety net so a tab label can never wrap. */
+  .ia-tab{flex:0 0 auto;display:flex;align-items:center;gap:8px;padding:0 14px;height:100%;font-size:13.5px;color:var(--ia-muted);position:relative;border-right:1px solid var(--ia-line-soft);max-width:200px;white-space:nowrap;cursor:pointer;transition:color .2s ease, background .2s ease;}
   .ia-tab:hover{color:var(--ia-ink);}
   .ia-tab .icon{width:16px;height:16px;color:var(--ia-muted-2);}
   /* label truncates to a single line with an ellipsis; the icon + close stay fixed (flex:none) */

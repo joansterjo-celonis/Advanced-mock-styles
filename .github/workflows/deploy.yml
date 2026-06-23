@@ -34,10 +34,13 @@ jobs:
 
       - name: Build
         run: npm run build
-        # Feedback-feature config (set these as repo secrets; empty = feature stays disabled).
+        # Feedback + theme-library config. Set VITE_JSONBIN_KEY as a repo secret;
+        # without it the feature falls back to per-browser localStorage (no sharing).
+        # Bin ids have safe defaults in code; override via secrets/vars only if needed.
         env:
-          VITE_FEEDBACK_ENDPOINT: ${{ secrets.VITE_FEEDBACK_ENDPOINT }}
-          VITE_FEEDBACK_PROJECT: ${{ secrets.VITE_FEEDBACK_PROJECT }}
+          VITE_JSONBIN_KEY: ${{ secrets.VITE_JSONBIN_KEY }}
+          VITE_JSONBIN_FEEDBACK_BIN: ${{ secrets.VITE_JSONBIN_FEEDBACK_BIN }}
+          VITE_JSONBIN_THEMES_BIN: ${{ secrets.VITE_JSONBIN_THEMES_BIN }}
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3

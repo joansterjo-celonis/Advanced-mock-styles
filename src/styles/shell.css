@@ -117,9 +117,10 @@
   .view { display:none; } .view.active { display:block; }
 
   /* floating settings */
-  .fab { position:fixed; right:26px; bottom:26px; width:48px; height:48px; border-radius:14px; background:#17181c; color:#fff; border:0; cursor:pointer; display:grid; place-items:center; box-shadow:0 14px 30px -10px rgba(0,0,0,0.6); z-index:50; transition:transform .15s; }
+  .fab { position:fixed; right:26px; bottom:26px; width:40px; height:40px; border-radius:12px; background:#17181c; color:#fff; border:0; cursor:pointer; display:grid; place-items:center; box-shadow:0 14px 30px -10px rgba(0,0,0,0.6); z-index:50; transition:transform .15s; }
   .fab:hover { transform:translateY(-2px); }
-  .proto { position:fixed; right:26px; bottom:86px; width:324px; max-height:calc(100vh - 120px); overflow-y:auto; overscroll-behavior:contain; background:#121317; border:1px solid rgba(255,255,255,0.12); border-radius:16px; padding:16px; z-index:50; box-shadow:0 30px 70px -20px rgba(0,0,0,0.7); display:none; }
+  .fab svg { width:17px; height:17px; }
+  .proto { position:fixed; right:26px; bottom:76px; width:324px; max-height:calc(100vh - 120px); overflow-y:auto; overscroll-behavior:contain; background:#121317; border:1px solid rgba(255,255,255,0.12); border-radius:16px; padding:16px; z-index:50; box-shadow:0 30px 70px -20px rgba(0,0,0,0.7); display:none; }
   .proto.open { display:block; }
   .proto::-webkit-scrollbar { width:9px; } .proto::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.16); border-radius:8px; } .proto::-webkit-scrollbar-track { background:transparent; }
   [data-mode="light"] .proto::-webkit-scrollbar-thumb { background:rgba(0,0,0,0.18); }
