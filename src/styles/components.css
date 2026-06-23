@@ -510,9 +510,11 @@
    row flex item (min-width:0 already set) so visible can't restore an auto min-HEIGHT here; the
    view-switch slide is still clipped by .content.fx-scene, so nothing leaks sideways. */
 [data-layout="flowy"] #main{background:var(--chrome-0);overflow:visible;}
-/* Flowy: the rail terminates above the 40px statusbar (10px margins top+bottom + 40px bar = 60px)
-   so its rounded bottom corners and drop shadow read over the bottom bar instead of being clipped behind it. */
-[data-layout="flowy"] #l1{margin:10px 8px;border:1px solid var(--chrome-border);border-radius:calc(var(--r-surface) + 4px);height:calc(100vh - 60px);box-shadow:0 22px 48px -26px rgba(0,0,0,.45);overflow:hidden;}
+/* Flowy: the rail terminates above the 40px statusbar with a tight 6px bottom gap that MUST match
+   the card's bottom gap (#content padding-bottom) so the rail and view end on exactly the same line.
+   10px top + 6px bottom + 40px bar = 56px reserved. Its rounded bottom corners + drop shadow read
+   over the bottom bar instead of being clipped behind it. */
+[data-layout="flowy"] #l1{margin:10px 8px 6px;border:1px solid var(--chrome-border);border-radius:calc(var(--r-surface) + 4px);height:calc(100vh - 56px);box-shadow:0 22px 48px -26px rgba(0,0,0,.45);overflow:hidden;}
 /* Flowy: the canvas is a frame the inner .view card fills and scrolls INSIDE (so the asset
    header can pin INSIDE the card). #main's gray is the single backdrop behind it.
    overflow:visible (NOT hidden) so the card's drop shadow bleeds DOWN over the transparent
@@ -524,8 +526,9 @@
 [data-layout="flowy"] .ctx-canvas{background:transparent;margin:0;overflow:visible;min-height:0;}
 /* the inner .view card is the single frame (its radius follows the corner-radius knob), fills the
    canvas height, and a tight content gap floats it on the gray. The bottom gap is small because the
-   statusbar below is transparent (nothing scrolls under it) — the card's drop shadow reads through it. */
-[data-layout="flowy"] .ctx-canvas #content{padding:10px 12px 8px;height:100%;}
+   statusbar below is transparent (nothing scrolls under it) — the card's drop shadow reads through it.
+   padding-bottom MUST match the #l1 rail's bottom margin (6px) so card + rail end on the same line. */
+[data-layout="flowy"] .ctx-canvas #content{padding:10px 12px 6px;height:100%;}
 [data-layout="flowy"] .tabbar{background:transparent;border-bottom-color:var(--chrome-border-soft);}
 [data-layout="flowy"].l0-open #l0,[data-layout="flowy"].pinned #l0{margin:10px;border-radius:18px;height:calc(100vh - 20px);border:1px solid var(--chrome-border);box-shadow:0 28px 70px -28px rgba(0,0,0,.55);}
 [data-layout="flowy"] .home-topbar{padding-top:8px;}
