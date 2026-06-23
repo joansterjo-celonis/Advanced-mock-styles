@@ -709,19 +709,21 @@ import { getThemes, syncOwnerThemes, getAuthor, ensureAuthor, isCloudEnabled } f
       var _ap=document.querySelector('.app')||document.getElementById('app'); if(_ap)_ap.style.borderRadius=CONFIG.appRadius+'px';
       bSp.onclick=()=>setDensity('spacious'); bCo.onclick=()=>setDensity('compact'); bDn.onclick=()=>setDensity('dense'); setDensity('spacious');
 
-      const bLayDef=document.getElementById('layout-default'), bLayFlow=document.getElementById('layout-flowy');
-      function setLayout(m){ if(m==='flowy')root.setAttribute('data-layout','flowy'); else root.removeAttribute('data-layout');
-        bLayDef.classList.toggle('on',m!=='flowy'); bLayFlow.classList.toggle('on',m==='flowy');
-        // Flowy is its own complete surface treatment — Shell separation conflicts with it, so hide it and reset to default
+      const bLayDef=document.getElementById('layout-default'), bLayFlow=document.getElementById('layout-flowy'), bLayFlap=document.getElementById('layout-flap');
+      // Flap inherits Flowy's surface treatment + a fused active-tab "flap" — both are "layered" modes.
+      function setLayout(m){ if(m==='flowy')root.setAttribute('data-layout','flowy'); else if(m==='flap')root.setAttribute('data-layout','flap'); else root.removeAttribute('data-layout');
+        bLayDef.classList.toggle('on',m!=='flowy'&&m!=='flap'); bLayFlow.classList.toggle('on',m==='flowy'); if(bLayFlap) bLayFlap.classList.toggle('on',m==='flap');
+        // Flowy/Flap are complete surface treatments — Shell separation conflicts with them, so hide it and reset to tinted
+        const layered=(m==='flowy'||m==='flap');
         const sg=document.getElementById('shell-sep-grp');
-        if(m==='flowy'){
+        if(layered){
           root.removeAttribute('data-shell');
           ['shell-seamless','shell-contrast'].forEach(id=>document.getElementById(id)&&document.getElementById(id).classList.remove('on'));
           const st=document.getElementById('shell-tinted'); if(st) st.classList.add('on');
           if(sg) sg.style.display='none';
         } else if(sg){ sg.style.display=''; }
         renderChartsIn(document.querySelector('.view.active')); }
-      bLayDef.onclick=()=>setLayout('default'); bLayFlow.onclick=()=>setLayout('flowy');
+      bLayDef.onclick=()=>setLayout('default'); bLayFlow.onclick=()=>setLayout('flowy'); if(bLayFlap) bLayFlap.onclick=()=>setLayout('flap');
 
       /* tab transition: default vs slide-fade */
       const bFxFlat=document.getElementById('tabfx-flat'), bFxSlide=document.getElementById('tabfx-slide');
@@ -793,7 +795,7 @@ import { getThemes, syncOwnerThemes, getAuthor, ensureAuthor, isCloudEnabled } f
         'mode-light':()=>setMode('light'), 'mode-dark':()=>setMode('dark'),
         'theme-mono':()=>setTheme('mono'), 'theme-color':()=>setTheme('color'), 'theme-vivid':()=>setTheme('vivid'),
         'density-spacious':()=>setDensity('spacious'), 'density-compact':()=>setDensity('compact'), 'density-dense':()=>setDensity('dense'),
-        'layout-default':()=>setLayout('default'), 'layout-flowy':()=>setLayout('flowy'),
+        'layout-default':()=>setLayout('default'), 'layout-flowy':()=>setLayout('flowy'), 'layout-flap':()=>setLayout('flap'),
         'tabfx-flat':()=>setTabFx('flat'), 'tabfx-slide':()=>setTabFx('slide'),
         'c3d-default':()=>setCharts3d('default'), 'c3d-iso':()=>setCharts3d('iso'), 'c3d-glass':()=>setCharts3d('glass'),
         'kf-sans':()=>setKpiFont('sans'), 'kf-mono':()=>setKpiFont('mono'), 'kf-serif':()=>setKpiFont('serif'),

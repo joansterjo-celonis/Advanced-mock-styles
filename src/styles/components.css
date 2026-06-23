@@ -514,12 +514,12 @@
    #main and reads through the transparent statusbar (a later, transparent sibling). #main is a
    row flex item (min-width:0 already set) so visible can't restore an auto min-HEIGHT here; the
    view-switch slide is still clipped by .content.fx-scene, so nothing leaks sideways. */
-[data-layout="flowy"] #main{background:var(--chrome-0);overflow:visible;}
+:is([data-layout="flowy"],[data-layout="flap"]) #main{background:var(--chrome-0);overflow:visible;}
 /* Flowy: the rail terminates above the 40px statusbar with a tight 6px bottom gap that MUST match
    the card's bottom gap (#content padding-bottom) so the rail and view end on exactly the same line.
    10px top + 6px bottom + 40px bar = 56px reserved. Its rounded bottom corners + drop shadow read
    over the bottom bar instead of being clipped behind it. */
-[data-layout="flowy"] #l1{margin:10px 8px 6px;border:1px solid var(--chrome-border);border-radius:calc(var(--r-surface) + 4px);height:calc(100vh - 56px);box-shadow:0 22px 48px -26px rgba(0,0,0,.45);overflow:hidden;}
+:is([data-layout="flowy"],[data-layout="flap"]) #l1{margin:10px 8px 6px;border:1px solid var(--chrome-border);border-radius:calc(var(--r-surface) + 4px);height:calc(100vh - 56px);box-shadow:0 22px 48px -26px rgba(0,0,0,.45);overflow:hidden;}
 /* Flowy: the canvas is a frame the inner .view card fills and scrolls INSIDE (so the asset
    header can pin INSIDE the card). #main's gray is the single backdrop behind it.
    overflow:visible (NOT hidden) so the card's drop shadow bleeds DOWN over the transparent
@@ -528,19 +528,19 @@
    overflow-y:auto pane), and the view-switch slide is clipped separately by .content.fx-scene
    (charts.css), so nothing leaks sideways during transitions. min-height:0 keeps this flex
    item from claiming its content's intrinsic height. */
-[data-layout="flowy"] .ctx-canvas{background:transparent;margin:0;overflow:visible;min-height:0;}
+:is([data-layout="flowy"],[data-layout="flap"]) .ctx-canvas{background:transparent;margin:0;overflow:visible;min-height:0;}
 /* the inner .view card is the single frame (its radius follows the corner-radius knob), fills the
    canvas height, and a tight content gap floats it on the gray. The bottom gap is small because the
    statusbar below is transparent (nothing scrolls under it) — the card's drop shadow reads through it.
    padding-bottom MUST match the #l1 rail's bottom margin (6px) so card + rail end on the same line. */
-[data-layout="flowy"] .ctx-canvas #content{padding:10px 12px 6px;height:100%;}
-[data-layout="flowy"] .tabbar{background:transparent;border-bottom-color:var(--chrome-border-soft);}
-[data-layout="flowy"].l0-open #l0,[data-layout="flowy"].pinned #l0{margin:10px;border-radius:18px;height:calc(100vh - 20px);border:1px solid var(--chrome-border);box-shadow:0 28px 70px -28px rgba(0,0,0,.55);}
-[data-layout="flowy"] .home-topbar{padding-top:8px;}
+:is([data-layout="flowy"],[data-layout="flap"]) .ctx-canvas #content{padding:10px 12px 6px;height:100%;}
+:is([data-layout="flowy"],[data-layout="flap"]) .tabbar{background:transparent;border-bottom-color:var(--chrome-border-soft);}
+:is([data-layout="flowy"],[data-layout="flap"]).l0-open #l0,:is([data-layout="flowy"],[data-layout="flap"]).pinned #l0{margin:10px;border-radius:18px;height:calc(100vh - 20px);border:1px solid var(--chrome-border);box-shadow:0 28px 70px -28px rgba(0,0,0,.55);}
+:is([data-layout="flowy"],[data-layout="flap"]) .home-topbar{padding-top:8px;}
 /* Flowy: the statusbar recedes into the canvas gray instead of reading as a glass pane on top — drop the chrome-glass blur so the floating card's shadow stays visible through it */
-[data-layout="flowy"] .statusbar{background:transparent;border-top:0;-webkit-backdrop-filter:none;backdrop-filter:none;box-shadow:none;}
+:is([data-layout="flowy"],[data-layout="flap"]) .statusbar{background:transparent;border-top:0;-webkit-backdrop-filter:none;backdrop-filter:none;box-shadow:none;}
 /* the chrome glass blur lives on ::before now — drop it too so the flowy bar fully recedes into the canvas */
-[data-layout="flowy"] .statusbar::before{display:none;}
+:is([data-layout="flowy"],[data-layout="flap"]) .statusbar::before{display:none;}
 /* Flowy: .ctx-body carries an inline overflow:hidden that clips the floating #l1 rail's drop
    shadow exactly at the statusbar's top edge, so the rail looks cut off above the bar. Let the
    shadow bleed down in flowy (still clipped at the route's bottom). Because the flowy statusbar
@@ -550,6 +550,11 @@
    min-height to its content (the rail's tall calc(100vh-60px)), over-constraining the #route-context
    column so the 40px statusbar is pushed past the clipped fold (disappears) and the canvas scroll
    height is starved. Resetting it to 0 keeps the shadow bleed without breaking the layout. */
-[data-layout="flowy"] .ctx-body{overflow:visible !important;min-height:0;}
+:is([data-layout="flowy"],[data-layout="flap"]) .ctx-body{overflow:visible !important;min-height:0;}
+/* Flap delta: drop the tab→card top gap so the flap tab meets the card with no seam.
+   (Lives here, after the shared Flowy #content rule, so it wins on source order — this
+   file loads after shell.css.) The active tab in .tabbar fuses into this card; see the
+   Flap block in shell.css. */
+[data-layout="flap"] .ctx-canvas #content{padding-top:0;}
 /* Tab style knob ([data-tabs]) for .ia-tab is unified with .subtab/.ep-tab in
    shell.css ("Tab style knob — ONE place styling every interactive tab"). */

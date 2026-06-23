@@ -182,40 +182,46 @@
      and the per-strip divider (the bar's own border-bottom is the divider now). */
   .asset-bar .subtabs { margin-bottom:0; border-bottom:0; }
 
-  /* one continuous gray overarches everything — internal panels go transparent */
-  [data-layout="flowy"] .sidebar,
-  [data-layout="flowy"] .main,
-  [data-layout="flowy"] .content,
-  [data-layout="flowy"] .tabbar { background: transparent; }
-  [data-layout="flowy"] .sidebar { border-right: 0; }
-  [data-layout="flowy"] .tabbar { border-bottom: 0; }
+  /* one continuous gray overarches everything — internal panels go transparent.
+     Flap is a Flowy variant: every shared surface rule below targets BOTH layouts
+     via :is(), so Flap inherits Flowy's treatment and only its deltas live separately. */
+  :is([data-layout="flowy"],[data-layout="flap"]) .sidebar,
+  :is([data-layout="flowy"],[data-layout="flap"]) .main,
+  :is([data-layout="flowy"],[data-layout="flap"]) .content,
+  :is([data-layout="flowy"],[data-layout="flap"]) .tabbar { background: transparent; }
+  :is([data-layout="flowy"],[data-layout="flap"]) .sidebar { border-right: 0; }
+  :is([data-layout="flowy"],[data-layout="flap"]) .tabbar { border-bottom: 0; }
 
   /* The .view card is a self-contained scroll pane: it fills the canvas viewport (see
      components.css [data-layout=flowy] .ctx-canvas / #content) and scrolls INTERNALLY, so its
      asset header pins to the card's top edge (charts scroll under it) and the card always
      reaches the bottom of the canvas even when the content is short. */
-  [data-layout="flowy"] .content { display:flex; flex-direction:column; min-height:0; }
-  [data-layout="flowy"] .view.active {
-    --flowy-surface:#08090b; background: var(--flowy-surface); border: 1px solid var(--border); border-radius: calc(var(--r-surface) + 8px);
+  :is([data-layout="flowy"],[data-layout="flap"]) .content { display:flex; flex-direction:column; min-height:0; }
+  /* --flowy-surface is hoisted to #route-context (below) so the flap tab — which lives in the
+     .tabbar, outside .view.active — can read the same surface colour as the card it fuses into. */
+  :is([data-layout="flowy"],[data-layout="flap"]) .view.active {
+    background: var(--flowy-surface); border: 1px solid var(--border); border-radius: calc(var(--r-surface) + 8px);
     flex:1 1 auto; min-height:0; overflow-y:auto; overflow-x:hidden;
     padding: 0 20px 16px;        /* no top padding — the sticky header supplies the top inset */
     box-shadow: 0 28px 60px -30px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.05);
   }
-  [data-mode="light"][data-layout="flowy"] .view.active {
-    --flowy-surface:#ffffff; border-color: rgba(0,0,0,0.07);
+  :is([data-layout="flowy"],[data-layout="flap"]) #route-context { --flowy-surface:#08090b; }
+  [data-mode="light"]:is([data-layout="flowy"],[data-layout="flap"]) #route-context { --flowy-surface:#ffffff; }
+  [data-mode="light"]:is([data-layout="flowy"],[data-layout="flap"]) .view.active {
+    border-color: rgba(0,0,0,0.07);
     box-shadow: 0 24px 52px -28px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.9);
   }
 
   /* header + tabs flush inside the body, separated by a divider. The sticky bar inherits
      --flowy-surface from the card so it stays seamless at rest and occludes content once
      pinned. Its top padding gives the title room since the card itself carries none. */
-  [data-layout="flowy"] .asset-bar { background:var(--flowy-surface); border:0; border-radius:0; box-shadow:none; padding:16px 2px 6px; margin-bottom:16px; border-bottom:1px solid var(--border); }
-  [data-layout="flowy"] .asset-bar .dash-head { margin-bottom: 6px; }
-  [data-layout="flowy"] .asset-bar .subtabs { margin: 0; border-bottom: 0; }
+  :is([data-layout="flowy"],[data-layout="flap"]) .asset-bar { background:var(--flowy-surface); border:0; border-radius:0; box-shadow:none; padding:16px 2px 6px; margin-bottom:16px; border-bottom:1px solid var(--border); }
+  :is([data-layout="flowy"],[data-layout="flap"]) .asset-bar .dash-head { margin-bottom: 6px; }
+  :is([data-layout="flowy"],[data-layout="flap"]) .asset-bar .subtabs { margin: 0; border-bottom: 0; }
 
   /* cards float as layers on the body */
-  [data-layout="flowy"] .bento { gap: calc(var(--gap) + 2px); }
-  [data-layout="flowy"] .card { border-radius: calc(var(--radius) + 3px); }
+  :is([data-layout="flowy"],[data-layout="flap"]) .bento { gap: calc(var(--gap) + 2px); }
+  :is([data-layout="flowy"],[data-layout="flap"]) .card { border-radius: calc(var(--radius) + 3px); }
 
   /* ===== slider-driven corner radii =====
      Interactive radii unique to the shell chrome. The shared control + surface lists
@@ -287,15 +293,73 @@
   /* ----- Flowy: the filled/color active tab floats as a centered chip (top/bottom
      inset) rather than filling the whole 54px bar, and the inter-tab dividers are
      shortened to a centered hairline instead of running edge-to-edge. ----- */
+  /* The floating chip follows the Control-radius knob (the Default layout's
+     full-height tabs are a different look and stay square — see message). */
   [data-layout="flowy"][data-tabs="filled"] #route-context .ia-tab.active,
   [data-layout="flowy"][data-tabs="color"] #route-context .ia-tab.active {
-    align-self:center; height:auto; padding:7px 14px; margin:0 2px; border-radius:9px;
+    align-self:center; height:auto; padding:7px 14px; margin:0 2px; border-radius:var(--r-interactive);
   }
   [data-layout="flowy"] #route-context .ia-tab { border-right:0; }
   [data-layout="flowy"] #route-context .ia-tab + .ia-tab::before {
     content:""; position:absolute; left:0; top:50%; transform:translateY(-50%);
     width:1px; height:20px; background:var(--ia-line-soft); pointer-events:none;
   }
+
+  /* ===== Flap: a tighter Flowy variant where the active asset tab fuses into the
+     content card as one continuous folder-tab "flap" surface. The top asset tabs IGNORE
+     the [data-tabs] knob here (this block sits after the knob block, so its same-specificity
+     rules win the cascade), and non-active tabs are plain text with no dividers.
+     The flap rules target EVERY active tab (`.ia-tab.active`), so in a side-by-side split BOTH
+     paired tabs render as flaps (the secondary also carries .sv-tab-split, but is styled the
+     same); split-view.js then anchors each flap horizontally over its own pane. */
+  [data-layout="flap"]{ --flap-gap:7px; --flap-flare:16px; }
+  [data-layout="flap"] #route-context .ia-tab { border-right:0; padding:0 12px; }
+  /* The tab strip scrolls (overflow-x:auto), so the FIRST/last flap's outer flare — which
+     extends one flare-width past the tab — would be sheared off flush at the strip edge.
+     Reserve a flare-width of padding on each end so those end flares paint in full; the cove
+     fills that space, so it reads as the flap sweeping into the strip edge, not an empty gap. */
+  [data-layout="flap"] #route-context .tabs { padding-left:var(--flap-flare); padding-right:var(--flap-flare); }
+
+  /* The active tab IS the flap. Its own box is transparent: ::before paints the rounded-top
+     body (inset from the bar top by --flap-gap so it doesn't run to the very top), and ::after
+     paints the two concave base flares that fan the narrow tab out into the full-width card —
+     so the tab and the card below read as one seamless sheet. Content is lifted above both. */
+  [data-layout="flap"] #route-context .ia-tab.active{
+    background:transparent; color:var(--ia-ink); z-index:2;
+  }
+  [data-layout="flap"] #route-context .ia-tab.active > *{ position:relative; z-index:1; }
+  [data-layout="flap"] #route-context .ia-tab.active .icon{ color:var(--brand-fixed); }
+  /* flap body: rounded top corners (ride the surface-radius knob), starts below the bar top */
+  [data-layout="flap"] #route-context .ia-tab.active::before{
+    content:""; position:absolute; left:0; right:0; top:var(--flap-gap); bottom:0; z-index:0;
+    background:var(--flowy-surface);
+    border-radius: var(--r-surface) var(--r-surface) 0 0;
+  }
+  /* flap base: two CONCAVE corner flares (inverse-radius "coves") that fan the narrow tab out
+     into the full-width card below, so tab + card read as one folder sheet. Built from a
+     surface-coloured strip that extends --flap-flare past each side; each outer end is masked
+     by a radial gradient that is TRANSPARENT inside a quarter-circle at its top-outer corner —
+     leaving the lower-inner cove filled, which curves the tab's side down into the card. The
+     centre strip (the tab's own width) stays solid so the flap body continues straight down. */
+  [data-layout="flap"] #route-context .ia-tab.active::after{
+    content:""; display:block; position:absolute; bottom:0; z-index:0;   /* display:block re-enables the flare: the [data-tabs=filled/color] knob above sets ::after{display:none} at equal specificity, so without this the flares vanish in the default tab mode */
+    left:calc(var(--flap-flare) * -1); right:calc(var(--flap-flare) * -1); height:var(--flap-flare);
+    background:var(--flowy-surface);
+    -webkit-mask:
+      radial-gradient(circle var(--flap-flare) at 0 0, transparent calc(var(--flap-flare) - 0.5px), #000 var(--flap-flare)) left top / var(--flap-flare) 100% no-repeat,
+      radial-gradient(circle var(--flap-flare) at 100% 0, transparent calc(var(--flap-flare) - 0.5px), #000 var(--flap-flare)) right top / var(--flap-flare) 100% no-repeat,
+      linear-gradient(#000,#000) center / calc(100% - var(--flap-flare) * 2) 100% no-repeat;
+    mask:
+      radial-gradient(circle var(--flap-flare) at 0 0, transparent calc(var(--flap-flare) - 0.5px), #000 var(--flap-flare)) left top / var(--flap-flare) 100% no-repeat,
+      radial-gradient(circle var(--flap-flare) at 100% 0, transparent calc(var(--flap-flare) - 0.5px), #000 var(--flap-flare)) right top / var(--flap-flare) 100% no-repeat,
+      linear-gradient(#000,#000) center / calc(100% - var(--flap-flare) * 2) 100% no-repeat;
+  }
+
+  /* The card keeps ALL FOUR corners on the surface-radius knob (this restores the knob
+     response that the squared-off top had lost). Only the TOP BORDER + inset top highlight
+     are dropped so the flap meets the card edge with no seam line. */
+  [data-layout="flap"] .view.active { border-top:0; box-shadow:0 28px 60px -30px rgba(0,0,0,0.7); }
+  [data-mode="light"][data-layout="flap"] .view.active { box-shadow:0 24px 52px -28px rgba(0,0,0,0.18); }
 
   /* =====================================================================
      Colour picker field — shared by the Palette "Single hue", Brand colour

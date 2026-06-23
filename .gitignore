@@ -1,6 +1,11 @@
 node_modules/
 dist/
 
+# Playwright (split-view e2e)
+test-results/
+playwright-report/
+.playwright/
+
 # Local env (never commit secrets; use GitHub Actions secrets in CI)
 .env
 .env.*

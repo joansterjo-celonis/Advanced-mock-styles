@@ -93,9 +93,9 @@
   @keyframes epIn { from { opacity:0; transform:translateY(12px) scale(.97); } to { opacity:1; transform:none; } }
   .ep-card { transition:border-color .15s,color .15s,transform .14s,box-shadow .15s; }
   .ep-card:hover { transform:translateY(-3px); box-shadow:0 10px 20px -12px rgba(0,0,0,0.5); }
-  /* flowy: panel sits inside the white asset block */
-  [data-layout="flowy"] .edit-panel { top:12px; right:12px; bottom:12px; border:1px solid var(--border); border-radius:14px; background:var(--card); }
-  [data-edit="on"][data-layout="flowy"] .view.active { padding-right:340px; }
+  /* flowy/flap: panel sits inside the white asset block */
+  :is([data-layout="flowy"],[data-layout="flap"]) .edit-panel { top:12px; right:12px; bottom:12px; border:1px solid var(--border); border-radius:14px; background:var(--card); }
+  [data-edit="on"]:is([data-layout="flowy"],[data-layout="flap"]) .view.active { padding-right:340px; }
 
   .ep-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
   .ep-tabs { display:flex; gap:6px; }
@@ -123,7 +123,7 @@
   .ep-search,.tabcolor-row input[type="color"],.huecolor-row input[type="color"],.hue-reset,.fab { border-radius: var(--r-interactive); }
   .toggle,.tabcolor-row,.huecolor-row { border-radius: calc(var(--r-interactive) + 3px); }
   .card,.proto,.pnode,.gctrl,.pbar,.ep-card { border-radius: var(--r-surface); }
-  [data-layout="flowy"] .edit-panel { border-radius: var(--r-surface); }
+  :is([data-layout="flowy"],[data-layout="flap"]) .edit-panel { border-radius: var(--r-surface); }
   /* .asset-bar is a full-bleed pinned band in every layout — never rounded (rounded
      corners would expose the white cards scrolling under the gray bar). */
 
@@ -198,7 +198,7 @@
   .ocpm-view .subtabs::-webkit-scrollbar { display:none; }
   .ocpm-view .subtab { flex:none; white-space:nowrap; }
   .ocpm-tabnav { position:sticky; right:0; display:flex; align-items:center; gap:2px; padding-left:6px; margin-left:auto; background:var(--ia-canvas); }
-  [data-layout="flowy"] .ocpm-view .ocpm-tabnav { background:var(--flowy-surface); }
+  :is([data-layout="flowy"],[data-layout="flap"]) .ocpm-view .ocpm-tabnav { background:var(--flowy-surface); }
   .ocpm-tnav { width:24px; height:26px; display:grid; place-items:center; border:0; background:transparent; color:var(--text-dim); cursor:pointer; border-radius:6px; }
   .ocpm-tnav:hover { background:var(--card-strong); color:var(--text); }
 

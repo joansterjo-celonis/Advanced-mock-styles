@@ -99,6 +99,9 @@
   }
   /* active tab icon is pinned to --brand-fixed (near-black) — flip it to chrome ink on the dark bar */
   [data-mode="light"][data-shell="contrast"] #main .ia-tab.active .icon { color: var(--chrome-text); }
+  /* the active tab's close (×) tracks the label + icon onto chrome ink too, so it doesn't read
+     faint (--chrome-faint) against the dark contrast bar while the text/icon are bright. */
+  [data-mode="light"][data-shell="contrast"] #main .ia-tab.active .ia-x { color: var(--chrome-text); }
 
   /* ---- D · Composition ---- (scoped to .bento so custom-grid views stay intact)
      .bento[data-fixed] OPTS OUT: bespoke, pixel-faithful views keep their hand-designed grid.
@@ -142,7 +145,7 @@
      pill past the bar (and under the open edit panel). Blend the sticky nav with the pill track. */
   [data-tabmodel="seg"] .ocpm-view .subtabs { display:flex; align-self:stretch; max-width:100%; }
   [data-tabmodel="seg"] .ocpm-view .ocpm-tabnav,
-  [data-layout="flowy"][data-tabmodel="seg"] .ocpm-view .ocpm-tabnav { background:var(--track); }
+  :is([data-layout="flowy"],[data-layout="flap"])[data-tabmodel="seg"] .ocpm-view .ocpm-tabnav { background:var(--track); }
 
   /* ---- Tables ---- (row TREATMENT only; spacing is owned by the Density knob) */
   /* Lined: zebra striping for scannability */

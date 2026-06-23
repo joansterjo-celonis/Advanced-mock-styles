@@ -97,9 +97,9 @@
   .content.fx-scene { overflow:hidden !important; }
   /* both views overlap and slide; faces are positioned to the content padding box by JS */
   .view.fx-face { position:absolute !important; overflow:hidden !important; background:var(--chrome-0); will-change:transform,opacity; z-index:2; }
-  /* Flowy: faces emulate the elevated rounded card the view already is */
-  [data-layout="flowy"] .view.fx-face { background:#08090b; border:1px solid var(--border); border-radius:calc(var(--r-surface) + 8px); box-shadow:0 40px 90px -40px rgba(0,0,0,0.55); }
-  [data-mode="light"][data-layout="flowy"] .view.fx-face { background:#fff; border-color:rgba(0,0,0,0.07); box-shadow:0 30px 64px -34px rgba(0,0,0,0.22); }
+  /* Flowy/Flap: faces emulate the elevated rounded card the view already is */
+  :is([data-layout="flowy"],[data-layout="flap"]) .view.fx-face { background:#08090b; border:1px solid var(--border); border-radius:calc(var(--r-surface) + 8px); box-shadow:0 40px 90px -40px rgba(0,0,0,0.55); }
+  [data-mode="light"]:is([data-layout="flowy"],[data-layout="flap"]) .view.fx-face { background:#fff; border-color:rgba(0,0,0,0.07); box-shadow:0 30px 64px -34px rgba(0,0,0,0.22); }
 
   /* ============================================================
      DIRECTION KNOBS (A–G) — leadership review follow-up

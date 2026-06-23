@@ -1,0 +1,126 @@
+/* =====================================================================
+   SIDE-BY-SIDE ASSET SPLIT — self-contained, removable layer.
+   --------------------------------------------------------------------
+   Nothing here applies until split-view.js mounts a .sv-split container
+   inside .ctx-canvas and flags the canvas with .sv-host. The single-view
+   code paths (one .view.active) are never altered: the LEFT pane keeps
+   .active so every existing query still resolves to it, and the RIGHT
+   pane is shown purely via the .sv-pane rule below.
+   ===================================================================== */
+
+/* The split frame fills the canvas viewport and hides the normal stack. */
+.ctx-canvas.sv-host { overflow: hidden; }
+.ctx-canvas.sv-host > #content { display: none; }
+
+.sv-split {
+  position: absolute; inset: 0; z-index: 4;
+  display: grid;
+  grid-template-columns: var(--sv-left, calc(50% - 5px)) 10px 1fr;
+  align-items: stretch;
+}
+
+/* Each pane is a clipped grid cell; its .view becomes the scroll container
+   so the sticky .asset-bar pins to the pane top in BOTH layouts (mirrors
+   Flowy's "the view is the scroller" model). min-width:0 lets a pane shrink
+   below its content's intrinsic width instead of blowing out the grid. */
+.sv-pane { position: relative; min-width: 0; display: flex; overflow: hidden; }
+.sv-pane > .view {
+  display: block;
+  flex: 1 1 auto; min-width: 0; height: 100%;
+  overflow-y: auto; overflow-x: hidden;
+  padding: 0 16px 24px;            /* top inset comes from the sticky .asset-bar */
+}
+
+/* ---- Divider = the resize anchor in the middle gap ---- */
+.sv-divider { position: relative; cursor: col-resize; align-self: stretch; }
+.sv-divider::before {                 /* hairline seam */
+  content: ""; position: absolute; top: 0; bottom: 0; left: 50%;
+  transform: translateX(-50%); width: 1px; background: var(--border);
+}
+.sv-divider::after {                  /* grab grip */
+  content: ""; position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 4px; height: 46px; border-radius: 3px;
+  background: var(--border-strong); opacity: .55;
+  transition: opacity .15s ease, background .15s ease;
+}
+.sv-divider:hover::after,
+.sv-split.sv-dragging .sv-divider::after { opacity: 1; background: var(--text-faint); }
+
+/* Close-split affordance (keeps the active/left pane). Appears on hover. */
+.sv-divider-close {
+  position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
+  width: 22px; height: 22px; border-radius: 50%;
+  display: grid; place-items: center;
+  background: var(--ia-panel); border: 1px solid var(--border);
+  color: var(--ia-muted); cursor: pointer; z-index: 2;
+  opacity: 0; transition: opacity .15s ease, color .15s ease, background .15s ease;
+  box-shadow: var(--ia-shadow-pop, 0 8px 20px -10px rgba(0,0,0,.5));
+}
+.sv-divider:hover .sv-divider-close,
+.sv-divider-close:focus-visible { opacity: 1; }
+.sv-divider-close:hover { color: var(--ia-ink); background: var(--ia-hover); }
+.sv-divider-close svg { width: 12px; height: 12px; }
+
+/* While dragging: kill text selection + force the resize cursor everywhere. */
+body.sv-dragging, body.sv-dragging * { cursor: col-resize !important; user-select: none !important; }
+
+/* ---- Per-pane sticky-header shadow ----
+   The shared handler toggles .ctx-canvas.is-scrolled off whichever pane fires
+   last, which would wrongly shadow the LEFT header. Neutralize that here and
+   drive each header from its own pane's scroll marker (set in split-view.js). */
+.ctx-canvas.sv-host.is-scrolled .view.active .asset-bar::after { opacity: 0; }
+.sv-pane > .view.sv-scrolled .asset-bar::after { opacity: 1; }
+
+/* ---- Composition knob parity for the RIGHT (non-active) pane ----
+   knobs.css scopes these to .view.active only; mirror them onto .sv-pane > .view
+   so both panes compose identically. (The left/active pane already matches the
+   originals; re-stating it here is harmless — identical values.) */
+[data-composition="uniform"] .sv-pane > .view .bento:not([data-fixed]) > .card:not(.kpi-strip):not(.span-12) { grid-column: span 6; }
+[data-composition="hero"] .sv-pane > .view .bento:not([data-fixed]) > .card[data-hero] { grid-column: span 8; }
+[data-composition="hero"] .sv-pane > .view .bento:not([data-fixed]) > .card:not([data-hero]):not(.kpi-strip):not(.span-12) { grid-column: span 4; }
+[data-composition="bento"] .sv-pane > .view .bento:not([data-fixed]) .card[data-hero],
+[data-composition="hero"] .sv-pane > .view .bento:not([data-fixed]) .card[data-hero] {
+  border-color: var(--border-strong);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.10), 0 30px 60px -26px rgba(0,0,0,0.6), 0 0 0 1px var(--border-strong);
+}
+
+/* ===== Flowy / Flap: each pane reads as the framed white/ink scroll card =====
+   Flap inherits the same split-pane cards as Flowy. In Flap, BOTH paired tabs render as flaps
+   (shell.css now targets every .ia-tab.active) and split-view.js anchors each flap horizontally
+   over its own pane; the flap-specific connect rules below fuse each flap into its pane. */
+:is([data-layout="flowy"],[data-layout="flap"]) .sv-split { padding: 10px 12px 6px; }
+:is([data-layout="flowy"],[data-layout="flap"]) .sv-pane > .view {
+  --flowy-surface: #08090b;
+  background: var(--flowy-surface);
+  border: 1px solid var(--border);
+  border-radius: calc(var(--r-surface) + 8px);
+  padding: 0 20px 16px;
+  box-shadow: 0 28px 60px -30px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.05);
+}
+[data-mode="light"]:is([data-layout="flowy"],[data-layout="flap"]) .sv-pane > .view {
+  --flowy-surface: #ffffff; border-color: rgba(0,0,0,0.07);
+  box-shadow: 0 24px 52px -28px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.9);
+}
+
+/* ---- Flap split connect: fuse each flap into its pane ----
+   Drop the split frame's TOP padding so the panes meet the tab bar (the flap bottom then
+   lands on the pane top), and drop each pane's top border + inset top highlight so the flap
+   meets the pane with no seam (mirrors single-view .view.active). Panes keep their corner
+   radius on the surface knob; the flap's flares connect to the flat top edge between corners. */
+[data-layout="flap"] .sv-split { padding-top: 0; }
+[data-layout="flap"] .sv-pane > .view { border-top: 0; box-shadow: 0 28px 60px -30px rgba(0,0,0,0.7); }
+[data-mode="light"][data-layout="flap"] .sv-pane > .view { box-shadow: 0 24px 52px -28px rgba(0,0,0,0.18); }
+
+/* Inert flex spacer split-view.js inserts into the tab strip to push the secondary flap over
+   the right pane. No fill, no pointer target — it only reserves horizontal space. */
+.sv-flap-spacer { flex: 0 0 auto; align-self: stretch; pointer-events: none; }
+
+/* ---- Tab pairing ----
+   The secondary tab is given the real .active class in split-view.js so it
+   inherits the exact tab-style knob (filled / underline / color) and reads
+   identically to the open tab. .sv-tab-split is only a JS cleanup marker — it
+   intentionally carries NO styling of its own, so the two tabs never diverge. */
+
+/* ---- Right-click tab menu (reuses .ctxmenu .glass surface from components.css) ---- */
+#sv-tab-ctxmenu .ctxmenu-item .icon { width: 17px; height: 17px; }
