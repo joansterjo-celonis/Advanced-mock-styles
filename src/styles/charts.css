@@ -58,8 +58,8 @@
   .rq-table-head .t { font-size:13px; font-weight:600; color:var(--text); }
   .rq-table-scroll { flex:1; min-height:0; overflow:auto; }
   table.rq-table { width:100%; border-collapse:collapse; font-size:13px; }
+  /* --bg-1 keeps the sticky header opaque AND inversion-aware (no hardcoded light bg). */
   table.rq-table thead th { position:sticky; top:0; z-index:1; text-align:left; padding:11px 16px; font-size:12px; font-weight:500; color:var(--text-dim); background:var(--bg-1); border-bottom:1px solid var(--border); white-space:nowrap; }
-  [data-mode="light"] table.rq-table thead th { background:#fff; }
   table.rq-table th.num, table.rq-table td.num { text-align:left; font-variant-numeric:tabular-nums; }
   table.rq-table tbody td { padding:10px 16px; border-bottom:1px solid var(--border); color:var(--text); white-space:nowrap; }
   table.rq-table tbody tr { cursor:pointer; transition:background .12s; }

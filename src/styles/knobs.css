@@ -176,9 +176,11 @@
   /* The flip must also reach the chart palette + the accent button, but only where they're
      mode-dependent: Mono greys are tied to the mode (white-ish on dark, dark-grey on light),
      so an inverted card borrows the OPPOSITE mode's greys. Mono + Vivid accents inherit the
-     mode ink, so they're flipped too. (Color theme's chart palette + accent read on either
-     surface, so they're deliberately left untouched.) Flat charts + the button consume these
-     via live var() and recolour instantly; 3D/baked charts are re-rendered from the card in JS. */
+     mode ink, so they're flipped too. (Color theme — static or custom hue — has a near
+     mode-independent palette, so its inverted flip can't be expressed as a static CSS swap;
+     applyCardInvert() in engine.js paints the opposite-surface palette inline on the card.)
+     Flat charts + the button consume these via live var() and recolour instantly; 3D/baked
+     charts are re-rendered from the card in JS. */
   /* dark app → inverted card is a LIGHT surface: use light-mono greys + dark accent */
   html:not([data-mode="light"]):not([data-theme]) .card[data-inverted] {
     --cstop-1a:#2b2b2b; --cstop-1b:#555; --cstop-2a:#6a6a6a; --cstop-3a:#a0a0a0; --cstop-4a:#cfcfcf;

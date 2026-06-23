@@ -113,9 +113,11 @@
 
   /* data table */
   .data-table { width:100%; border-collapse:collapse; font-size:13px; }
-  .data-table thead th { text-align:left; padding:10px 14px; color:var(--text-dim); font-weight:500; font-size:12px; background:rgba(255,255,255,0.03); position:sticky; top:0; border-bottom:1px solid var(--border); }
+  /* sticky header background MUST be opaque (to occlude rows scrolling under it) AND track the
+     card surface so right-click Invert flips it too — --bg-1 does both (no hardcoded light bg). */
+  .data-table thead th { text-align:left; padding:10px 14px; color:var(--text-dim); font-weight:500; font-size:12px; background:var(--bg-1); position:sticky; top:0; border-bottom:1px solid var(--border); }
   .data-table tbody td { padding:9px 14px; border-bottom:1px solid var(--border); color:var(--text); }
-  .data-table tbody tr:hover { background:rgba(255,255,255,0.04); }
+  .data-table tbody tr:hover { background:var(--card-strong); }   /* token = inversion-aware, matches .ptable/.rq-table */
   .table-card { padding:0; overflow:hidden; }
   .table-scroll { max-height:240px; overflow-y:auto; }
   .table-head-row { display:flex; align-items:center; justify-content:space-between; padding:10px 14px; border-bottom:1px solid var(--border); }

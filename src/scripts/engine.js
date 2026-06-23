@@ -273,8 +273,18 @@ import { getThemes, syncOwnerThemes, getAuthor, ensureAuthor, isCloudEnabled } f
         const mx=20, svg=E('svg',{viewBox:`0 0 ${W} ${H}`,preserveAspectRatio:'none'});
         [0,5,10,15,20].forEach(g=>{ const y=padT+innerH*(1-g/mx); svg.appendChild(E('line',{x1:padL,x2:padL+innerW,y1:y,y2:y,stroke:'rgba(128,128,128,0.16)','stroke-dasharray':'2 4'})); svg.appendChild(svgText(E,padL-4,y+3,g+'sec.','end')); });
         const step=innerW/(n-1); let d=''; pts.forEach((v,i)=>{ const x=padL+step*i, y=padT+innerH-(v/mx)*innerH; d+=(i?'L':'M')+x.toFixed(1)+','+y.toFixed(1); });
-        const col=cssVar('--cstop-1a', wrap);
-        const lp=E('path',{d:d,fill:'none','stroke-width':2,'stroke-linecap':'round','stroke-linejoin':'round','vector-effect':'non-scaling-stroke'}); lp.style.stroke=col; svg.appendChild(lp);
+        const m3=chartMode(wrap), col=cssVar('--cstop-1a', wrap);   // honor the Charts-look (iso / glass) knob
+        if(m3){
+          let defs=svg.querySelector('defs'); if(!defs){ defs=E('defs',{}); svg.insertBefore(defs,svg.firstChild);} const gid='dl'+nextGid();
+          const lg=E('linearGradient',{id:gid,x1:0,y1:0,x2:0,y2:1}); lg.appendChild(E('stop',{offset:'0%','stop-color':rgbaC(col,0.5)})); lg.appendChild(E('stop',{offset:'100%','stop-color':rgbaC(col,0.04)})); defs.appendChild(lg);
+          svg.appendChild(E('path',{d:d+`L${(padL+innerW).toFixed(1)},${(padT+innerH).toFixed(1)}L${padL.toFixed(1)},${(padT+innerH).toFixed(1)}Z`,fill:`url(#${gid})`}));   // frosted area fill
+          if(m3==='iso'){ const lip=E('path',{d:d,fill:'none','stroke-width':6,'stroke-linecap':'round','stroke-linejoin':'round',transform:'translate(0 4)'}); lip.style.stroke=shadeC(col,-0.3); lip.style.opacity='0.85'; svg.appendChild(lip); }  // depth lip
+          const lp=E('path',{d:d,fill:'none','stroke-width':2.6,'stroke-linecap':'round','stroke-linejoin':'round'}); lp.style.stroke=col; svg.appendChild(lp);
+          const gloss=E('path',{d:d,fill:'none','stroke-width':1,'stroke-linecap':'round',transform:'translate(0 -1.4)'}); gloss.style.stroke='rgba(255,255,255,0.55)'; svg.appendChild(gloss);
+          pts.forEach((v,i)=>{ if(i%3)return; const x=padL+step*i,y=padT+innerH-(v/mx)*innerH; sphere(svg,+x.toFixed(1),+y.toFixed(1),3,col); });
+        } else {
+          const lp=E('path',{d:d,fill:'none','stroke-width':2,'stroke-linecap':'round','stroke-linejoin':'round','vector-effect':'non-scaling-stroke'}); lp.style.stroke=col; svg.appendChild(lp);
+        }
         const dates=['2024-12-30','2025-03-31','2025-06-30','2025-09-29','2025-12-29','2026-06-30'];
         dates.forEach((dt,i)=>{ const x=padL+innerW*(i/(dates.length-1)); svg.appendChild(svgText(E,x,padT+innerH+12,dt,i===0?'start':(i===dates.length-1?'end':'middle'))); });
         for(let i=0;i<n;i++){ const cxp=padL+step*i, x0=Math.max(padL,cxp-step/2), x1=Math.min(padL+innerW,cxp+step/2); hitRect(svg,x0,padT,x1-x0,innerH,'duration',[['seconds',pts[i].toFixed(1)]]); }
@@ -310,15 +320,28 @@ import { getThemes, syncOwnerThemes, getAuthor, ensureAuthor, isCloudEnabled } f
         const cx=W*0.40, cy=H/2, r=Math.min(W*0.34,H*0.42);
         const svg=E('svg',{viewBox:`0 0 ${W} ${H}`});
         const pal=['--cstop-1b','--legend-3','--cstop-1a','--legend-2','--legend-1','--cstop-3a'];
-        let a0=-Math.PI/2;
-        segs.forEach((sg,i)=>{ const frac=Math.max(0,sg[1])/100, a1=a0+frac*2*Math.PI;
-          const x0=cx+r*Math.cos(a0), y0=cy+r*Math.sin(a0), x1=cx+r*Math.cos(a1), y1=cy+r*Math.sin(a1), large=frac>0.5?1:0;
-          const cvar=sg[2]||pal[i%pal.length];
-          const p=E('path',{d:`M${cx.toFixed(1)},${cy.toFixed(1)} L${x0.toFixed(1)},${y0.toFixed(1)} A${r.toFixed(1)},${r.toFixed(1)} 0 ${large} 1 ${x1.toFixed(1)},${y1.toFixed(1)} Z`}); p.style.fill='var('+cvar+')'; svg.appendChild(p);
-          const am=(a0+a1)/2, lx=cx+(r+10)*Math.cos(am), ly=cy+(r+10)*Math.sin(am);
+        const m3=chartMode(wrap);                                  // honor the Charts-look (iso / glass) knob
+        const yS = m3==='iso'?0.6 : m3==='glass'?0.92 : 1;          // vertical squash → tilted cylinder
+        const depth = m3==='iso'?Math.max(7,r*0.2) : m3==='glass'?4 : 0;   // extrusion thickness
+        const cvarOf=i=>segs[i][2]||pal[i%pal.length];
+        const arcs=[]; let ang=-Math.PI/2; segs.forEach(sg=>{ const a1=ang+Math.max(0,sg[1])/100*2*Math.PI; arcs.push([ang,a1]); ang=a1; });
+        function slicePath(a0,a1,yy){ const large=(a1-a0)>Math.PI?1:0; const x0=cx+r*Math.cos(a0), y0=yy+r*Math.sin(a0)*yS, x1=cx+r*Math.cos(a1), y1=yy+r*Math.sin(a1)*yS;
+          return `M${cx.toFixed(1)},${yy.toFixed(1)} L${x0.toFixed(1)},${y0.toFixed(1)} A${r.toFixed(1)},${(r*yS).toFixed(1)} 0 ${large} 1 ${x1.toFixed(1)},${y1.toFixed(1)} Z`; }
+        const body = m3 ? E('g',{filter:`url(#${ensureSoftShadow(svg, m3==='iso'?7:4, m3==='iso'?6:5, 0.3)})`}) : svg;
+        // 1) extruded side wall (darker copies stacked behind the top faces)
+        if(m3){ for(let k=Math.round(depth);k>=1;k--){ segs.forEach((sg,i)=>{ const p=E('path',{d:slicePath(arcs[i][0],arcs[i][1],cy+k)}); p.style.fill=shadeC(cssVar(cvarOf(i),wrap),-0.34); body.appendChild(p); }); } }
+        // 2) top faces (+ tooltips)
+        segs.forEach((sg,i)=>{ const p=E('path',{d:slicePath(arcs[i][0],arcs[i][1],cy)}); p.style.fill='var('+cvarOf(i)+')'; if(m3==='glass')p.style.fillOpacity='0.94'; p.style.stroke='var(--bg-1)'; p.style.strokeWidth='1'; body.appendChild(p);
+          setTip(p,String(sg[0]),[['Share',sg[1].toFixed(2)+'%']]); });
+        // 3) glassy sheen across the top face
+        if(m3){ let pd=svg.querySelector('defs'); if(!pd){ pd=E('defs',{}); svg.insertBefore(pd,svg.firstChild);} const sid='pgSheen'+nextGid();
+          const rg=E('radialGradient',{id:sid,cx:'50%',cy:'30%',r:'68%'}); rg.appendChild(E('stop',{offset:'0%','stop-color':'rgba(255,255,255,0.28)'})); rg.appendChild(E('stop',{offset:'55%','stop-color':'rgba(255,255,255,0.06)'})); rg.appendChild(E('stop',{offset:'100%','stop-color':'rgba(255,255,255,0)'})); pd.appendChild(rg);
+          body.appendChild(E('ellipse',{cx:cx,cy:cy,rx:(r*0.99).toFixed(1),ry:(r*yS*0.99).toFixed(1),fill:`url(#${sid})`,'pointer-events':'none'})); }
+        if(m3) svg.appendChild(body);
+        // 4) leader labels (offset below the extrusion in 3D)
+        segs.forEach((sg,i)=>{ const am=(arcs[i][0]+arcs[i][1])/2, lx=cx+(r+10)*Math.cos(am), ly=cy+(r+10)*Math.sin(am)*yS+(m3?depth*0.5:0);
           const nm=String(sg[0]); const lab=sg[1].toFixed(2)+'% '+(nm.length>9?nm.slice(0,8)+'\u2026':nm);
-          const t=svgText(E,lx,ly+3,lab,Math.cos(am)<0?'end':'start'); t.setAttribute('font-size','8'); svg.appendChild(t);
-          setTip(p,nm,[['Share',sg[1].toFixed(2)+'%']]); a0=a1; });
+          const t=svgText(E,lx,ly+3,lab,Math.cos(am)<0?'end':'start'); t.setAttribute('font-size','8'); svg.appendChild(t); });
         wrap.appendChild(svg);
       }
       /* ---- Generic stacked bars over a category axis (seeded; data-series='[{"c":"--var","w":weight},…]')
@@ -616,17 +639,45 @@ import { getThemes, syncOwnerThemes, getAuthor, ensureAuthor, isCloudEnabled } f
       bColor.onclick=()=>setTheme('color'); bMono.onclick=()=>setTheme('mono'); bVivid.onclick=()=>setTheme('vivid');
       const hueInput=document.getElementById('theme-hue-input'), hueReset=document.getElementById('theme-hue-reset');
       function rgbToHue(hex){ const n=parseInt(hex.slice(1),16); let r=(n>>16&255)/255,g=(n>>8&255)/255,b=(n&255)/255; const mx=Math.max(r,g,b),mn=Math.min(r,g,b),d=mx-mn; let h=0; if(d){ if(mx===r)h=((g-b)/d)%6; else if(mx===g)h=(b-r)/d+2; else h=(r-g)/d+4; h*=60; if(h<0)h+=360; } return h; }
+      // Chart palette for a given surface mode — shared by the hue knob AND per-card Invert.
+      function huePalette(h, light){
+        const S=52, Ls= light?[20,34,44,56,64,74,82,89]:[98,84,76,60,52,40,30,20], hsl=l=>'hsl('+h+' '+S+'% '+l+'%)';
+        return { '--cstop-1a':hsl(Ls[0]),'--cstop-1b':hsl(Ls[1]),'--cstop-2a':hsl(Ls[2]),'--cstop-3a':hsl(Ls[4]),'--cstop-4a':hsl(Ls[6]),
+          '--area-top':'hsl('+h+' '+S+'% '+(light?46:62)+'% / '+(light?0.2:0.42)+')','--area-mid':'hsl('+h+' '+S+'% 50% / 0)','--line-2':hsl(light?42:70),
+          '--legend-1':hsl(Ls[0]),'--legend-2':hsl(Ls[3]),'--legend-3':hsl(Ls[4]),'--legend-4':hsl(Ls[6]),'--success':hsl(light?42:64) }; }
+      const INV_PROPS=['--cstop-1a','--cstop-1b','--cstop-2a','--cstop-3a','--cstop-4a','--area-top','--area-mid','--line-2','--legend-1','--legend-2','--legend-3','--legend-4','--success'];
+      // Static Color theme palettes per surface (mirror tokens.css) — used when no custom hue is set.
+      const COLOR_DARK={'--cstop-1a':'#a78bfa','--cstop-1b':'#7c3aed','--cstop-2a':'#6ee7b7','--cstop-3a':'#fde68a','--cstop-4a':'#f9a8d4','--area-top':'rgba(139,140,248,0.5)','--area-mid':'rgba(139,140,248,0)','--line-2':'#34d399','--legend-1':'#a78bfa','--legend-2':'#34d399','--legend-3':'#fbbf24','--legend-4':'#f472b6','--success':'#34d399'};
+      const COLOR_LIGHT={'--cstop-1a':'#a78bfa','--cstop-1b':'#7c3aed','--cstop-2a':'#6ee7b7','--cstop-3a':'#fde68a','--cstop-4a':'#f9a8d4','--area-top':'rgba(124,58,237,0.42)','--area-mid':'rgba(124,58,237,0)','--line-2':'#7c3aed','--legend-1':'#7c3aed','--legend-2':'#10b981','--legend-3':'#f59e0b','--legend-4':'#ec4899','--success':'#10b981'};
+      // The chart palette an INVERTED Color card should adopt: it flips to the opposite surface, so
+      // it borrows the OPPOSITE mode's palette (recomputed on the opposite ramp for custom hue).
+      // Mono/Vivid return null — their flip is handled in CSS, so there's nothing to set per-card.
+      function colorInvPalette(){ if(root.getAttribute('data-theme')!=='color') return null; const light=root.getAttribute('data-mode')==='light';
+        return customHue ? huePalette(Math.round(rgbToHue(customHue)), !light) : (light?COLOR_DARK:COLOR_LIGHT); }
+      const INV_ACCENT=['--accent','--accent-text'];
+      // The accent (primary-button) colour an INVERTED Color card should adopt: recomputed for the
+      // OPPOSITE surface so .btn-validate & friends flip like they do in Mono/Vivid (those use CSS).
+      // Honors a custom brand colour by re-running the brand legibility logic for the flipped surface.
+      function colorInvAccent(){ if(root.getAttribute('data-theme')!=='color') return null;
+        const targetLight = root.getAttribute('data-mode')!=='light';   // inverted card = the OPPOSITE of the app mode
+        if(brandColor!=null){ const dark=!targetLight, c=(dark && brandLum(brandColor)<0.22)?shadeC(brandColor,0.82):brandColor;
+          return { '--accent':c, '--accent-text': brandLum(c)>0.5?'#15161a':'#ffffff' }; }
+        return { '--accent':'#8b8cf8', '--accent-text': targetLight?'#ffffff':'#15161a' }; }
+      // Re-sync the inline accent on every inverted card (accent-only, no chart re-render) — used when
+      // the brand colour changes via its picker, which doesn't go through applyHue.
+      function refreshInvertedAccent(){ document.querySelectorAll('.card[data-inverted]').forEach(card=>{
+        INV_ACCENT.forEach(p=>card.style.removeProperty(p)); const acc=colorInvAccent();
+        if(acc){ for(const k in acc) card.style.setProperty(k,acc[k]); } }); }
+      // Apply (on) or clear the inverted-card chart palette + accent as inline vars, then re-render charts.
+      function applyCardInvert(card, on){ INV_PROPS.concat(INV_ACCENT).forEach(p=>card.style.removeProperty(p));
+        if(on){ const map=colorInvPalette(); if(map){ for(const k in map) card.style.setProperty(k,map[k]); }
+          const acc=colorInvAccent(); if(acc){ for(const k in acc) card.style.setProperty(k,acc[k]); } }
+        card.querySelectorAll('[data-chart]').forEach(buildChart); }
       function applyHue(){
-        const props=['--cstop-1a','--cstop-1b','--cstop-2a','--cstop-3a','--cstop-4a','--area-top','--area-mid','--line-2','--legend-1','--legend-2','--legend-3','--legend-4','--success'];
-        if(!(root.getAttribute('data-theme')==='color' && customHue)){ props.forEach(p=>root.style.removeProperty(p)); renderChartsIn(document.querySelector('.view.active')); return; }
-        const h=Math.round(rgbToHue(customHue)), light=root.getAttribute('data-mode')==='light', S=52;
-        const Ls= light?[20,34,44,56,64,74,82,89]:[98,84,76,60,52,40,30,20];
-        const hsl=l=>'hsl('+h+' '+S+'% '+l+'%)', set=(k,v)=>root.style.setProperty(k,v);
-        set('--cstop-1a',hsl(Ls[0]));set('--cstop-1b',hsl(Ls[1]));set('--cstop-2a',hsl(Ls[2]));set('--cstop-3a',hsl(Ls[4]));set('--cstop-4a',hsl(Ls[6]));
-        set('--area-top','hsl('+h+' '+S+'% '+(light?46:62)+'% / '+(light?0.2:0.42)+')'); set('--area-mid','hsl('+h+' '+S+'% 50% / 0)');
-        set('--line-2',hsl(light?42:70));
-        set('--legend-1',hsl(Ls[0]));set('--legend-2',hsl(Ls[3]));set('--legend-3',hsl(Ls[4]));set('--legend-4',hsl(Ls[6]));
-        set('--success',hsl(light?42:64));
+        const active = root.getAttribute('data-theme')==='color' && customHue;
+        if(!active){ INV_PROPS.forEach(p=>root.style.removeProperty(p)); }
+        else { const map=huePalette(Math.round(rgbToHue(customHue)), root.getAttribute('data-mode')==='light'); for(const k in map) root.style.setProperty(k,map[k]); }
+        document.querySelectorAll('.card[data-inverted]').forEach(c=>applyCardInvert(c,true));   // keep inverted cards synced to the new palette / mode
         renderChartsIn(document.querySelector('.view.active'));
       }
       hueInput.addEventListener('input',()=>{ customHue=hueInput.value; applyHue(); });
@@ -637,13 +688,14 @@ import { getThemes, syncOwnerThemes, getAuthor, ensureAuthor, isCloudEnabled } f
       function brandLum(hex){ const {r,g,b}=toRGB(hex); const f=c=>{c/=255; return c<=0.03928?c/12.92:Math.pow((c+0.055)/1.055,2.4);}; return 0.2126*f(r)+0.7152*f(g)+0.0722*f(b); }
       function applyBrand(){
         // Mono is monochrome — the accent auto-resolves to ink, so a custom brand never applies (its knob is hidden too).
-        if(brandColor==null || !root.getAttribute('data-theme')){ root.style.removeProperty('--accent'); root.style.removeProperty('--accent-text'); return; }
+        if(brandColor==null || !root.getAttribute('data-theme')){ root.style.removeProperty('--accent'); root.style.removeProperty('--accent-text'); refreshInvertedAccent(); return; }
         const dark = root.getAttribute('data-mode')!=='light';
         // a near-black brand would disappear on the dark shell — lighten it toward white for legibility.
         const c = (dark && brandLum(brandColor) < 0.22) ? shadeC(brandColor, 0.82) : brandColor;
         root.style.setProperty('--accent', c);
         // legible label colour on accent-filled buttons (white on dark accents, ink on light ones)
         root.style.setProperty('--accent-text', brandLum(c) > 0.5 ? '#15161a' : '#ffffff');
+        refreshInvertedAccent();   // inverted Color cards recompute their accent for the flipped surface
       }
       if(brandInput) brandInput.addEventListener('input',()=>{ brandColor=brandInput.value; applyBrand(); });
       if(brandReset) brandReset.addEventListener('click',()=>{ brandColor=null; if(brandInput) brandInput.value='#000000'; applyBrand(); });
@@ -1055,8 +1107,9 @@ import { getThemes, syncOwnerThemes, getAuthor, ensureAuthor, isCloudEnabled } f
             const inv=card.hasAttribute('data-inverted');
             menu.appendChild(item(inv?'Reset surface':'Invert surface', inv, ()=>{
               if(inv) card.removeAttribute('data-inverted'); else card.setAttribute('data-inverted','');
-              // re-render so baked colours (3D bars, pie slices, value labels) pick up the card's flipped tokens
-              card.querySelectorAll('[data-chart]').forEach(buildChart);
+              // flip the card's chart palette to the opposite surface (Color / custom hue) + re-render so
+              // flat AND baked colours (3D bars, pie slices, donut, value labels) follow the flipped surface
+              applyCardInvert(card, !inv);
             }));
           }
           menu.classList.add('open');
