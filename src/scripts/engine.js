@@ -2,7 +2,7 @@ import { PALETTE, rng, series, N, RQ_BARS, RQ_PIE, RQ_CASES, RQ_ACTIVITIES } fro
 import { E, svgText, chartMode, cssVar, toRGB, shadeC, rgbaC, resolveColor, ensureSoftShadow, sheenGrad, sphere, bar3dV, bar3dH, nextGid } from './effects.js';
 import { icons, hydrateIcons } from './icons.js';
 import { buildAssetHeader } from './components/asset-header.js';
-import { getThemes, syncOwnerThemes, getAuthor, ensureAuthor } from './cloud-store.js';
+import { getThemes, syncOwnerThemes, getAuthor, ensureAuthor, isCloudEnabled } from './cloud-store.js';
 
       const root = document.documentElement;
       // Swap static [data-icon] placeholders for real <svg> before anything reads
@@ -1137,6 +1137,26 @@ import { getThemes, syncOwnerThemes, getAuthor, ensureAuthor } from './cloud-sto
           persist(); render(); refresh();
         }
 
+        /* One-time upload of presets that were created before cloud sync existed.
+           Runs after the shared pull so we never clobber the server. */
+        const MIGRATED_KEY='sb-presets-synced-v1';
+        async function migrateOnce(){
+          try{
+            if(!isCloudEnabled()) return;                 // nothing to push to; retry once configured
+            if(localStorage.getItem(MIGRATED_KEY)) return;
+            const localUser = store.presets.filter(p=>!DEFAULT_IDS.has(p.id));
+            if(!localUser.length){ localStorage.setItem(MIGRATED_KEY,'1'); return; } // nothing to migrate
+            const me = await ensureAuthor();              // prompt once for a name (skipped if already set)
+            if(!me) return;                               // dismissed — try again next boot
+            let changed=false;
+            store.presets.forEach(p=>{ if(!DEFAULT_IDS.has(p.id) && !p.owner){ p.owner=me; changed=true; } });
+            if(changed) persist();
+            const ok = await syncOwnerThemes(me, myPresets(me));
+            if(ok){ localStorage.setItem(MIGRATED_KEY,'1'); render();
+              console.info('[themes] uploaded', myPresets(me).length, 'preset(s) to the shared library'); }
+          }catch(e){ console.error('[themes] migration failed', e); }
+        }
+
         function render(){
           sel.innerHTML='';
           const me=getAuthor();
@@ -1198,8 +1218,9 @@ import { getThemes, syncOwnerThemes, getAuthor, ensureAuthor } from './cloud-sto
         window.IA = window.IA || {};
         window.IA.captureState = captureState;
         window.IA.applyState = applyState;
-        // Pull the shared theme library in (read-only path — no name prompt on boot).
-        getThemes().then(mergeShared).catch(()=>{});
+        // Pull the shared theme library in (read-only path — no name prompt on boot),
+        // then upload any locally-made presets that predate cloud sync (one-time).
+        getThemes().then(mergeShared).catch(()=>{}).finally(migrateOnce);
       })();
 
 export { selectView, renderChartsIn, runCounters, registerView, getViews };
