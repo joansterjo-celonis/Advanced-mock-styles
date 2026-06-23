@@ -153,7 +153,7 @@
   .hpill .hp-k { font-size:9px; text-transform:uppercase; letter-spacing:.05em; color:var(--text-faint); white-space:nowrap; }
   .hpill .hp-v { display:flex; align-items:center; gap:6px; font-size:12px; font-weight:600; color:var(--text); white-space:nowrap; max-width:170px; overflow:hidden; text-overflow:ellipsis; }
   .hpill .hp-v svg { color:var(--text-dim); flex:none; }
-  .hpill .hp-av { width:16px; height:16px; border-radius:50%; background:linear-gradient(135deg,#6366f1,#a855f7); flex:none; }
+  .hpill .hp-av { width:16px; height:16px; border-radius:50%; background:linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 55%, var(--text))); flex:none; }
 
   /* KPI strip: long PQL labels truncate on one line like the source */
   .tr-view .kpi { padding:13px 15px; }
@@ -241,7 +241,7 @@
 
   /* "List of CS projects" failed/empty widget */
   .ocpm-errstate { display:flex; align-items:center; justify-content:center; min-height:150px; }
-  .ocpm-errdot { width:22px; height:22px; border-radius:50%; background:#e5484d; color:#fff; font-size:14px; font-weight:700; display:grid; place-items:center; box-shadow:0 4px 12px -3px rgba(229,72,77,0.6); }
+  .ocpm-errdot { width:22px; height:22px; border-radius:50%; background:var(--danger); color:#fff; font-size:14px; font-weight:700; display:grid; place-items:center; box-shadow:0 4px 12px -3px color-mix(in srgb, var(--danger) 60%, transparent); }
 
   /* ===== OCPM adoption view — activity breakdown (filter-panel variant) ===== */
   /* body = the dashboard + a right filter drawer toggled from the header's panel button.

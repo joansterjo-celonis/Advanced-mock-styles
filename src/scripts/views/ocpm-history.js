@@ -33,8 +33,8 @@ const leg = items => '<div class="ocpm2-legend">' + items.map(it =>
   typeof it === 'string' ? '<span>' + it + '</span>'
   : '<span class="ocpm2-legitem"><span class="ocpm2-swatch" style="background:var(' + it.c + ')"></span>' + it.t + '</span>').join('') + '</div>';
 
-/* ---- KPI cell ---- */
-const kpi = (k, v) => '<div class="ocpm-kpi"><div class="k">' + k + '</div><div class="v">' + v + '</div></div>';
+/* ---- KPI cell ---- (numeral carries data-counter so it count-ups + obeys the KPI weight/font knob) */
+const kpi = (k, v) => '<div class="ocpm-kpi"><div class="k">' + k + '</div><div class="v" data-counter data-to="' + String(v).replace(/[^0-9.-]/g, '') + '">0</div></div>';
 
 /* ---- table ---- */
 function table(cols, rows, numIdx) {
@@ -61,7 +61,7 @@ const ttSeries = [
 ];
 
 /* ---- maturity-funnel layout (deterministic 12-col bento) ---- */
-const dashboard = '<div class="bento ocpm3-content" data-shpanel="hist">' +
+const dashboard = '<div class="bento ocpm3-content" data-shpanel="hist" data-fixed>' +
 
   /* row 1 — title banner + last load */
   '<section class="card span-9" data-card>' +
@@ -78,7 +78,7 @@ const dashboard = '<div class="bento ocpm3-content" data-shpanel="hist">' +
     '<span class="gloss"></span><span class="rim"></span>' +
     '<div class="card-title" style="font-size:12px;">Filter current cohort ( &quot;first dev.&quot; betwee&hellip;</div>' +
     '<div class="metric-sub" style="margin-top:8px;">% of accounts reaching production &lt;= 90 &hellip;</div>' +
-    '<div class="ocpm3-bigpct">71%</div>' +
+    '<div class="ocpm3-bigpct" data-counter data-to="71" data-suffix="%">0</div>' +
     '<div class="ocpm3-cohort-foot">' +
       '<div class="ocpm2-subm"><span class="lbl">accounts reaching &quot;producti&hellip;</span><b>17 accou&hellip;</b></div>' +
       '<div class="ocpm2-subm"><span class="lbl">accounts in cohort (denomin&hellip;</span><b>24 accou&hellip;</b></div>' +

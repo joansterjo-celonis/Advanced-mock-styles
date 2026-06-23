@@ -75,22 +75,22 @@ const filterBar =
   '</div></aside>';
 
 /* ---- dashboard rows ---- */
-const dashboard = '<div class="bento ocpm2-content" data-acpanel="ab">' +
+const dashboard = '<div class="bento ocpm2-content" data-acpanel="ab" data-fixed>' +
 
   /* row 1 */
   '<section class="card span-6" data-card>' +
     '<span class="gloss"></span><span class="rim"></span>' +
     '<div class="card-title" style="font-size:13px;">account average: amount of hours having tracking events (not: total time) <span class="i" tabindex="0" data-tip="Average hours of tracking-event activity per account, by service.">i</span></div>' +
     '<div class="ocpm2-avgkpis">' +
-      '<div class="ocpm-kpi"><div class="k">Data Integration</div><div class="ocpm2-bignum">1,062 h</div></div>' +
-      '<div class="ocpm-kpi"><div class="k">Studio</div><div class="ocpm2-bignum">9,245 h</div></div>' +
-      '<div class="ocpm-kpi"><div class="k">PQL</div><div class="ocpm2-bignum">7,227 h</div></div>' +
-      '<div class="ocpm-kpi"><div class="k">Objects &amp; Events</div><div class="ocpm2-bignum">145 h</div></div>' +
+      '<div class="ocpm-kpi"><div class="k">Data Integration</div><div class="ocpm2-bignum" data-counter data-to="1062" data-suffix=" h">0</div></div>' +
+      '<div class="ocpm-kpi"><div class="k">Studio</div><div class="ocpm2-bignum" data-counter data-to="9245" data-suffix=" h">0</div></div>' +
+      '<div class="ocpm-kpi"><div class="k">PQL</div><div class="ocpm2-bignum" data-counter data-to="7227" data-suffix=" h">0</div></div>' +
+      '<div class="ocpm-kpi"><div class="k">Objects &amp; Events</div><div class="ocpm2-bignum" data-counter data-to="145" data-suffix=" h">0</div></div>' +
     '</div>' +
   '</section>' +
   '<section class="card span-2" data-card>' +
     '<span class="gloss"></span><span class="rim"></span>' +
-    '<div class="ocpm-kpi" style="border:0;padding:0;"><div class="k"># accounts</div><div class="ocpm2-bignum" style="font-size:44px;margin-top:6px;">789</div></div>' +
+    '<div class="ocpm-kpi" style="border:0;padding:0;"><div class="k"># accounts</div><div class="ocpm2-bignum" style="font-size:44px;margin-top:6px;" data-counter data-to="789">0</div></div>' +
   '</section>' +
   '<section class="card span-4" data-card>' +
     '<span class="gloss"></span><span class="rim"></span>' +
@@ -107,14 +107,14 @@ const dashboard = '<div class="bento ocpm2-content" data-acpanel="ab">' +
   '<section class="card span-3" data-card>' +
     '<span class="gloss"></span><span class="rim"></span>' +
     '<div class="card-title" style="font-size:12px;color:var(--text-dim);">eligible &rarr; DI activity started (first 10 % fin&hellip;</div>' +
-    '<div class="ocpm2-days">51 days</div>' +
+    '<div class="ocpm2-days" data-counter data-to="51" data-suffix=" days">0</div>' +
     '<div class="ocpm2-subm"><span class="lbl">eligible &rarr; 10 % OCPM DI acti&hellip;</span><b>66 days</b></div>' +
     '<div class="ocpm2-subm"><span class="lbl">eligible &rarr; 10 % CC DI activity</span><b>54 days</b></div>' +
   '</section>' +
   '<section class="card span-3" data-card>' +
     '<span class="gloss"></span><span class="rim"></span>' +
     '<div class="card-title" style="font-size:12px;color:var(--text-dim);">eligible &rarr; PQL activity started (first 10 % f&hellip;</div>' +
-    '<div class="ocpm2-days">88 days</div>' +
+    '<div class="ocpm2-days" data-counter data-to="88" data-suffix=" days">0</div>' +
     '<div class="ocpm2-subm"><span class="lbl">eligible &rarr; 10 % OCPM PQL a&hellip;</span><b>142 days</b></div>' +
     '<div class="ocpm2-subm"><span class="lbl">eligible &rarr; 10 % CC PQL activ&hellip;</span><b>81 days</b></div>' +
   '</section>' +

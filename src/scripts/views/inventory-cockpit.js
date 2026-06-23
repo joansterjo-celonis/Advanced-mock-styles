@@ -27,9 +27,13 @@ const ageBadge = '<span class="ocpm-age">' + s(13, 1.8, '<circle cx="12" cy="12"
 
 /* ---- KPI cells (these replace the screenshot's redacted pills) ---- */
 const kpi = (k, v, o) => { o = o || {};
+  // Hero (big) numerals count-up; the number lives in an inner [data-counter] span so the
+  // animation never wipes the trailing unit span. Smaller numerals stay static but still
+  // inherit the KPI weight/font knob via the .inv-kpi .v selector.
+  const num = o.big ? '<span data-counter data-to="' + String(v).replace(/[^0-9.-]/g, '') + '">0</span>' : v;
   return '<div class="inv-kpi' + (o.big ? ' big' : '') + '">' +
     '<div class="k">' + k + '</div>' +
-    '<div class="v">' + v + (o.u ? '<span class="u">' + o.u + '</span>' : '') + '</div>' +
+    '<div class="v">' + num + (o.u ? '<span class="u">' + o.u + '</span>' : '') + '</div>' +
     (o.det ? '<span class="det">Details' + DET + '</span>' : '') +
   '</div>';
 };
@@ -135,7 +139,7 @@ const disposal = smallSection('thereof Disposal', 'Cockpit',
   [{ c: '--cstop-1a', t: 'Disposal [k]' }, { c: '--cstop-3a', t: 'Disposal [m€]' }],
   kpi('# Batches Marked for Disposal', '64'));
 
-const dashboard = '<div class="bento inv-content" data-invpanel="overview">' +
+const dashboard = '<div class="bento inv-content" data-invpanel="overview" data-fixed>' +
   topRow + totalStock + unrestricted + qStock + blocked + rework + disposal + '</div>';
 
 const emptyPanel = '<div class="bento inv-empty" data-invpanel="empty" style="display:none;">' +

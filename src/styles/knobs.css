@@ -5,7 +5,7 @@
   [data-mode="light"][data-coloruse="calm"] .card { border-color:rgba(0,0,0,0.06); }
   [data-coloruse="calm"] .card:hover { box-shadow:none !important; border-color:var(--border-strong); }
   [data-coloruse="calm"] .card.is-active { box-shadow:none !important; border-color:var(--border-strong); }
-  [data-coloruse="calm"] .card .gloss, [data-coloruse="calm"] .card .rim, [data-coloruse="calm"] .card .sheen { display:none !important; }
+  [data-coloruse="calm"] .card .gloss, [data-coloruse="calm"] .card .rim, [data-coloruse="calm"] .card .sheen, [data-coloruse="calm"] .card::before { display:none !important; }
   [data-coloruse="calm"] .content { background-image:none; }      /* drop the ambient light wash */
   /* quiet chrome — neutral status pills / chips / legend swatches; colour reserved for genuine alerts */
   [data-coloruse="calm"] .otd-pill { background:var(--card-strong) !important; color:var(--text-dim) !important; }
@@ -19,7 +19,7 @@
   [data-mode="light"][data-coloruse="strategic"] .card { box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 6px 16px -14px rgba(0,0,0,0.13) !important; }
   [data-mode="light"][data-coloruse="strategic"] .card:hover { box-shadow: 0 2px 5px rgba(0,0,0,0.06), 0 12px 26px -16px rgba(0,0,0,0.18) !important; }
   [data-coloruse="strategic"] .card .gloss { display:none !important; }
-  [data-coloruse="strategic"] .card .sheen { opacity:.5; }
+  [data-coloruse="strategic"] .card .sheen, [data-coloruse="strategic"] .card::before { opacity:.5; }
   [data-coloruse="strategic"] .card .rim { opacity:.16 !important; }
   [data-coloruse="strategic"] .card:hover .rim { opacity:.32 !important; }
 
@@ -100,20 +100,28 @@
   /* active tab icon is pinned to --brand-fixed (near-black) — flip it to chrome ink on the dark bar */
   [data-mode="light"][data-shell="contrast"] #main .ia-tab.active .icon { color: var(--chrome-text); }
 
-  /* ---- D · Composition ---- (scoped to .bento so custom-grid views stay intact) */
-  [data-composition="uniform"] .view.active .bento > .card:not(.kpi-strip):not(.span-12) { grid-column: span 6; }
-  [data-composition="hero"] .view.active .bento > .card[data-hero] { grid-column: span 8; }
-  [data-composition="hero"] .view.active .bento > .card:not([data-hero]):not(.kpi-strip):not(.span-12) { grid-column: span 4; }
+  /* ---- D · Composition ---- (scoped to .bento so custom-grid views stay intact)
+     .bento[data-fixed] OPTS OUT: bespoke, pixel-faithful views keep their hand-designed grid.
+     The knob only re-composes the generic dashboards (order-management / purchase-order /
+     rework-quality / insights). */
+  [data-composition="uniform"] .view.active .bento:not([data-fixed]) > .card:not(.kpi-strip):not(.span-12) { grid-column: span 6; }
+  [data-composition="hero"] .view.active .bento:not([data-fixed]) > .card[data-hero] { grid-column: span 8; }
+  [data-composition="hero"] .view.active .bento:not([data-fixed]) > .card:not([data-hero]):not(.kpi-strip):not(.span-12) { grid-column: span 4; }
   /* hero emphasis — the "few high-contrast cards" of a bento (elevation, not colour) */
-  [data-composition="bento"] .view.active .card[data-hero],
-  [data-composition="hero"] .view.active .card[data-hero] {
+  [data-composition="bento"] .view.active .bento:not([data-fixed]) .card[data-hero],
+  [data-composition="hero"] .view.active .bento:not([data-fixed]) .card[data-hero] {
     border-color: var(--border-strong);
     box-shadow: inset 0 1px 0 rgba(255,255,255,0.10), 0 30px 60px -26px rgba(0,0,0,0.6), 0 0 0 1px var(--border-strong);
   }
 
-  /* ---- KPI numerals (weight + font family knobs) ---- */
+  /* ---- KPI numerals (weight + font family knobs) ----
+     CONTRACT: every dashboard numeral must match one of these hooks so the weight/font knob
+     reaches it. Going forward the canonical hook is [data-counter] (it also gives count-up) —
+     the explicit class list below covers the existing bespoke numerals (and deltas/labels that
+     don't animate). When adding a new KPI, prefer [data-counter] over inventing a new class. */
   :root { --kpi-weight:600; --kpi-font:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; }
-  .metric-val, .kpi .v, [data-counter] {
+  .metric-val, .kpi .v, [data-counter],
+  .tr-bignum, .ocpm-kpi .v, .ocpm3-bigpct, .ocpm2-bignum, .ocpm2-days, .ocpm2-subm b, .inv-kpi .v, .inv-kpi .d {
     font-weight:var(--kpi-weight) !important;
     font-family:var(--kpi-font);
     letter-spacing:-0.02em; font-variant-numeric:tabular-nums;
@@ -163,7 +171,7 @@
     --bg-1:#15161a; --card:rgba(255,255,255,0.05); --card-strong:rgba(255,255,255,0.09); --border:rgba(255,255,255,0.12); --border-strong:rgba(255,255,255,0.26); --track:rgba(255,255,255,0.09);
     background:#15161a; color:#ffffff; border-color:rgba(255,255,255,0.12);
     box-shadow:0 26px 54px -22px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.08); }
-  .card[data-inverted] .gloss, .card[data-inverted] .sheen, .card[data-inverted] .rim { display:none; }
+  .card[data-inverted] .gloss, .card[data-inverted] .sheen, .card[data-inverted] .rim, .card[data-inverted]::before { display:none; }
 
   /* The flip must also reach the chart palette + the accent button, but only where they're
      mode-dependent: Mono greys are tied to the mode (white-ish on dark, dark-grey on light),

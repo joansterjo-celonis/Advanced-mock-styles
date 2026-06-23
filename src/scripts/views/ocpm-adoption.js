@@ -78,10 +78,10 @@ const topPanel =
       /* middle column */
       '<div class="ocpm-col ocpm-mid">' +
         '<div class="ocpm-kpis">' +
-          '<div class="ocpm-kpi"><div class="k"># of projects</div><div class="v">6,772</div></div>' +
-          '<div class="ocpm-kpi"><div class="k"># of accounts</div><div class="v">734</div></div>' +
-          '<div class="ocpm-kpi"><div class="k"># of presales</div><div class="v">5,709</div></div>' +
-          '<div class="ocpm-kpi"><div class="k"># of accounts</div><div class="v">884</div></div>' +
+          '<div class="ocpm-kpi"><div class="k"># of projects</div><div class="v" data-counter data-to="6772">0</div></div>' +
+          '<div class="ocpm-kpi"><div class="k"># of accounts</div><div class="v" data-counter data-to="734">0</div></div>' +
+          '<div class="ocpm-kpi"><div class="k"># of presales</div><div class="v" data-counter data-to="5709">0</div></div>' +
+          '<div class="ocpm-kpi"><div class="k"># of accounts</div><div class="v" data-counter data-to="884">0</div></div>' +
         '</div>' +
         '<div class="ocpm-filterbar">' +
           '<span class="ocpm-fbtext">Filter accounts having either a PoV project OR CS project</span>' +
@@ -120,7 +120,7 @@ const topPanel =
     '</div>' +
   '</section>';
 
-const presalesPanel = '<div class="bento ocpm-content" data-ocpanel="presales">' +
+const presalesPanel = '<div class="bento ocpm-content" data-ocpanel="presales" data-fixed>' +
   topPanel +
 
   /* presales table */
