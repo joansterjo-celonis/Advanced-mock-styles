@@ -1266,11 +1266,49 @@ import { getThemes, syncThemes, getAuthor, ensureAuthor, isCloudEnabled } from '
           const arr = Array.isArray(shared)?shared:[];
           if(!arr.length) return;
           const me = getAuthor();
-          const keep = store.presets.filter(p => DEFAULT_IDS.has(p.id) || isMine(p, me));
-          const keepIds = new Set(keep.map(p=>p.id));
-          const others = arr.filter(p => p && p.id && !DEFAULT_IDS.has(p.id) && !(me && p.owner===me) && !keepIds.has(p.id) && !deleted.has(p.id));
-          store.presets = [...keep, ...others];
+          // Union by id: keep my local defaults + my own presets (local edits win for mine),
+          // then pull in EVERY shared preset by id I haven't already kept or explicitly deleted.
+          // This retrieves both other people's themes AND my own themes created on another
+          // device/browser (same name) — the latter were dropped by the old owner-exclusion
+          // filter, which is why new themes were invisible outside a fresh (incognito) profile.
+          const byId = new Map();
+          store.presets.forEach(p => { if(p && p.id && (DEFAULT_IDS.has(p.id) || isMine(p, me))) byId.set(p.id, p); });
+          arr.forEach(p => { if(p && p.id && !DEFAULT_IDS.has(p.id) && !deleted.has(p.id) && !byId.has(p.id)) byId.set(p.id, p); });
+          store.presets = [...byId.values()];
           persist(); render(); refresh();
+        }
+
+        /* Manual "Sync" button: push my presets (only when I'm already named, so a read-only
+           refresh never forces a name prompt) and pull the shared library now, with button
+           feedback. The boot pull + auto pushMine still run; this is the on-demand path. */
+        let syncing=false;
+        async function syncNow(){
+          if(syncing) return;
+          const btn=$('preset-sync');
+          syncing=true;
+          if(btn){ btn.disabled=true; btn.classList.add('is-syncing'); btn.textContent='Syncing\u2026'; }
+          let ok=true;
+          try{
+            const me = getAuthor();
+            if(me){
+              let changed=false;
+              store.presets.forEach(p=>{ if(!DEFAULT_IDS.has(p.id) && !p.owner){ p.owner=me; changed=true; } });
+              if(changed) persist();
+              const tombstones=[...deleted];
+              const pushed = await syncThemes(me, myPresets(me), tombstones);
+              if(pushed && tombstones.length){ tombstones.forEach(id=>deleted.delete(id)); persistDeleted(); }
+              ok = ok && pushed;
+            }
+            mergeShared(await getThemes());   // pull + re-render
+          }catch(e){ console.error('[themes] manual sync failed', e); ok=false; }
+          finally{
+            syncing=false;
+            if(btn){
+              btn.disabled=false; btn.classList.remove('is-syncing');
+              btn.textContent = ok ? 'Synced' : 'Retry sync';
+              setTimeout(()=>{ const b=$('preset-sync'); if(b && !syncing) b.textContent='Sync'; }, 1500);
+            }
+          }
         }
 
         /* One-time upload of presets that were created before cloud sync existed.
@@ -1448,6 +1486,7 @@ import { getThemes, syncThemes, getAuthor, ensureAuthor, isCloudEnabled } from '
         $('preset-dup').onclick=()=>{ const p=current(); if(!p){ openEdit('new','My preset'); return; } const c={id:uid(),name:p.name+' copy',state:JSON.parse(JSON.stringify(p.state))}; delete c.owner; store.presets.push(c); store.selected=c.id; persist(); render(); snap(); refresh(); pushMine(); };
         $('preset-rename').onclick=()=>{ const p=current(); if(!p) return; openEdit('rename',p.name); };
         $('preset-del').onclick=()=>{ const p=current(); if(!p) return; openConfirm('Delete \u201C'+p.name+'\u201D?'); };
+        { const syncBtn=$('preset-sync'); if(syncBtn) syncBtn.onclick=syncNow; }
         // ---- inline editor / confirm wiring ----
         $('preset-ok').onclick=commitEdit;
         $('preset-cancel').onclick=closeRows;

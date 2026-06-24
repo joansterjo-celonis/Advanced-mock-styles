@@ -188,6 +188,11 @@
   .preset-actions button#preset-del:not(:disabled):hover { color:#e5484d; border-color:#e5484d; background:transparent; }
   .preset-actions button:disabled { opacity:.34; cursor:default; }
   .preset-actions button:disabled:hover { background:transparent; border-color:var(--chrome-border); color:var(--chrome-text); }
+  /* Sync spans its own full-width row beneath the CRUD buttons, with a quiet "working" pulse */
+  .preset-actions button#preset-sync { flex:1 0 100%; }
+  .preset-actions button#preset-sync.is-syncing { opacity:.7; cursor:progress; animation:preset-sync-pulse 1s ease-in-out infinite; }
+  .preset-actions button#preset-sync.is-syncing:disabled { opacity:.7; }
+  @keyframes preset-sync-pulse { 0%,100%{ opacity:.45; } 50%{ opacity:.8; } }
 
   /* inline editor + delete confirm rows (replace native prompt/confirm) */
   .preset-inline { display:flex; align-items:center; gap:6px; margin-top:8px; }
