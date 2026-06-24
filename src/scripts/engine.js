@@ -2,7 +2,7 @@ import { PALETTE, rng, series, N, RQ_BARS, RQ_PIE, RQ_CASES, RQ_ACTIVITIES } fro
 import { E, svgText, chartMode, cssVar, toRGB, shadeC, rgbaC, resolveColor, ensureSoftShadow, sheenGrad, sphere, bar3dV, bar3dH, nextGid } from './effects.js';
 import { icons, hydrateIcons } from './icons.js';
 import { buildAssetHeader } from './components/asset-header.js';
-import { getThemes, syncOwnerThemes, getAuthor, ensureAuthor, isCloudEnabled } from './cloud-store.js';
+import { getThemes, syncThemes, getAuthor, ensureAuthor, isCloudEnabled } from './cloud-store.js';
 
       const root = document.documentElement;
       // Swap static [data-icon] placeholders for real <svg> before anything reads
@@ -1240,6 +1240,12 @@ import { getThemes, syncOwnerThemes, getAuthor, ensureAuthor, isCloudEnabled } f
         const DEFAULT_IDS = new Set(DEFAULTS.map(d=>d.id));
         const isMine = (p, me)=> me ? p.owner===me : (!DEFAULT_IDS.has(p.id) && !p.owner);
         const myPresets = (me)=> store.presets.filter(p=>!DEFAULT_IDS.has(p.id) && isMine(p,me));
+        /* Explicit-deletion tombstones: ids the user deleted on this device. The cloud sync
+           is now an upsert-by-id (never drops on absence), so a preset is only removed from
+           the shared bin when its id is sent here. Persisted so a failed/offline push retries. */
+        const DELETED_KEY='sb-presets-deleted-v1';
+        const deleted = new Set((()=>{ try{ const r=JSON.parse(localStorage.getItem(DELETED_KEY)); return Array.isArray(r)?r:[]; }catch(e){ return []; } })());
+        function persistDeleted(){ try{ localStorage.setItem(DELETED_KEY, JSON.stringify([...deleted])); }catch(e){} }
         let pushT;
         function pushMine(){
           clearTimeout(pushT);
@@ -1250,7 +1256,9 @@ import { getThemes, syncOwnerThemes, getAuthor, ensureAuthor, isCloudEnabled } f
               let changed=false;
               store.presets.forEach(p=>{ if(!DEFAULT_IDS.has(p.id) && !p.owner){ p.owner=me; changed=true; } });
               if(changed) persist();
-              await syncOwnerThemes(me, myPresets(me));
+              const tombstones=[...deleted];
+              const ok = await syncThemes(me, myPresets(me), tombstones);
+              if(ok && tombstones.length){ tombstones.forEach(id=>deleted.delete(id)); persistDeleted(); }   // applied on the server — stop tracking
             }catch(e){ console.error('[themes] sync failed', e); }
           }, 250);
         }
@@ -1260,7 +1268,7 @@ import { getThemes, syncOwnerThemes, getAuthor, ensureAuthor, isCloudEnabled } f
           const me = getAuthor();
           const keep = store.presets.filter(p => DEFAULT_IDS.has(p.id) || isMine(p, me));
           const keepIds = new Set(keep.map(p=>p.id));
-          const others = arr.filter(p => p && p.id && !DEFAULT_IDS.has(p.id) && !(me && p.owner===me) && !keepIds.has(p.id));
+          const others = arr.filter(p => p && p.id && !DEFAULT_IDS.has(p.id) && !(me && p.owner===me) && !keepIds.has(p.id) && !deleted.has(p.id));
           store.presets = [...keep, ...others];
           persist(); render(); refresh();
         }
@@ -1279,7 +1287,7 @@ import { getThemes, syncOwnerThemes, getAuthor, ensureAuthor, isCloudEnabled } f
             let changed=false;
             store.presets.forEach(p=>{ if(!DEFAULT_IDS.has(p.id) && !p.owner){ p.owner=me; changed=true; } });
             if(changed) persist();
-            const ok = await syncOwnerThemes(me, myPresets(me));
+            const ok = await syncThemes(me, myPresets(me));
             if(ok){ localStorage.setItem(MIGRATED_KEY,'1'); render();
               console.info('[themes] uploaded', myPresets(me).length, 'preset(s) to the shared library'); }
           }catch(e){ console.error('[themes] migration failed', e); }
@@ -1402,9 +1410,10 @@ import { getThemes, syncOwnerThemes, getAuthor, ensureAuthor, isCloudEnabled } f
             const m=customCard.querySelector('.tp-meta'); if(m) m.textContent=metaLine(cs); }
           // "Modified" badge now lives inside the active preset card
           cardEls().forEach(c=>{ const b=c.querySelector('.tp-badge'); if(b) b.hidden = !((c.dataset.id||'')===(store.selected||'') && dirty); });
+          const mine = !!p && isMine(p, getAuthor());           // only your own (or unowned-local) presets are editable
           $('preset-save').disabled   = p ? !dirty : false;   // Custom → enabled (acts as "New"); preset → only when drifted
-          $('preset-rename').disabled = !p;                    // nothing to rename on "— Custom —"
-          $('preset-del').disabled    = !p;
+          $('preset-rename').disabled = !mine;                 // nothing to rename on "— Custom —" or another user's theme
+          $('preset-del').disabled    = !mine;                 // only your own themes can be deleted from the shared library
           markActive();
         }
 
@@ -1443,7 +1452,7 @@ import { getThemes, syncOwnerThemes, getAuthor, ensureAuthor, isCloudEnabled } f
         $('preset-ok').onclick=commitEdit;
         $('preset-cancel').onclick=closeRows;
         nameInp.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); commitEdit(); } else if(e.key==='Escape'){ e.preventDefault(); closeRows(); } });
-        $('preset-confirm-ok').onclick=()=>{ const p=current(); if(p){ store.presets=store.presets.filter(x=>x.id!==p.id); store.selected=''; persist(); render(); pushMine(); } closeRows(); snap(); refresh(); };
+        $('preset-confirm-ok').onclick=()=>{ const p=current(); if(p){ if(isMine(p, getAuthor())){ deleted.add(p.id); persistDeleted(); } store.presets=store.presets.filter(x=>x.id!==p.id); store.selected=''; persist(); render(); pushMine(); } closeRows(); snap(); refresh(); };
         $('preset-confirm-cancel').onclick=closeRows;
 
         // ---- live drift tracking: any knob change re-evaluates the Modified flag ----
@@ -1473,6 +1482,26 @@ import { getThemes, syncOwnerThemes, getAuthor, ensureAuthor, isCloudEnabled } f
         window.IA = window.IA || {};
         window.IA.captureState = captureState;
         window.IA.applyState = applyState;
+        /* Per-card "Invert surface" state (right-click → Invert). Indexed by .card position
+           within each view so capture and replay stay self-consistent and split-view safe. */
+        window.IA.captureInverted = function(){
+          const out=[];
+          document.querySelectorAll('.view[data-view]').forEach(view=>{
+            const id=view.getAttribute('data-view');
+            [...view.querySelectorAll('.card')].forEach((c,i)=>{ if(c.hasAttribute('data-inverted')) out.push({ view:id, idx:i }); });
+          });
+          return out;
+        };
+        window.IA.applyInverted = function(list){
+          document.querySelectorAll('.card[data-inverted]').forEach(c=>{ c.removeAttribute('data-inverted'); applyCardInvert(c,false); });
+          (list||[]).forEach(item=>{
+            if(!item || !item.view) return;
+            const esc=(window.CSS && CSS.escape) ? CSS.escape(item.view) : item.view;
+            const v=document.querySelector('.view[data-view="'+esc+'"]'); if(!v) return;
+            const card=v.querySelectorAll('.card')[item.idx];
+            if(card){ card.setAttribute('data-inverted',''); applyCardInvert(card,true); }
+          });
+        };
         // Pull the shared theme library in (read-only path — no name prompt on boot),
         // then upload any locally-made presets that predate cloud sync (one-time).
         getThemes().then(mergeShared).catch(()=>{}).finally(migrateOnce);

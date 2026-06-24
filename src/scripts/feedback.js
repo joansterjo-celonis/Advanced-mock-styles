@@ -185,6 +185,7 @@ function captureScreen(view) {
     viewport: { w: window.innerWidth, h: window.innerHeight },
     rootAttrs: captureRootAttrs(),
     split: captureSplitState(view),
+    inverted: (window.IA && typeof window.IA.captureInverted === 'function') ? (safe(window.IA.captureInverted) || []) : [],
   };
 }
 
@@ -334,6 +335,9 @@ async function enterView(entry) {
   restoreSub(screen);
   await waitFrames(2);
   if (!viewing) return;
+  // Re-apply per-card inversions after controls + view are settled (applyState re-renders
+  // charts and clears inverted cards, so this must run last).
+  if (window.IA && typeof window.IA.applyInverted === 'function') safe(() => window.IA.applyInverted(screen.inverted || []));
   restoreScroll(screen);
   drawMarker(entry);
   attachTracking();
@@ -489,7 +493,7 @@ function screenFromEntry(entry) {
   const s = (entry && entry.screen) || null;
   if (s) {
     const scroll = (s.scroll && typeof s.scroll === 'object') ? s.scroll : { source: 'legacy', top: Number(s.scroll || 0) || 0 };
-    return { ...s, viewId: s.viewId || s.id || (entry.view && entry.view.id) || null, scroll };
+    return { ...s, viewId: s.viewId || s.id || (entry.view && entry.view.id) || null, scroll, inverted: s.inverted || [] };
   }
   const v = (entry && entry.view) || {};
   return {
@@ -502,6 +506,7 @@ function screenFromEntry(entry) {
     viewport: entry && entry.viewport,
     rootAttrs: null,
     split: { active: false },
+    inverted: [],
   };
 }
 function applyRootAttrs(attrs) {
