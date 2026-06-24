@@ -2133,12 +2133,16 @@
 }
 /* Doubled class outranks the legacy `.tc-overlay.tc-dark .tc-art i` background,
    so the palette color always paints the orbs (light + dark). */
+/* Large, overlapping orbs so colour sits behind the WHOLE panel (not just the edges).
+   The portions outside the menu stay sharp; the portions behind the menu get dissolved
+   into a soft, diffuse pastel wash by the menu's large backdrop blur — matching how the
+   real product frosts the colourful content behind it. */
 .tc-overlay .tc-glass-scene .tc-glass-orb.tc-glass-orb-a {
-  left:-6px; width:62px; height:62px;
+  left:-14px; width:112px; height:112px;
   background:var(--tc-orb-a);
 }
 .tc-overlay .tc-glass-scene .tc-glass-orb.tc-glass-orb-b {
-  right:-6px; width:58px; height:58px;
+  right:-14px; width:106px; height:106px;
   background:var(--tc-orb-b);
 }
 /* A touch more vertical room so the padded, gapped dropdown isn't cramped against the card. */
@@ -2165,22 +2169,21 @@
   box-shadow:0 16px 26px -22px rgba(0,0,0,.5);
   --tc-translucency:calc(var(--tc-op) / 100);
   --tc-glassiness:calc(var(--tc-bl) / 100);
-  /* 0% glass must be fully opaque (no orb bleed-through). As frost increases,
-     the surface opens up so backdrop-filter can visibly blur the sharp orbs behind it. */
+  /* 0% glass must be fully opaque (no orb bleed-through). As frost increases, the surface
+     opens up and a LARGE backdrop blur dissolves the orbs behind it into soft, diffuse
+     pastel clouds — the key to the real product's "faded" frosted-glass look. A small blur
+     leaves hard colour shapes; the radius must be big relative to the content. */
   background:color-mix(in srgb, var(--ia-panel) calc(100% - var(--tc-translucency) * 49%), transparent);
-  -webkit-backdrop-filter:blur(calc(var(--tc-glassiness) * 15px)) saturate(calc(1.1 + var(--tc-glassiness) * .8));
-  backdrop-filter:blur(calc(var(--tc-glassiness) * 15px)) saturate(calc(1.1 + var(--tc-glassiness) * .8));
+  -webkit-backdrop-filter:blur(calc(var(--tc-glassiness) * 32px)) saturate(calc(1.05 + var(--tc-glassiness) * .55));
+  backdrop-filter:blur(calc(var(--tc-glassiness) * 32px)) saturate(calc(1.05 + var(--tc-glassiness) * .55));
 }
-/* Light mode reads the frost far more weakly than dark: a translucent WHITE veil
-   desaturates the blurred orbs (adding white washes chroma toward white), and colored
-   frost on a bright field has lower perceptual contrast than on a dark one. Measured,
-   light showed only ~72% of dark's colour bleed at every glass level. To reach parity
-   we let more orb bleed through (lower white fill at high glass) and push saturation
-   harder. The 0% case is untouched (translucency 0 -> 100% fill, fully opaque). */
+/* Light mode: a translucent WHITE veil desaturates the blurred orbs more than a dark
+   veil does, so the surface can drift too pale. Keep it BRIGHT and pastel (like the real
+   product) by letting a little extra colour through — but do NOT over-saturate (that was
+   the mistake before: neon, hard-edged blobs instead of soft diffuse colour). The large
+   shared blur above does the real work. 0% stays fully opaque (translucency 0 -> 100%). */
 [data-mode="light"] .tc-glass-scene .tc-glass-menu {
-  background:color-mix(in srgb, var(--ia-panel) calc(100% - var(--tc-translucency) * 64%), transparent);
-  -webkit-backdrop-filter:blur(calc(var(--tc-glassiness) * 15px)) saturate(calc(1.1 + var(--tc-glassiness) * 1.5));
-  backdrop-filter:blur(calc(var(--tc-glassiness) * 15px)) saturate(calc(1.1 + var(--tc-glassiness) * 1.5));
+  background:color-mix(in srgb, var(--ia-panel) calc(100% - var(--tc-translucency) * 46%), transparent);
 }
 .tc-glass-scene .ctxmenu-item {
   gap:9px;
