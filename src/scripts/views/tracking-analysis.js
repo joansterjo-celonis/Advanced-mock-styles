@@ -93,13 +93,21 @@ const KPIS = [
   ['median time between events', '16 sec.'],
   ['# distinct user', '10023'],
 ];
-const kpiCells = KPIS.map(k => '<div class="kpi"><div class="k" title="' + k[0] + '">' + k[0] + '</div><div class="v">' + k[1] + '</div></div>').join('');
+// Split a KPI value into its numeric part + trailing unit so the numeral count-ups (and
+// inherits the KPI weight/font knob) while keeping the unit (e.g. "49 sec.").
+function numv(v) { const m = String(v).match(/^([\d.,]+)(.*)$/); return m ? { to: m[1].replace(/,/g, ''), suf: m[2] } : null; }
+const kpiCells = KPIS.map(k => {
+  const n = numv(k[1]);
+  const v = n ? '<div class="v" data-counter data-to="' + n.to + '"' + (n.suf ? ' data-suffix="' + n.suf + '"' : '') + '>0</div>'
+              : '<div class="v">' + k[1] + '</div>';
+  return '<div class="kpi"><div class="k" title="' + k[0] + '">' + k[0] + '</div>' + v + '</div>';
+}).join('');
 
 const START = 'views.pql-editor-open.trigger';
 const END = 'views.pql-editor-done-button.trigger';
 const FREQ_X = 'Time between ' + START + ' and ' + END + ' [seconds] &rarr;';
 
-const eventsPanel = '<div class="bento tr-events" data-trcontent="events">' +
+const eventsPanel = '<div class="bento tr-events" data-trcontent="events" data-fixed>' +
 
   /* row 1 — start event, end event, frequency histogram */
   '<section class="card span-3 tr-evcard" data-card>' +
@@ -108,7 +116,7 @@ const eventsPanel = '<div class="bento tr-events" data-trcontent="events">' +
     '<div class="tr-evsub">' + START + '</div>' +
     '<div class="tr-select"><span class="tr-seltext">' + START + '</span>' + CHEV + '</div>' +
     '<div class="tr-evfoot">Tracking events: ' + START + '</div>' +
-    '<div class="tr-bignum">11,229,054</div>' +
+    '<div class="tr-bignum" data-counter data-to="11229054">0</div>' +
   '</section>' +
   '<section class="card span-3 tr-evcard" data-card>' +
     '<span class="gloss"></span><span class="rim"></span>' +
@@ -116,7 +124,7 @@ const eventsPanel = '<div class="bento tr-events" data-trcontent="events">' +
     '<div class="tr-evsub">' + END + '</div>' +
     '<div class="tr-select"><span class="tr-seltext">' + END + '</span>' + CHEV + '</div>' +
     '<div class="tr-evfoot">Tracking events: ' + END + '</div>' +
-    '<div class="tr-bignum">6,103,657</div>' +
+    '<div class="tr-bignum" data-counter data-to="6103657">0</div>' +
   '</section>' +
   '<section class="card span-6 metric" data-card style="min-height:230px;">' +
     '<span class="gloss"></span><span class="rim"></span>' +

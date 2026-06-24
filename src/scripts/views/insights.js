@@ -14,8 +14,8 @@ registerView({
   id: 'insights',
   label: 'Insights',
   icon,
-  // Header comes from the shared component — Insights only needs the edit action.
-  html: buildAssetHeader({ title: 'Insights', actions: ['edit'] }) + `
+  // Header comes from the shared component with the standard Filters / panel / Edit buttons.
+  html: buildAssetHeader({ title: 'Insights' }) + `
 
     <div class="bento">
       <section class="card span-12 kpi-strip" data-card style="min-height:auto;">

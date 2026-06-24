@@ -58,8 +58,8 @@
   .rq-table-head .t { font-size:13px; font-weight:600; color:var(--text); }
   .rq-table-scroll { flex:1; min-height:0; overflow:auto; }
   table.rq-table { width:100%; border-collapse:collapse; font-size:13px; }
+  /* --bg-1 keeps the sticky header opaque AND inversion-aware (no hardcoded light bg). */
   table.rq-table thead th { position:sticky; top:0; z-index:1; text-align:left; padding:11px 16px; font-size:12px; font-weight:500; color:var(--text-dim); background:var(--bg-1); border-bottom:1px solid var(--border); white-space:nowrap; }
-  [data-mode="light"] table.rq-table thead th { background:#fff; }
   table.rq-table th.num, table.rq-table td.num { text-align:left; font-variant-numeric:tabular-nums; }
   table.rq-table tbody td { padding:10px 16px; border-bottom:1px solid var(--border); color:var(--text); white-space:nowrap; }
   table.rq-table tbody tr { cursor:pointer; transition:background .12s; }
@@ -97,9 +97,9 @@
   .content.fx-scene { overflow:hidden !important; }
   /* both views overlap and slide; faces are positioned to the content padding box by JS */
   .view.fx-face { position:absolute !important; overflow:hidden !important; background:var(--chrome-0); will-change:transform,opacity; z-index:2; }
-  /* Flowy: faces emulate the elevated rounded card the view already is */
-  [data-layout="flowy"] .view.fx-face { background:#08090b; border:1px solid var(--border); border-radius:calc(var(--r-surface) + 8px); box-shadow:0 40px 90px -40px rgba(0,0,0,0.55); }
-  [data-mode="light"][data-layout="flowy"] .view.fx-face { background:#fff; border-color:rgba(0,0,0,0.07); box-shadow:0 30px 64px -34px rgba(0,0,0,0.22); }
+  /* Flowy/Flap: faces emulate the elevated rounded card the view already is */
+  :is([data-layout="flowy"],[data-layout="flap"]) .view.fx-face { background:#08090b; border:1px solid var(--border); border-radius:calc(var(--r-surface) + 8px); box-shadow:0 40px 90px -40px rgba(0,0,0,0.55); }
+  [data-mode="light"]:is([data-layout="flowy"],[data-layout="flap"]) .view.fx-face { background:#fff; border-color:rgba(0,0,0,0.07); box-shadow:0 30px 64px -34px rgba(0,0,0,0.22); }
 
   /* ============================================================
      DIRECTION KNOBS (A–G) — leadership review follow-up
@@ -125,20 +125,66 @@
   [data-mode="light"] .gg-adv { background:rgba(0,0,0,0.05); border-color:rgba(0,0,0,0.10); color:var(--chrome-dim); }
   [data-mode="light"] .gg-adv:hover { background:rgba(0,0,0,0.07); color:var(--chrome-text); }
   [data-mode="light"] .gg-adv[aria-pressed="true"] { background:rgba(0,0,0,0.09); border-color:rgba(0,0,0,0.2); color:var(--chrome-text); }
-  /* presets */
-  .preset-applyrow { display:flex; align-items:center; gap:8px; }
-  .preset-sel { flex:1 1 auto; min-width:0; width:100%; height:36px; border-radius:var(--r-interactive); background:var(--chrome-hover); border:1px solid var(--chrome-border); color:var(--chrome-text); font:inherit; font-size:13px; font-weight:500; padding:0 32px 0 10px; cursor:pointer; appearance:none; text-overflow:ellipsis;
-    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2.4'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 10px center; }
-  .preset-sel:focus { outline:none; border-color:var(--chrome-text); }
-  /* "Modified" pill — current settings drifted from the applied preset */
-  .preset-flag { flex:none; display:inline-flex; align-items:center; gap:5px; font-size:10px; font-weight:600; letter-spacing:.05em; text-transform:uppercase; color:#f5b14a; border:1px solid rgba(245,177,74,0.5); border-radius:999px; padding:3px 8px; white-space:nowrap; }
-  .preset-flag::before { content:""; width:6px; height:6px; border-radius:50%; background:#f5b14a; }
+  /* ===== presets — card carousel theme picker ===== */
+  /* the <select> stays in the DOM (selection source of truth + a11y) but visually hidden */
+  .tp-select-sr { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; border:0; }
+
+  .tp-carousel { position:relative; display:flex; align-items:center; gap:4px; }
+  /* chevrons sit just inside the panel edges, vertically centered on the card row */
+  .tp-nav { flex:none; width:24px; height:24px; display:grid; place-items:center; padding:0; border:0; border-radius:50%;
+    background:var(--chrome-hover); color:var(--chrome-dim); cursor:pointer; transition:background .15s,color .15s; }
+  .tp-nav:hover { background:var(--chrome-active); color:var(--chrome-text); }
+  .tp-nav svg { width:15px; height:15px; }
+
+  /* horizontal scroll-snap strip — one card centered with a peek of its neighbours */
+  .tp-track { flex:1 1 auto; min-width:0; display:flex; gap:10px; overflow-x:auto; scroll-snap-type:x mandatory;
+    scroll-padding:0 14px; padding:4px 2px 6px; scrollbar-width:none; -webkit-overflow-scrolling:touch; }
+  .tp-track::-webkit-scrollbar { display:none; }
+
+  .tp-card { scroll-snap-align:center; flex:0 0 calc(100% - 26px); box-sizing:border-box; display:flex; flex-direction:column; gap:8px;
+    text-align:left; padding:10px; border-radius:14px; cursor:pointer; font:inherit; appearance:none;
+    background:var(--chrome-hover); border:1px solid var(--chrome-border);
+    transition:border-color .18s, box-shadow .2s, transform .18s, background .18s; }
+  .tp-card:hover { transform:translateY(-1px); border-color:var(--chrome-text); }
+  .tp-card.is-active { border-color:transparent; box-shadow:0 0 0 2px var(--shine,#6366f1), 0 12px 26px -16px rgba(0,0,0,0.6); }
+
+  .tp-card-head { display:flex; align-items:center; justify-content:space-between; gap:8px; min-height:18px; }
+  .tp-name { font-size:13px; font-weight:600; color:var(--chrome-text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  /* "Modified" badge — moved inside the active card (amber pill, same look as the old flag) */
+  .tp-badge { flex:none; display:inline-flex; align-items:center; gap:5px; font-size:9.5px; font-weight:700; letter-spacing:.05em; text-transform:uppercase;
+    color:#f5b14a; border:1px solid rgba(245,177,74,0.5); border-radius:999px; padding:2px 7px; white-space:nowrap; }
+  .tp-badge[hidden] { display:none; }
+  .tp-badge::before { content:""; width:5px; height:5px; border-radius:50%; background:#f5b14a; }
+  .tp-meta { font-size:10.5px; color:var(--chrome-faint); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .tp-owner { font-size:10px; color:var(--chrome-faint); opacity:.85; margin-top:-4px; }
+
+  /* abstract mini-mock — bg/corners/gaps/accents are all set inline from the preset's knobs */
+  .tp-preview { position:relative; display:flex; flex-direction:column; height:74px; overflow:hidden; border:1px solid rgba(127,127,127,0.18); }
+  .tp-pv-bar { display:flex; flex:none; }
+  .tp-pv-tab { height:8px; width:26%; }
+  .tp-pv-tab.on { width:34%; }
+  .tp-pv-grid { display:grid; flex:1 1 auto; min-height:0; }
+  .tp-pv-grid.tp-comp-bento { grid-template-columns:repeat(2,1fr); grid-template-rows:1fr 1fr; }
+  .tp-pv-grid.tp-comp-bento .wide { grid-column:1 / -1; }
+  .tp-pv-grid.tp-comp-uniform { grid-template-columns:repeat(2,1fr); grid-template-rows:1fr 1fr; }
+  .tp-pv-grid.tp-comp-hero { grid-template-columns:1fr 1fr; grid-template-rows:1.4fr 1fr; }
+  .tp-pv-grid.tp-comp-hero .big { grid-column:1 / -1; }
+  .tp-pv-tile { position:relative; display:block; min-width:0; min-height:0; }
+  .tp-pv-dot { position:absolute; left:6px; bottom:6px; width:7px; height:7px; border-radius:50%; }
+  .tp-pv-frost { position:absolute; inset:0; pointer-events:none; background:linear-gradient(120deg, rgba(255,255,255,0.55), rgba(255,255,255,0) 60%); }
+
+  .tp-dots { display:flex; flex-wrap:wrap; justify-content:center; gap:5px; margin-top:2px; }
+  .tp-dot { width:6px; height:6px; padding:0; border:0; border-radius:50%; background:var(--chrome-border); cursor:pointer; transition:background .15s, transform .15s; }
+  .tp-dot:hover { background:var(--chrome-dim); }
+  .tp-dot.on { background:var(--chrome-text); transform:scale(1.25); }
 
   .preset-actions { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
   .preset-actions button { flex:1 1 auto; height:30px; border-radius:var(--r-interactive); border:1px solid var(--chrome-border); background:transparent; color:var(--chrome-text); font:inherit; font-size:12px; cursor:pointer; padding:0 10px; transition:background .15s,border-color .15s,color .15s,opacity .15s; }
   .preset-actions button:hover { background:var(--chrome-hover); border-color:var(--chrome-text); }
   /* "Save" lights up white when there is something to commit (dirty / Custom) */
   .preset-actions button#preset-save:not(:disabled) { border-color:rgba(255,255,255,0.5); color:#fff; }
+  /* light mode: white-on-white would vanish — use ink + dark border for the same primary lift */
+  [data-mode="light"] .preset-actions button#preset-save:not(:disabled) { border-color:rgba(0,0,0,0.45); color:#15161a; }
   .preset-actions button#preset-del:not(:disabled):hover { color:#e5484d; border-color:#e5484d; background:transparent; }
   .preset-actions button:disabled { opacity:.34; cursor:default; }
   .preset-actions button:disabled:hover { background:transparent; border-color:var(--chrome-border); color:var(--chrome-text); }
@@ -151,7 +197,9 @@
   .preset-inline button { flex:none; height:32px; padding:0 12px; border-radius:var(--r-interactive); border:1px solid var(--chrome-border); background:transparent; color:var(--chrome-text); font:inherit; font-size:12px; cursor:pointer; transition:background .15s,border-color .15s,color .15s; }
   .preset-inline button:hover { border-color:var(--chrome-text); }
   .preset-inline .pi-ok { border-color:rgba(255,255,255,0.55); color:#fff; }
+  [data-mode="light"] .preset-inline .pi-ok { border-color:rgba(0,0,0,0.45); color:#15161a; }
   .preset-inline .pi-ok:hover { background:#fff; color:#15161a; border-color:#fff; }
+  [data-mode="light"] .preset-inline .pi-ok:hover { background:#15161a; color:#fff; border-color:#15161a; }
   .preset-inline .pi-danger { border-color:rgba(229,72,77,0.6); color:#ff6b6f; }
   .preset-inline .pi-danger:hover { background:#e5484d; color:#fff; border-color:#e5484d; }
   .preset-confirm .pc-text { flex:1 1 auto; min-width:0; font-size:12px; color:var(--chrome-dim); }

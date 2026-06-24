@@ -5,7 +5,7 @@
   [data-mode="light"][data-coloruse="calm"] .card { border-color:rgba(0,0,0,0.06); }
   [data-coloruse="calm"] .card:hover { box-shadow:none !important; border-color:var(--border-strong); }
   [data-coloruse="calm"] .card.is-active { box-shadow:none !important; border-color:var(--border-strong); }
-  [data-coloruse="calm"] .card .gloss, [data-coloruse="calm"] .card .rim, [data-coloruse="calm"] .card .sheen { display:none !important; }
+  [data-coloruse="calm"] .card .gloss, [data-coloruse="calm"] .card .rim, [data-coloruse="calm"] .card .sheen, [data-coloruse="calm"] .card::before { display:none !important; }
   [data-coloruse="calm"] .content { background-image:none; }      /* drop the ambient light wash */
   /* quiet chrome — neutral status pills / chips / legend swatches; colour reserved for genuine alerts */
   [data-coloruse="calm"] .otd-pill { background:var(--card-strong) !important; color:var(--text-dim) !important; }
@@ -19,7 +19,7 @@
   [data-mode="light"][data-coloruse="strategic"] .card { box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 6px 16px -14px rgba(0,0,0,0.13) !important; }
   [data-mode="light"][data-coloruse="strategic"] .card:hover { box-shadow: 0 2px 5px rgba(0,0,0,0.06), 0 12px 26px -16px rgba(0,0,0,0.18) !important; }
   [data-coloruse="strategic"] .card .gloss { display:none !important; }
-  [data-coloruse="strategic"] .card .sheen { opacity:.5; }
+  [data-coloruse="strategic"] .card .sheen, [data-coloruse="strategic"] .card::before { opacity:.5; }
   [data-coloruse="strategic"] .card .rim { opacity:.16 !important; }
   [data-coloruse="strategic"] .card:hover .rim { opacity:.32 !important; }
 
@@ -29,7 +29,12 @@
   /* Seamless: shell surfaces collapse onto the gray workspace (no distinction). Flatten the
      full chrome tier — rail/side AND the panel that feeds glass-chrome (#l1/.tabbar/.statusbar)
      — to --chrome-0, so seamless reads as one continuous gray and differs from tinted. */
-  [data-shell="seamless"] { --chrome-rail:var(--chrome-0); --chrome-side:var(--chrome-0); --chrome-panel:var(--chrome-0); --glass-tint-chrome:var(--chrome-0); }
+  /* --glass-fill-chrome:1 keeps the chrome tier SOLID so the rails/tab-bar paint the exact
+     --chrome-0 of the workspace (no ~1% glass bleed). Without it the rail reads as chrome-0 at
+     99% alpha — the same hue but a hair off the solid view, breaking the "one material" illusion
+     (and worsening as the Global glass slider drops --glass-fill-chrome). Overlays still glassify
+     via --glass-fill. Mirrors the Contrast shell's solid-chrome treatment. */
+  [data-shell="seamless"] { --chrome-rail:var(--chrome-0); --chrome-side:var(--chrome-0); --chrome-panel:var(--chrome-0); --glass-tint-chrome:var(--chrome-0); --glass-fill-chrome:1; }
   [data-shell="seamless"] .sidebar { border-color:transparent; }
   [data-shell="seamless"] .tabbar { border-color:var(--chrome-border-soft); }
   /* Contrast: strong surface contrast — dark shell against the light workspace (and deeper black in dark mode) */
@@ -99,21 +104,32 @@
   }
   /* active tab icon is pinned to --brand-fixed (near-black) — flip it to chrome ink on the dark bar */
   [data-mode="light"][data-shell="contrast"] #main .ia-tab.active .icon { color: var(--chrome-text); }
+  /* the active tab's close (×) tracks the label + icon onto chrome ink too, so it doesn't read
+     faint (--chrome-faint) against the dark contrast bar while the text/icon are bright. */
+  [data-mode="light"][data-shell="contrast"] #main .ia-tab.active .ia-x { color: var(--chrome-text); }
 
-  /* ---- D · Composition ---- (scoped to .bento so custom-grid views stay intact) */
-  [data-composition="uniform"] .view.active .bento > .card:not(.kpi-strip):not(.span-12) { grid-column: span 6; }
-  [data-composition="hero"] .view.active .bento > .card[data-hero] { grid-column: span 8; }
-  [data-composition="hero"] .view.active .bento > .card:not([data-hero]):not(.kpi-strip):not(.span-12) { grid-column: span 4; }
+  /* ---- D · Composition ---- (scoped to .bento so custom-grid views stay intact)
+     .bento[data-fixed] OPTS OUT: bespoke, pixel-faithful views keep their hand-designed grid.
+     The knob only re-composes the generic dashboards (order-management / purchase-order /
+     rework-quality / insights). */
+  [data-composition="uniform"] .view.active .bento:not([data-fixed]) > .card:not(.kpi-strip):not(.span-12) { grid-column: span 6; }
+  [data-composition="hero"] .view.active .bento:not([data-fixed]) > .card[data-hero] { grid-column: span 8; }
+  [data-composition="hero"] .view.active .bento:not([data-fixed]) > .card:not([data-hero]):not(.kpi-strip):not(.span-12) { grid-column: span 4; }
   /* hero emphasis — the "few high-contrast cards" of a bento (elevation, not colour) */
-  [data-composition="bento"] .view.active .card[data-hero],
-  [data-composition="hero"] .view.active .card[data-hero] {
+  [data-composition="bento"] .view.active .bento:not([data-fixed]) .card[data-hero],
+  [data-composition="hero"] .view.active .bento:not([data-fixed]) .card[data-hero] {
     border-color: var(--border-strong);
     box-shadow: inset 0 1px 0 rgba(255,255,255,0.10), 0 30px 60px -26px rgba(0,0,0,0.6), 0 0 0 1px var(--border-strong);
   }
 
-  /* ---- KPI numerals (weight + font family knobs) ---- */
+  /* ---- KPI numerals (weight + font family knobs) ----
+     CONTRACT: every dashboard numeral must match one of these hooks so the weight/font knob
+     reaches it. Going forward the canonical hook is [data-counter] (it also gives count-up) —
+     the explicit class list below covers the existing bespoke numerals (and deltas/labels that
+     don't animate). When adding a new KPI, prefer [data-counter] over inventing a new class. */
   :root { --kpi-weight:600; --kpi-font:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; }
-  .metric-val, .kpi .v, [data-counter] {
+  .metric-val, .kpi .v, [data-counter],
+  .tr-bignum, .ocpm-kpi .v, .ocpm3-bigpct, .ocpm2-bignum, .ocpm2-days, .ocpm2-subm b, .inv-kpi .v, .inv-kpi .d {
     font-weight:var(--kpi-weight) !important;
     font-family:var(--kpi-font);
     letter-spacing:-0.02em; font-variant-numeric:tabular-nums;
@@ -128,6 +144,13 @@
   [data-tabmodel="seg"] .subtab.on::after { display:none; }
   [data-tabmodel="seg"] .subtab .x, [data-tabmodel="seg"] .subtab .dots { display:none !important; }
   [data-tabmodel="seg"] .subtab-add { display:none; }
+  /* OCPM strips overflow (10+ tabs), so the segmented pill must fold like the default model:
+     fill the bar (block-level flex) and let .ocpm-view's overflow-x:auto scroll the tabs with
+     the ‹ › ☰ nav pinned right — NOT inline-flex, which balloons to max-content and spills the
+     pill past the bar (and under the open edit panel). Blend the sticky nav with the pill track. */
+  [data-tabmodel="seg"] .ocpm-view .subtabs { display:flex; align-self:stretch; max-width:100%; }
+  [data-tabmodel="seg"] .ocpm-view .ocpm-tabnav,
+  :is([data-layout="flowy"],[data-layout="flap"])[data-tabmodel="seg"] .ocpm-view .ocpm-tabnav { background:var(--track); }
 
   /* ---- Tables ---- (row TREATMENT only; spacing is owned by the Density knob) */
   /* Lined: zebra striping for scannability */
@@ -156,14 +179,16 @@
     --bg-1:#15161a; --card:rgba(255,255,255,0.05); --card-strong:rgba(255,255,255,0.09); --border:rgba(255,255,255,0.12); --border-strong:rgba(255,255,255,0.26); --track:rgba(255,255,255,0.09);
     background:#15161a; color:#ffffff; border-color:rgba(255,255,255,0.12);
     box-shadow:0 26px 54px -22px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.08); }
-  .card[data-inverted] .gloss, .card[data-inverted] .sheen, .card[data-inverted] .rim { display:none; }
+  .card[data-inverted] .gloss, .card[data-inverted] .sheen, .card[data-inverted] .rim, .card[data-inverted]::before { display:none; }
 
   /* The flip must also reach the chart palette + the accent button, but only where they're
      mode-dependent: Mono greys are tied to the mode (white-ish on dark, dark-grey on light),
      so an inverted card borrows the OPPOSITE mode's greys. Mono + Vivid accents inherit the
-     mode ink, so they're flipped too. (Color theme's chart palette + accent read on either
-     surface, so they're deliberately left untouched.) Flat charts + the button consume these
-     via live var() and recolour instantly; 3D/baked charts are re-rendered from the card in JS. */
+     mode ink, so they're flipped too. (Color theme — static or custom hue — has a near
+     mode-independent palette, so its inverted flip can't be expressed as a static CSS swap;
+     applyCardInvert() in engine.js paints the opposite-surface palette inline on the card.)
+     Flat charts + the button consume these via live var() and recolour instantly; 3D/baked
+     charts are re-rendered from the card in JS. */
   /* dark app → inverted card is a LIGHT surface: use light-mono greys + dark accent */
   html:not([data-mode="light"]):not([data-theme]) .card[data-inverted] {
     --cstop-1a:#2b2b2b; --cstop-1b:#555; --cstop-2a:#6a6a6a; --cstop-3a:#a0a0a0; --cstop-4a:#cfcfcf;

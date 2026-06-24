@@ -53,7 +53,9 @@ const DEFAULT_META = ['bookmark', 'share', 'comments', 'more'];
 // Add or restyle a button once → it applies to every view that lists its key.
 const ACTIONS = {
   filters: '<button class="hbtn">' + g(14, 1.8, '<path d="M3 5h18l-7 8v6l-4-2v-4z"/>') + 'Filters' + g(12, 2, icons.chevron) + '</button>',
-  layout:  '<button class="hbtn">' + g(14, 1.8, '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M15 4v16"/>') + '</button>',
+  // the panel/split button toggles a view's right-hand filter drawer (.ocpm2-fbar) where one
+  // exists; .fbar-btn is wired once, globally, in engine.js (like .edit-btn).
+  layout:  '<button class="hbtn fbar-btn" title="Toggle filter bar">' + g(14, 1.8, '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M15 4v16"/>') + '</button>',
   edit:    '<button class="hbtn edit-btn" title="Edit">' + g(14, 1.8, icons.edit) + '</button>',
 };
 const DEFAULT_ACTIONS = ['filters', 'layout', 'edit'];

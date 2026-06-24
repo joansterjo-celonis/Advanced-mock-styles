@@ -24,8 +24,6 @@ const KEBAB = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColo
 
 /* ---- header extras (same family as the other OCPM views) ---- */
 const ageBadge = '<span class="ocpm-age">' + s(13, 1.8, '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>') + '5 days</span>';
-const bell = '<span class="dh-ic ocpm-bell" title="Notifications">' + s(16, 1.8, '<path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6"/><path d="M10 20a2 2 0 0 0 4 0"/>') + '<span class="ocpm-badge">3</span></span>';
-const blueBtn = '<button class="ocpm-bluebtn" title="Present">' + s(15, 2, '<rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4"/>') + '</button>';
 const tabNav = '<div class="ocpm-tabnav"><button class="ocpm-tnav" data-dir="-1" title="Scroll left">' + s(14, 2.2, '<path d="m15 6-6 6 6 6"/>') + '</button><button class="ocpm-tnav" data-dir="1" title="Scroll right">' + s(14, 2.2, '<path d="m9 6 6 6-6 6"/>') + '</button><button class="ocpm-tnav" title="All tabs">' + s(14, 2, '<path d="M4 6h16M4 12h16M4 18h16"/>') + '</button></div>';
 
 const info = tip => '<span class="i" tabindex="0" data-tip="' + tip + '">i</span>';
@@ -35,8 +33,8 @@ const leg = items => '<div class="ocpm2-legend">' + items.map(it =>
   typeof it === 'string' ? '<span>' + it + '</span>'
   : '<span class="ocpm2-legitem"><span class="ocpm2-swatch" style="background:var(' + it.c + ')"></span>' + it.t + '</span>').join('') + '</div>';
 
-/* ---- KPI cell ---- */
-const kpi = (k, v) => '<div class="ocpm-kpi"><div class="k">' + k + '</div><div class="v">' + v + '</div></div>';
+/* ---- KPI cell ---- (numeral carries data-counter so it count-ups + obeys the KPI weight/font knob) */
+const kpi = (k, v) => '<div class="ocpm-kpi"><div class="k">' + k + '</div><div class="v" data-counter data-to="' + String(v).replace(/[^0-9.-]/g, '') + '">0</div></div>';
 
 /* ---- table ---- */
 function table(cols, rows, numIdx) {
@@ -63,7 +61,7 @@ const ttSeries = [
 ];
 
 /* ---- maturity-funnel layout (deterministic 12-col bento) ---- */
-const dashboard = '<div class="bento ocpm3-content" data-shpanel="hist">' +
+const dashboard = '<div class="bento ocpm3-content" data-shpanel="hist" data-fixed>' +
 
   /* row 1 — title banner + last load */
   '<section class="card span-9" data-card>' +
@@ -80,7 +78,7 @@ const dashboard = '<div class="bento ocpm3-content" data-shpanel="hist">' +
     '<span class="gloss"></span><span class="rim"></span>' +
     '<div class="card-title" style="font-size:12px;">Filter current cohort ( &quot;first dev.&quot; betwee&hellip;</div>' +
     '<div class="metric-sub" style="margin-top:8px;">% of accounts reaching production &lt;= 90 &hellip;</div>' +
-    '<div class="ocpm3-bigpct">71%</div>' +
+    '<div class="ocpm3-bigpct" data-counter data-to="71" data-suffix="%">0</div>' +
     '<div class="ocpm3-cohort-foot">' +
       '<div class="ocpm2-subm"><span class="lbl">accounts reaching &quot;producti&hellip;</span><b>17 accou&hellip;</b></div>' +
       '<div class="ocpm2-subm"><span class="lbl">accounts in cohort (denomin&hellip;</span><b>24 accou&hellip;</b></div>' +
@@ -169,7 +167,6 @@ registerView({
       { k: 'Predefined filter', v: 'exclude PoV' },
       { k: 'Predefined filter', v: 'Direct Customers' },
     ],
-    actions: [bell, blueBtn],
     subtabs: {
       attr: 'data-shsub',
       trailing: tabNav,

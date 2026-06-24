@@ -25,12 +25,10 @@ const CHEV_R = s(14, 2.2, '<path d="m9 6 6 6-6 6"/>');
 const LIST = s(14, 2, '<path d="M4 6h16M4 12h16M4 18h16"/>');
 
 /* ---- header extras specific to this view ----
-   The bookmark/share/comments/more cluster + the predefined-filter pills come from
-   the shared header component; here we only add the "5 days" age badge (meta prefix)
-   and this view's notification bell + blue action button (after the pills). */
+   The bookmark/share/comments/more cluster, the predefined-filter pills, and the standard
+   Filters / panel / Edit buttons all come from the shared header component; here we only add
+   the "5 days" age badge (meta prefix). */
 const ageBadge = '<span class="ocpm-age">' + s(13, 1.8, '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>') + '5 days</span>';
-const bell = '<span class="dh-ic ocpm-bell" title="Notifications">' + s(16, 1.8, '<path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6"/><path d="M10 20a2 2 0 0 0 4 0"/>') + '<span class="ocpm-badge">3</span></span>';
-const blueBtn = '<button class="ocpm-bluebtn" title="Present">' + s(15, 2, '<rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4"/>') + '</button>';
 
 const tabNav = '<div class="ocpm-tabnav"><button class="ocpm-tnav" data-dir="-1" title="Scroll left">' + CHEV_L + '</button><button class="ocpm-tnav" data-dir="1" title="Scroll right">' + CHEV_R + '</button><button class="ocpm-tnav" title="All tabs">' + LIST + '</button></div>';
 
@@ -80,10 +78,10 @@ const topPanel =
       /* middle column */
       '<div class="ocpm-col ocpm-mid">' +
         '<div class="ocpm-kpis">' +
-          '<div class="ocpm-kpi"><div class="k"># of projects</div><div class="v">6,772</div></div>' +
-          '<div class="ocpm-kpi"><div class="k"># of accounts</div><div class="v">734</div></div>' +
-          '<div class="ocpm-kpi"><div class="k"># of presales</div><div class="v">5,709</div></div>' +
-          '<div class="ocpm-kpi"><div class="k"># of accounts</div><div class="v">884</div></div>' +
+          '<div class="ocpm-kpi"><div class="k"># of projects</div><div class="v" data-counter data-to="6772">0</div></div>' +
+          '<div class="ocpm-kpi"><div class="k"># of accounts</div><div class="v" data-counter data-to="734">0</div></div>' +
+          '<div class="ocpm-kpi"><div class="k"># of presales</div><div class="v" data-counter data-to="5709">0</div></div>' +
+          '<div class="ocpm-kpi"><div class="k"># of accounts</div><div class="v" data-counter data-to="884">0</div></div>' +
         '</div>' +
         '<div class="ocpm-filterbar">' +
           '<span class="ocpm-fbtext">Filter accounts having either a PoV project OR CS project</span>' +
@@ -122,7 +120,7 @@ const topPanel =
     '</div>' +
   '</section>';
 
-const presalesPanel = '<div class="bento ocpm-content" data-ocpanel="presales">' +
+const presalesPanel = '<div class="bento ocpm-content" data-ocpanel="presales" data-fixed>' +
   topPanel +
 
   /* presales table */
@@ -164,8 +162,6 @@ registerView({
       { k: 'Predefined filter', v: 'exclude PoV' },
       { k: 'Predefined filter', v: 'Direct Customers' },
     ],
-    // this view's actions are a notification bell + the blue present button
-    actions: [bell, blueBtn],
     subtabs: {
       attr: 'data-ocsub',
       trailing: tabNav,

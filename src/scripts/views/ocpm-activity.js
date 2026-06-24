@@ -25,9 +25,6 @@ const SORT = '<svg class="tr-sort" width="11" height="11" viewBox="0 0 24 24" fi
 
 /* ---- header extras (same family as the other OCPM view) ---- */
 const ageBadge = '<span class="ocpm-age">' + s(13, 1.8, '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>') + '5 days</span>';
-const bell = '<span class="dh-ic ocpm-bell" title="Notifications">' + s(16, 1.8, '<path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6"/><path d="M10 20a2 2 0 0 0 4 0"/>') + '<span class="ocpm-badge">3</span></span>';
-// the blue button toggles the filter panel (wired in render)
-const blueBtn = '<button class="ocpm-bluebtn" title="Toggle filter bar">' + s(15, 2, '<path d="M3 5h18l-7 8v6l-4-2v-4z"/>') + '</button>';
 const tabNav = '<div class="ocpm-tabnav"><button class="ocpm-tnav" data-dir="-1" title="Scroll left">' + s(14, 2.2, '<path d="m15 6-6 6 6 6"/>') + '</button><button class="ocpm-tnav" data-dir="1" title="Scroll right">' + s(14, 2.2, '<path d="m9 6 6 6-6 6"/>') + '</button><button class="ocpm-tnav" title="All tabs">' + s(14, 2, '<path d="M4 6h16M4 12h16M4 18h16"/>') + '</button></div>';
 
 /* ---- chart legend (HTML) ---- */
@@ -78,22 +75,22 @@ const filterBar =
   '</div></aside>';
 
 /* ---- dashboard rows ---- */
-const dashboard = '<div class="bento ocpm2-content" data-acpanel="ab">' +
+const dashboard = '<div class="bento ocpm2-content" data-acpanel="ab" data-fixed>' +
 
   /* row 1 */
   '<section class="card span-6" data-card>' +
     '<span class="gloss"></span><span class="rim"></span>' +
     '<div class="card-title" style="font-size:13px;">account average: amount of hours having tracking events (not: total time) <span class="i" tabindex="0" data-tip="Average hours of tracking-event activity per account, by service.">i</span></div>' +
     '<div class="ocpm2-avgkpis">' +
-      '<div class="ocpm-kpi"><div class="k">Data Integration</div><div class="ocpm2-bignum">1,062 h</div></div>' +
-      '<div class="ocpm-kpi"><div class="k">Studio</div><div class="ocpm2-bignum">9,245 h</div></div>' +
-      '<div class="ocpm-kpi"><div class="k">PQL</div><div class="ocpm2-bignum">7,227 h</div></div>' +
-      '<div class="ocpm-kpi"><div class="k">Objects &amp; Events</div><div class="ocpm2-bignum">145 h</div></div>' +
+      '<div class="ocpm-kpi"><div class="k">Data Integration</div><div class="ocpm2-bignum" data-counter data-to="1062" data-suffix=" h">0</div></div>' +
+      '<div class="ocpm-kpi"><div class="k">Studio</div><div class="ocpm2-bignum" data-counter data-to="9245" data-suffix=" h">0</div></div>' +
+      '<div class="ocpm-kpi"><div class="k">PQL</div><div class="ocpm2-bignum" data-counter data-to="7227" data-suffix=" h">0</div></div>' +
+      '<div class="ocpm-kpi"><div class="k">Objects &amp; Events</div><div class="ocpm2-bignum" data-counter data-to="145" data-suffix=" h">0</div></div>' +
     '</div>' +
   '</section>' +
   '<section class="card span-2" data-card>' +
     '<span class="gloss"></span><span class="rim"></span>' +
-    '<div class="ocpm-kpi" style="border:0;padding:0;"><div class="k"># accounts</div><div class="ocpm2-bignum" style="font-size:44px;margin-top:6px;">789</div></div>' +
+    '<div class="ocpm-kpi" style="border:0;padding:0;"><div class="k"># accounts</div><div class="ocpm2-bignum" style="font-size:44px;margin-top:6px;" data-counter data-to="789">0</div></div>' +
   '</section>' +
   '<section class="card span-4" data-card>' +
     '<span class="gloss"></span><span class="rim"></span>' +
@@ -110,14 +107,14 @@ const dashboard = '<div class="bento ocpm2-content" data-acpanel="ab">' +
   '<section class="card span-3" data-card>' +
     '<span class="gloss"></span><span class="rim"></span>' +
     '<div class="card-title" style="font-size:12px;color:var(--text-dim);">eligible &rarr; DI activity started (first 10 % fin&hellip;</div>' +
-    '<div class="ocpm2-days">51 days</div>' +
+    '<div class="ocpm2-days" data-counter data-to="51" data-suffix=" days">0</div>' +
     '<div class="ocpm2-subm"><span class="lbl">eligible &rarr; 10 % OCPM DI acti&hellip;</span><b>66 days</b></div>' +
     '<div class="ocpm2-subm"><span class="lbl">eligible &rarr; 10 % CC DI activity</span><b>54 days</b></div>' +
   '</section>' +
   '<section class="card span-3" data-card>' +
     '<span class="gloss"></span><span class="rim"></span>' +
     '<div class="card-title" style="font-size:12px;color:var(--text-dim);">eligible &rarr; PQL activity started (first 10 % f&hellip;</div>' +
-    '<div class="ocpm2-days">88 days</div>' +
+    '<div class="ocpm2-days" data-counter data-to="88" data-suffix=" days">0</div>' +
     '<div class="ocpm2-subm"><span class="lbl">eligible &rarr; 10 % OCPM PQL a&hellip;</span><b>142 days</b></div>' +
     '<div class="ocpm2-subm"><span class="lbl">eligible &rarr; 10 % CC PQL activ&hellip;</span><b>81 days</b></div>' +
   '</section>' +
@@ -206,7 +203,6 @@ registerView({
       { k: 'Predefined filter', v: 'exclude PoV' },
       { k: 'Predefined filter', v: 'Direct Customers' },
     ],
-    actions: [bell, blueBtn],
     subtabs: {
       attr: 'data-acsub',
       trailing: tabNav,
@@ -228,19 +224,17 @@ registerView({
 
   render(viewEl) {
     viewEl.classList.add('ocpm-view');
-    const body = viewEl.querySelector('.ocpm2-body');
     const sub = viewEl.querySelector('.subtabs');
     const tabs = Array.from(viewEl.querySelectorAll('.subtab[data-acsub]'));
     const ab = viewEl.querySelector('[data-acpanel="ab"]');
     const empty = viewEl.querySelector('[data-acpanel="empty"]');
     const emptyTitle = empty && empty.querySelector('.tr-emt');
 
-    // blue header button + filter-bar "x" toggle the filter drawer
-    const toggleFbar = open => body && body.setAttribute('data-fbar', open ? 'open' : 'closed');
-    const blue = viewEl.querySelector('.ocpm-bluebtn');
-    if (blue) blue.addEventListener('click', () => toggleFbar(body.getAttribute('data-fbar') !== 'open'));
-    const fx = viewEl.querySelector('.ocpm2-fbar-head .x');
-    if (fx) fx.addEventListener('click', () => toggleFbar(false));
+    // The filter drawer (.ocpm2-fbar) is toggled by the shared header panel button (.fbar-btn)
+    // and its own "x" — both wired once, globally, in engine.js. Sync the button's pressed
+    // state to the drawer's initial (open) state.
+    const fbarBtn = viewEl.querySelector('.fbar-btn'), fbarBody = viewEl.querySelector('.ocpm2-body');
+    if (fbarBtn && fbarBody) fbarBtn.classList.toggle('on', fbarBody.getAttribute('data-fbar') === 'open');
 
     // tab overflow controls + center the active tab once the view is shown
     viewEl.querySelectorAll('.ocpm-tnav[data-dir]').forEach(b =>

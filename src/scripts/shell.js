@@ -238,7 +238,8 @@ import { icons } from './icons.js';
     var content=document.getElementById('content');
     function tabsEl(){ return document.querySelector('.tabbar .tabs'); }
     function tabFor(v){ return document.querySelector('.tabbar .tabs .ia-tab[data-view="'+v+'"]'); }
-    function activateTab(v){ document.querySelectorAll('.tabbar .tabs .ia-tab[data-view]').forEach(function(x){ x.classList.toggle('active', x.dataset.view===v); }); }
+    function scrollTabIntoView(v){ var t=tabFor(v); if(t&&t.scrollIntoView) t.scrollIntoView({inline:'nearest',block:'nearest'}); }
+    function activateTab(v){ document.querySelectorAll('.tabbar .tabs .ia-tab[data-view]').forEach(function(x){ x.classList.toggle('active', x.dataset.view===v); }); scrollTabIntoView(v); }
     function showEmpty(){ document.querySelectorAll('#content .view').forEach(function(v){ v.classList.remove('active'); }); if(content) content.classList.add('is-empty'); }
     function hideEmpty(){ if(content) content.classList.remove('is-empty'); }
     // (re)create a tab chip for a view, reusing the matching L1 leaf's icon + label
@@ -250,7 +251,8 @@ import { icons } from './icons.js';
       var label=((leaf?leaf.textContent:'')||v||'').trim()||v;
       var tab=document.createElement('div');
       tab.className='ia-tab'; tab.setAttribute('data-view',v);
-      tab.innerHTML=ic+' '+label+CLOSE_SVG;
+      // label MUST live in .ia-tab-lbl so it truncates with an ellipsis (a bare text node wraps).
+      tab.innerHTML=ic+'<span class="ia-tab-lbl">'+label+'</span>'+CLOSE_SVG;
       tabs.insertBefore(tab, tabs.querySelector('.ia-tab-add')||null);
       return tab;
     }
@@ -259,6 +261,52 @@ import { icons } from './icons.js';
       var rc=document.getElementById('route-context'); rc.classList.remove('mode-overview'); rc.classList.add('mode-editor');
       makeTab(v); hideEmpty(); activateTab(v); selectView(v);
     }
+    function escAttr(v){ return String(v||'').replace(/["\\]/g,'\\$&'); }
+    function activateLeaf(v){
+      document.querySelectorAll('.l1-leaf[data-view]').forEach(function(l){ l.classList.toggle('active', l.dataset.view===v); });
+    }
+    function ensureContextEditor(){
+      var app=document.getElementById('app');
+      var routeIds={ home:'route-home', studio:'route-studio', context:'route-context', datalake:'route-datalake', space:'route-space' };
+      Object.keys(routeIds).forEach(function(k){
+        var el=document.getElementById(routeIds[k]);
+        if(el) el.classList.toggle('active', k==='context');
+      });
+      if(app) app.dataset.route='context';
+      document.querySelectorAll('.nav-item').forEach(function(n){ n.classList.toggle('active', n.dataset.nav==='context'); });
+      var rc=document.getElementById('route-context');
+      if(rc){ rc.classList.remove('mode-overview'); rc.classList.add('mode-editor'); }
+    }
+    function forceView(v){
+      var target=document.querySelector('.view[data-view="'+escAttr(v)+'"]');
+      if(!target) return false;
+      if(content){
+        content.classList.remove('is-empty','fx-scene');
+        content.style.height='';
+      }
+      document.querySelectorAll('.view.fx-face').forEach(function(face){
+        face.classList.remove('fx-face');
+        face.style.left=''; face.style.top=''; face.style.width=''; face.style.height='';
+        face.style.transform=''; face.style.opacity='';
+      });
+      document.querySelectorAll('.view').forEach(function(s){ s.classList.toggle('active', s===target); });
+      activateTab(v); activateLeaf(v);
+      renderChartsIn(target); runCounters(target);
+      return true;
+    }
+    function restoreScreen(screen){
+      var s=screen||{};
+      var v=s.viewId || s.id || s.tabViewId || (s.view && s.view.id);
+      if(window.IA && typeof window.IA.exitSplitView==='function') window.IA.exitSplitView();
+      ensureContextEditor();
+      if(!v) return false;
+      openTab(v);
+      activateLeaf(v);
+      if(!document.querySelector('.view[data-view="'+escAttr(v)+'"].active')) forceView(v);
+      return true;
+    }
+    window.IA = window.IA || {};
+    window.IA.restoreScreen = restoreScreen;
     function closeTab(tab){
       if(!tab) return;
       var wasActive=tab.classList.contains('active');
@@ -282,6 +330,11 @@ import { icons } from './icons.js';
         var t=e.target.closest('.ia-tab[data-view]');
         if(t){ hideEmpty(); activateTab(t.dataset.view); selectView(t.dataset.view); }
       });
+      // let a vertical mouse wheel scroll the tab strip horizontally (trackpads already do this)
+      tabs.addEventListener('wheel',function(e){
+        if(e.deltaY===0 || tabs.scrollWidth<=tabs.clientWidth) return;
+        tabs.scrollLeft+=e.deltaY; e.preventDefault();
+      },{passive:false});
     }
 
     // L1 leaves + overview rows open (and reopen) the editor on the right dashboard

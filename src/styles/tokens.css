@@ -155,8 +155,8 @@
   [data-mode="light"] .ch .icon { background: rgba(0,0,0,0.05); }
   [data-mode="light"] .toggle { background: rgba(0,0,0,0.05); border-color: rgba(0,0,0,0.10); }
   [data-mode="light"] .toggle button.on { background:#fff; color:#1b1c20; box-shadow: 0 1px 3px rgba(0,0,0,0.14); }
-  [data-mode="light"] .data-table thead th { background:#f6f7f9; }
-  [data-mode="light"] .data-table tbody tr:hover { background: rgba(0,0,0,0.03); }
+  /* (light .data-table header + hover overrides removed — both now use inversion-aware tokens:
+     header → --bg-1, hover → --card-strong, so right-click Invert flips them with the surface) */
   [data-mode="light"] .proto { background:#fff; border-color: rgba(0,0,0,0.12); box-shadow: 0 24px 60px -20px rgba(0,0,0,0.3); color:#1b1c20; }
   /* the controls panel + context menu are their own light surfaces — re-assert light-on-chrome vars so the Contrast shell's inverted vars don't bleed into them (statusbar popovers + wb/vh menus use --ia-* and are handled in knobs.css instead) */
   [data-mode="light"] .proto, [data-mode="light"] .ctxmenu {

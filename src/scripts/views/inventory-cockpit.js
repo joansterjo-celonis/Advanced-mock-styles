@@ -24,15 +24,16 @@ const GRID = s(14, 1.9, '<rect x="3" y="3" width="8" height="8" rx="1"/><rect x=
 
 /* ---- header extras ---- */
 const ageBadge = '<span class="ocpm-age">' + s(13, 1.8, '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>') + '11 minutes</span>';
-const bell = '<span class="dh-ic ocpm-bell" title="Notifications">' + s(16, 1.8, '<path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6"/><path d="M10 20a2 2 0 0 0 4 0"/>') + '<span class="ocpm-badge">5</span></span>';
-// blue button toggles the filter drawer (wired in render)
-const blueBtn = '<button class="ocpm-bluebtn" title="Toggle filter">' + GRID + '</button>';
 
 /* ---- KPI cells (these replace the screenshot's redacted pills) ---- */
 const kpi = (k, v, o) => { o = o || {};
+  // Hero (big) numerals count-up; the number lives in an inner [data-counter] span so the
+  // animation never wipes the trailing unit span. Smaller numerals stay static but still
+  // inherit the KPI weight/font knob via the .inv-kpi .v selector.
+  const num = o.big ? '<span data-counter data-to="' + String(v).replace(/[^0-9.-]/g, '') + '">0</span>' : v;
   return '<div class="inv-kpi' + (o.big ? ' big' : '') + '">' +
     '<div class="k">' + k + '</div>' +
-    '<div class="v">' + v + (o.u ? '<span class="u">' + o.u + '</span>' : '') + '</div>' +
+    '<div class="v">' + num + (o.u ? '<span class="u">' + o.u + '</span>' : '') + '</div>' +
     (o.det ? '<span class="det">Details' + DET + '</span>' : '') +
   '</div>';
 };
@@ -138,7 +139,7 @@ const disposal = smallSection('thereof Disposal', 'Cockpit',
   [{ c: '--cstop-1a', t: 'Disposal [k]' }, { c: '--cstop-3a', t: 'Disposal [m€]' }],
   kpi('# Batches Marked for Disposal', '64'));
 
-const dashboard = '<div class="bento inv-content" data-invpanel="overview">' +
+const dashboard = '<div class="bento inv-content" data-invpanel="overview" data-fixed>' +
   topRow + totalStock + unrestricted + qStock + blocked + rework + disposal + '</div>';
 
 const emptyPanel = '<div class="bento inv-empty" data-invpanel="empty" style="display:none;">' +
@@ -168,7 +169,6 @@ registerView({
   html: buildAssetHeader({
     title: 'Inventory Cockpit 2.0',
     meta: [ageBadge, 'bookmark', 'share', 'comments', 'more'],
-    actions: [bell, blueBtn],
     subtabs: {
       attr: 'data-invsub',
       trailing: '',
@@ -183,17 +183,16 @@ registerView({
 
   render(viewEl) {
     viewEl.classList.add('ocpm-view', 'inv-view');
-    const body = viewEl.querySelector('.ocpm2-body');
     const tabs = Array.from(viewEl.querySelectorAll('.subtab[data-invsub]'));
     const overview = viewEl.querySelector('[data-invpanel="overview"]');
     const empty = viewEl.querySelector('[data-invpanel="empty"]');
     const emptyTitle = empty && empty.querySelector('.tr-emt');
 
-    const toggleFbar = open => body && body.setAttribute('data-fbar', open ? 'open' : 'closed');
-    const blue = viewEl.querySelector('.ocpm-bluebtn');
-    if (blue) blue.addEventListener('click', () => toggleFbar(body.getAttribute('data-fbar') !== 'open'));
-    const fx = viewEl.querySelector('.ocpm2-fbar-head .x');
-    if (fx) fx.addEventListener('click', () => toggleFbar(false));
+    // The filter drawer (.ocpm2-fbar) is toggled by the shared header panel button (.fbar-btn)
+    // and its own "x" — both wired once, globally, in engine.js. Sync the button's pressed
+    // state to the drawer's initial (open) state.
+    const fbarBtn = viewEl.querySelector('.fbar-btn'), fbarBody = viewEl.querySelector('.ocpm2-body');
+    if (fbarBtn && fbarBody) fbarBtn.classList.toggle('on', fbarBody.getAttribute('data-fbar') === 'open');
 
     tabs.forEach(s2 => s2.addEventListener('click', e => {
       if (e.target.closest('.x') || e.target.closest('.dots')) return;

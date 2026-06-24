@@ -2,6 +2,7 @@ import { PALETTE, rng, series, N, RQ_BARS, RQ_PIE, RQ_CASES, RQ_ACTIVITIES } fro
 import { E, svgText, chartMode, cssVar, toRGB, shadeC, rgbaC, resolveColor, ensureSoftShadow, sheenGrad, sphere, bar3dV, bar3dH, nextGid } from './effects.js';
 import { icons, hydrateIcons } from './icons.js';
 import { buildAssetHeader } from './components/asset-header.js';
+import { getThemes, syncOwnerThemes, getAuthor, ensureAuthor, isCloudEnabled } from './cloud-store.js';
 
       const root = document.documentElement;
       // Swap static [data-icon] placeholders for real <svg> before anything reads
@@ -64,26 +65,27 @@ import { buildAssetHeader } from './components/asset-header.js';
       /* ---- COMBO chart (bars + line, dual axis) — size-aware ---- */
       function combo(wrap){
         const key = wrap.dataset.key, rightMax = parseFloat(wrap.dataset.rightmax)||40, leftLabel = wrap.dataset.leftlabel||'';
+        const n = Math.max(2, parseInt(wrap.dataset.n,10) || N);   // bar/line count; data-n trims it (e.g. theme-creator art)
         const W=Math.max(Math.round(wrap.clientWidth),220), H=Math.max(Math.round(wrap.clientHeight),110);
         const padL=30, padR=34, padT=8, padB=18, innerW=W-padL-padR, innerH=H-padT-padB;
         let bars, line;
-        if(key==='otd'){ bars=series(11,N,18,26,0.4); line=series(21,N,30,8,0.1); }
-        else if(key==='touch'){ bars=series(31,N,30,24,0.6); line=series(41,N,2.6,1.2,0.04); }
-        else if(key==='blocks'){ bars=series(51,N,28,22,0.5); line=series(61,N,10,3,0.05); }
-        else { bars=series(71,N,50,30,0.5); line=series(81,N,60,18,0.4); }
+        if(key==='otd'){ bars=series(11,n,18,26,0.4); line=series(21,n,30,8,0.1); }
+        else if(key==='touch'){ bars=series(31,n,30,24,0.6); line=series(41,n,2.6,1.2,0.04); }
+        else if(key==='blocks'){ bars=series(51,n,28,22,0.5); line=series(61,n,10,3,0.05); }
+        else { bars=series(71,n,50,30,0.5); line=series(81,n,60,18,0.4); }
         const barMax=Math.max(...bars)*1.15, lineMax=rightMax;
         const tint=vividTint(key);
         const svg=E('svg',{viewBox:`0 0 ${W} ${H}`,preserveAspectRatio:'none'});
-        const defs=E('defs',{}); const g=E('linearGradient',{id:'cb_'+key,x1:0,x2:0,y1:0,y2:1});
+        const defs=E('defs',{}); const gid='cb_'+key+'_'+nextGid(); const g=E('linearGradient',{id:gid,x1:0,x2:0,y1:0,y2:1});
         if(tint){ g.appendChild(E('stop',{offset:'0%','stop-color':shade(tint,0.22)})); g.appendChild(E('stop',{offset:'100%','stop-color':shade(tint,-0.12)})); }
         else { g.appendChild(E('stop',{offset:'0%','class':'stop-1a'})); g.appendChild(E('stop',{offset:'100%','class':'stop-1b'})); }
         defs.appendChild(g); svg.appendChild(defs);
         [0,0.5,1].forEach(f=>{ const y=padT+innerH*f; svg.appendChild(E('line',{x1:padL,x2:padL+innerW,y1:y,y2:y,stroke:'rgba(128,128,128,0.18)','stroke-dasharray':'2 4'})); });
-        const step=innerW/N, bw=step*0.6;
+        const step=innerW/n, bw=step*0.6;
         const m3=chartMode(wrap), barCol = tint || cssVar('--cstop-1a', wrap);
         bars.forEach((v,i)=>{ const h=Math.max(2,(v/barMax)*innerH); const x=padL+step*i+(step-bw)/2; const y=padT+innerH-h;
           if(m3){ bar3dV(svg,x,y,bw,h,barCol,m3); }
-          else svg.appendChild(E('rect',{x:x.toFixed(1),y:y.toFixed(1),width:bw.toFixed(1),height:h.toFixed(1),rx:1.5,fill:`url(#cb_${key})`})); });
+          else svg.appendChild(E('rect',{x:x.toFixed(1),y:y.toFixed(1),width:bw.toFixed(1),height:h.toFixed(1),rx:1.5,fill:`url(#${gid})`})); });
         let d=''; line.forEach((v,i)=>{ const x=padL+step*i+step/2; const y=padT+innerH-(Math.min(v,lineMax)/lineMax)*innerH; d+=(i?'L':'M')+x.toFixed(1)+','+y.toFixed(1); });
         const path=E('path',{d:d,fill:'none','stroke-width':2,'stroke-linecap':'round','stroke-linejoin':'round','vector-effect':'non-scaling-stroke'});
         path.style.stroke = tint ? shade(tint,-0.28) : (wrap.dataset.rightline==='green' ? 'var(--line-2)' : 'var(--text)'); svg.appendChild(path);
@@ -131,7 +133,7 @@ import { buildAssetHeader } from './components/asset-header.js';
         const mx=Math.max(...pts)*1.15;
         const tint=vividTint(key);
         const svg=E('svg',{viewBox:`0 0 ${W} ${H}`,preserveAspectRatio:'none'});
-        const defs=E('defs',{}); const g=E('linearGradient',{id:'ar_'+key,x1:0,x2:0,y1:0,y2:1});
+        const defs=E('defs',{}); const gid='ar_'+key+'_'+nextGid(); const g=E('linearGradient',{id:gid,x1:0,x2:0,y1:0,y2:1});
         if(tint){ g.appendChild(E('stop',{offset:'0%','stop-color':tint,'stop-opacity':'0.5'})); g.appendChild(E('stop',{offset:'100%','stop-color':tint,'stop-opacity':'0'})); }
         else { g.appendChild(E('stop',{offset:'0%','class':'stop-area-top'})); g.appendChild(E('stop',{offset:'100%','class':'stop-area-mid'})); }
         defs.appendChild(g); svg.appendChild(defs);
@@ -141,8 +143,8 @@ import { buildAssetHeader } from './components/asset-header.js';
         const m3=chartMode(wrap), glassCol = tint || cssVar('--cstop-1a', wrap);
         if(m3){
           // frosted fill in the chart primary colour
-          const fg=svg.querySelector('#ar_'+key); if(fg){ fg.innerHTML=''; fg.appendChild(E('stop',{offset:'0%','stop-color':rgbaC(glassCol,0.55)})); fg.appendChild(E('stop',{offset:'100%','stop-color':rgbaC(glassCol,0.05)})); }
-          svg.appendChild(E('path',{d:d+`L${padL+innerW},${padT+innerH}L${padL},${padT+innerH}Z`,fill:`url(#ar_${key})`}));
+          const fg=svg.querySelector('#'+gid); if(fg){ fg.innerHTML=''; fg.appendChild(E('stop',{offset:'0%','stop-color':rgbaC(glassCol,0.55)})); fg.appendChild(E('stop',{offset:'100%','stop-color':rgbaC(glassCol,0.05)})); }
+          svg.appendChild(E('path',{d:d+`L${padL+innerW},${padT+innerH}L${padL},${padT+innerH}Z`,fill:`url(#${gid})`}));
           if(m3==='iso'){ // depth lip under the line
             const lip=E('path',{d:d,fill:'none','stroke-width':6,'stroke-linecap':'round','stroke-linejoin':'round',transform:'translate(0 4)'}); lip.style.stroke=shadeC(glassCol,-0.3); lip.style.opacity='0.85'; svg.appendChild(lip);
           }
@@ -150,7 +152,7 @@ import { buildAssetHeader } from './components/asset-header.js';
           const gloss=E('path',{d:d,fill:'none','stroke-width':1,'stroke-linecap':'round','transform':'translate(0 -1.4)'}); gloss.style.stroke='rgba(255,255,255,0.55)'; svg.appendChild(gloss);
           pts.forEach((v,i)=>{ if(i%3)return; const x=padL+step*i,y=padT+innerH-(v/mx)*innerH; sphere(svg,+x.toFixed(1),+y.toFixed(1),3,glassCol); });
         } else {
-          svg.appendChild(E('path',{d:d+`L${padL+innerW},${padT+innerH}L${padL},${padT+innerH}Z`,fill:`url(#ar_${key})`}));
+          svg.appendChild(E('path',{d:d+`L${padL+innerW},${padT+innerH}L${padL},${padT+innerH}Z`,fill:`url(#${gid})`}));
           const lineCol = tint ? shade(tint,-0.1) : 'var(--text)';
           const lp=E('path',{d:d,fill:'none','stroke-width':2,'stroke-linecap':'round','stroke-linejoin':'round','vector-effect':'non-scaling-stroke'}); lp.style.stroke=lineCol; svg.appendChild(lp);
           pts.forEach((v,i)=>{ if(i%2)return; const x=padL+step*i,y=padT+innerH-(v/mx)*innerH; const c=E('circle',{cx:x.toFixed(1),cy:y.toFixed(1),r:2.2}); c.style.fill=lineCol; svg.appendChild(c); });
@@ -272,8 +274,18 @@ import { buildAssetHeader } from './components/asset-header.js';
         const mx=20, svg=E('svg',{viewBox:`0 0 ${W} ${H}`,preserveAspectRatio:'none'});
         [0,5,10,15,20].forEach(g=>{ const y=padT+innerH*(1-g/mx); svg.appendChild(E('line',{x1:padL,x2:padL+innerW,y1:y,y2:y,stroke:'rgba(128,128,128,0.16)','stroke-dasharray':'2 4'})); svg.appendChild(svgText(E,padL-4,y+3,g+'sec.','end')); });
         const step=innerW/(n-1); let d=''; pts.forEach((v,i)=>{ const x=padL+step*i, y=padT+innerH-(v/mx)*innerH; d+=(i?'L':'M')+x.toFixed(1)+','+y.toFixed(1); });
-        const col=cssVar('--cstop-1a', wrap);
-        const lp=E('path',{d:d,fill:'none','stroke-width':2,'stroke-linecap':'round','stroke-linejoin':'round','vector-effect':'non-scaling-stroke'}); lp.style.stroke=col; svg.appendChild(lp);
+        const m3=chartMode(wrap), col=cssVar('--cstop-1a', wrap);   // honor the Charts-look (iso / glass) knob
+        if(m3){
+          let defs=svg.querySelector('defs'); if(!defs){ defs=E('defs',{}); svg.insertBefore(defs,svg.firstChild);} const gid='dl'+nextGid();
+          const lg=E('linearGradient',{id:gid,x1:0,y1:0,x2:0,y2:1}); lg.appendChild(E('stop',{offset:'0%','stop-color':rgbaC(col,0.5)})); lg.appendChild(E('stop',{offset:'100%','stop-color':rgbaC(col,0.04)})); defs.appendChild(lg);
+          svg.appendChild(E('path',{d:d+`L${(padL+innerW).toFixed(1)},${(padT+innerH).toFixed(1)}L${padL.toFixed(1)},${(padT+innerH).toFixed(1)}Z`,fill:`url(#${gid})`}));   // frosted area fill
+          if(m3==='iso'){ const lip=E('path',{d:d,fill:'none','stroke-width':6,'stroke-linecap':'round','stroke-linejoin':'round',transform:'translate(0 4)'}); lip.style.stroke=shadeC(col,-0.3); lip.style.opacity='0.85'; svg.appendChild(lip); }  // depth lip
+          const lp=E('path',{d:d,fill:'none','stroke-width':2.6,'stroke-linecap':'round','stroke-linejoin':'round'}); lp.style.stroke=col; svg.appendChild(lp);
+          const gloss=E('path',{d:d,fill:'none','stroke-width':1,'stroke-linecap':'round',transform:'translate(0 -1.4)'}); gloss.style.stroke='rgba(255,255,255,0.55)'; svg.appendChild(gloss);
+          pts.forEach((v,i)=>{ if(i%3)return; const x=padL+step*i,y=padT+innerH-(v/mx)*innerH; sphere(svg,+x.toFixed(1),+y.toFixed(1),3,col); });
+        } else {
+          const lp=E('path',{d:d,fill:'none','stroke-width':2,'stroke-linecap':'round','stroke-linejoin':'round','vector-effect':'non-scaling-stroke'}); lp.style.stroke=col; svg.appendChild(lp);
+        }
         const dates=['2024-12-30','2025-03-31','2025-06-30','2025-09-29','2025-12-29','2026-06-30'];
         dates.forEach((dt,i)=>{ const x=padL+innerW*(i/(dates.length-1)); svg.appendChild(svgText(E,x,padT+innerH+12,dt,i===0?'start':(i===dates.length-1?'end':'middle'))); });
         for(let i=0;i<n;i++){ const cxp=padL+step*i, x0=Math.max(padL,cxp-step/2), x1=Math.min(padL+innerW,cxp+step/2); hitRect(svg,x0,padT,x1-x0,innerH,'duration',[['seconds',pts[i].toFixed(1)]]); }
@@ -309,15 +321,28 @@ import { buildAssetHeader } from './components/asset-header.js';
         const cx=W*0.40, cy=H/2, r=Math.min(W*0.34,H*0.42);
         const svg=E('svg',{viewBox:`0 0 ${W} ${H}`});
         const pal=['--cstop-1b','--legend-3','--cstop-1a','--legend-2','--legend-1','--cstop-3a'];
-        let a0=-Math.PI/2;
-        segs.forEach((sg,i)=>{ const frac=Math.max(0,sg[1])/100, a1=a0+frac*2*Math.PI;
-          const x0=cx+r*Math.cos(a0), y0=cy+r*Math.sin(a0), x1=cx+r*Math.cos(a1), y1=cy+r*Math.sin(a1), large=frac>0.5?1:0;
-          const cvar=sg[2]||pal[i%pal.length];
-          const p=E('path',{d:`M${cx.toFixed(1)},${cy.toFixed(1)} L${x0.toFixed(1)},${y0.toFixed(1)} A${r.toFixed(1)},${r.toFixed(1)} 0 ${large} 1 ${x1.toFixed(1)},${y1.toFixed(1)} Z`}); p.style.fill='var('+cvar+')'; svg.appendChild(p);
-          const am=(a0+a1)/2, lx=cx+(r+10)*Math.cos(am), ly=cy+(r+10)*Math.sin(am);
+        const m3=chartMode(wrap);                                  // honor the Charts-look (iso / glass) knob
+        const yS = m3==='iso'?0.6 : m3==='glass'?0.92 : 1;          // vertical squash → tilted cylinder
+        const depth = m3==='iso'?Math.max(7,r*0.2) : m3==='glass'?4 : 0;   // extrusion thickness
+        const cvarOf=i=>segs[i][2]||pal[i%pal.length];
+        const arcs=[]; let ang=-Math.PI/2; segs.forEach(sg=>{ const a1=ang+Math.max(0,sg[1])/100*2*Math.PI; arcs.push([ang,a1]); ang=a1; });
+        function slicePath(a0,a1,yy){ const large=(a1-a0)>Math.PI?1:0; const x0=cx+r*Math.cos(a0), y0=yy+r*Math.sin(a0)*yS, x1=cx+r*Math.cos(a1), y1=yy+r*Math.sin(a1)*yS;
+          return `M${cx.toFixed(1)},${yy.toFixed(1)} L${x0.toFixed(1)},${y0.toFixed(1)} A${r.toFixed(1)},${(r*yS).toFixed(1)} 0 ${large} 1 ${x1.toFixed(1)},${y1.toFixed(1)} Z`; }
+        const body = m3 ? E('g',{filter:`url(#${ensureSoftShadow(svg, m3==='iso'?7:4, m3==='iso'?6:5, 0.3)})`}) : svg;
+        // 1) extruded side wall (darker copies stacked behind the top faces)
+        if(m3){ for(let k=Math.round(depth);k>=1;k--){ segs.forEach((sg,i)=>{ const p=E('path',{d:slicePath(arcs[i][0],arcs[i][1],cy+k)}); p.style.fill=shadeC(cssVar(cvarOf(i),wrap),-0.34); body.appendChild(p); }); } }
+        // 2) top faces (+ tooltips)
+        segs.forEach((sg,i)=>{ const p=E('path',{d:slicePath(arcs[i][0],arcs[i][1],cy)}); p.style.fill='var('+cvarOf(i)+')'; if(m3==='glass')p.style.fillOpacity='0.94'; p.style.stroke='var(--bg-1)'; p.style.strokeWidth='1'; body.appendChild(p);
+          setTip(p,String(sg[0]),[['Share',sg[1].toFixed(2)+'%']]); });
+        // 3) glassy sheen across the top face
+        if(m3){ let pd=svg.querySelector('defs'); if(!pd){ pd=E('defs',{}); svg.insertBefore(pd,svg.firstChild);} const sid='pgSheen'+nextGid();
+          const rg=E('radialGradient',{id:sid,cx:'50%',cy:'30%',r:'68%'}); rg.appendChild(E('stop',{offset:'0%','stop-color':'rgba(255,255,255,0.28)'})); rg.appendChild(E('stop',{offset:'55%','stop-color':'rgba(255,255,255,0.06)'})); rg.appendChild(E('stop',{offset:'100%','stop-color':'rgba(255,255,255,0)'})); pd.appendChild(rg);
+          body.appendChild(E('ellipse',{cx:cx,cy:cy,rx:(r*0.99).toFixed(1),ry:(r*yS*0.99).toFixed(1),fill:`url(#${sid})`,'pointer-events':'none'})); }
+        if(m3) svg.appendChild(body);
+        // 4) leader labels (offset below the extrusion in 3D)
+        segs.forEach((sg,i)=>{ const am=(arcs[i][0]+arcs[i][1])/2, lx=cx+(r+10)*Math.cos(am), ly=cy+(r+10)*Math.sin(am)*yS+(m3?depth*0.5:0);
           const nm=String(sg[0]); const lab=sg[1].toFixed(2)+'% '+(nm.length>9?nm.slice(0,8)+'\u2026':nm);
-          const t=svgText(E,lx,ly+3,lab,Math.cos(am)<0?'end':'start'); t.setAttribute('font-size','8'); svg.appendChild(t);
-          setTip(p,nm,[['Share',sg[1].toFixed(2)+'%']]); a0=a1; });
+          const t=svgText(E,lx,ly+3,lab,Math.cos(am)<0?'end':'start'); t.setAttribute('font-size','8'); svg.appendChild(t); });
         wrap.appendChild(svg);
       }
       /* ---- Generic stacked bars over a category axis (seeded; data-series='[{"c":"--var","w":weight},…]')
@@ -335,16 +360,33 @@ import { buildAssetHeader } from './components/asset-header.js';
         const padL=pct?34:46,padR=8,padT=8,padB=22, innerW=W-padL-padR, innerH=H-padT-padB;
         const svg=E('svg',{viewBox:`0 0 ${W} ${H}`,preserveAspectRatio:'none'});
         [0,0.5,1].forEach(f=>{ const y=padT+innerH*(1-f); svg.appendChild(E('line',{x1:padL,x2:padL+innerW,y1:y,y2:y,stroke:'rgba(128,128,128,0.16)','stroke-dasharray':'2 4'})); svg.appendChild(svgText(E,padL-4,y+3,pct?Math.round(ymax*f)+'%':fmt(ymax*f),'end')); });
+        const m3=chartMode(wrap);                                  // honor the Charts-look (iso / glass) knob
         const r=rng(seed), step=innerW/n, bw=step*0.74, last=series.length-1, tops=[];
+        const isoD=Math.max(2,Math.min(bw*0.5,10)), dvx=isoD*0.82, dvy=-isoD*0.5;
+        const _defs=()=>{ let d=svg.querySelector('defs'); if(!d){ d=E('defs',{}); svg.insertBefore(d,svg.firstChild);} return d; };
+        const _cc={}, _cv=cv=>(_cc[cv]||(_cc[cv]=cssVar(cv,wrap)));   // cache resolved colours (per series colour var)
+        const _gc={}, _grad=(cv,glass)=>{ const k=(glass?'g':'i')+cv; if(_gc[k])return _gc[k]; const col=_cv(cv),gid=(glass?'sbg':'sbv')+nextGid(),lg=E('linearGradient',{id:gid,x1:0,y1:0,x2:0,y2:1});
+          if(glass){ lg.appendChild(E('stop',{offset:'0%','stop-color':rgbaC(col,0.95)})); lg.appendChild(E('stop',{offset:'100%','stop-color':rgbaC(col,0.6)})); }
+          else { lg.appendChild(E('stop',{offset:'0%','stop-color':shadeC(col,0.12)})); lg.appendChild(E('stop',{offset:'100%','stop-color':shadeC(col,-0.14)})); }
+          _defs().appendChild(lg); return (_gc[k]=gid); };
         for(let i=0;i<n;i++){ const t=n>1?i/(n-1):0;
           const profile=shape==='grow'?(0.12+0.85*t)*(0.85+r()*0.2):shape==='rand'?(0.2+r()*0.78):Math.pow(Math.sin(Math.min(1,t*1.12)*Math.PI),0.7);
           const total=full?ymax*(0.9+r()*0.08):ymax*(0.30+0.62*profile)*(0.82+r()*0.3);
           const finalAllLast=bias&&i===n-1;
           const shares=series.map((s,si)=>{ if(finalAllLast) return si===last?1:0.0001; let base=(s.w||1)*(0.55+0.9*r()); if(bias&&si===last) base*=(0.1+t*t*4); return base; });
           const sum=shares.reduce((a,b)=>a+b,0);
-          let yb=padT+innerH; const x=padL+step*i+(step-bw)/2;
-          series.forEach((s,si)=>{ const h=(shares[si]/sum)*(Math.min(total,ymax)/ymax)*innerH, y=yb-h;
-            const rect=E('rect',{x:x.toFixed(1),y:y.toFixed(1),width:bw.toFixed(1),height:Math.max(0.4,h).toFixed(1)}); rect.style.fill='var('+(s.c||'--cstop-1a')+')'; svg.appendChild(rect); yb=y; });
+          let yb=padT+innerH; const x=padL+step*i+(step-bw)/2, x2=x+bw; let topCol=null;
+          series.forEach((s,si)=>{ const h=(shares[si]/sum)*(Math.min(total,ymax)/ymax)*innerH; if(h<=0)return; const y=yb-h, cv=s.c||'--cstop-1a';
+            if(m3==='iso'){ const col=_cv(cv);
+              svg.appendChild(E('path',{d:`M${x2.toFixed(1)},${y.toFixed(1)} L${(x2+dvx).toFixed(1)},${(y+dvy).toFixed(1)} L${(x2+dvx).toFixed(1)},${(yb+dvy).toFixed(1)} L${x2.toFixed(1)},${yb.toFixed(1)} Z`,fill:shadeC(col,-0.26)}));   // right side wall
+              svg.appendChild(E('rect',{x:x.toFixed(1),y:y.toFixed(1),width:bw.toFixed(1),height:h.toFixed(1),fill:`url(#${_grad(cv,false)})`}));   // front face
+              topCol=col; }
+            else if(m3==='glass'){ const col=_cv(cv);
+              const fr=E('rect',{x:x.toFixed(1),y:y.toFixed(1),width:bw.toFixed(1),height:h.toFixed(1),fill:`url(#${_grad(cv,true)})`}); fr.style.stroke=rgbaC(col,0.85); fr.style.strokeWidth='0.5'; svg.appendChild(fr); }
+            else { const rect=E('rect',{x:x.toFixed(1),y:y.toFixed(1),width:bw.toFixed(1),height:Math.max(0.4,h).toFixed(1)}); rect.style.fill='var('+cv+')'; svg.appendChild(rect); }
+            yb=y; });
+          if(m3==='iso' && topCol!=null){ svg.appendChild(E('path',{d:`M${x.toFixed(1)},${yb.toFixed(1)} L${(x+dvx).toFixed(1)},${(yb+dvy).toFixed(1)} L${(x2+dvx).toFixed(1)},${(yb+dvy).toFixed(1)} L${x2.toFixed(1)},${yb.toFixed(1)} Z`,fill:shadeC(topCol,0.34)})); }  // single top face (lightest)
+          else if(m3==='glass'){ const cb=padT+innerH; if(cb-yb>1){ svg.appendChild(E('rect',{x:x.toFixed(1),y:yb.toFixed(1),width:bw.toFixed(1),height:(cb-yb).toFixed(1),fill:`url(#${sheenGrad(svg,true)})`,'pointer-events':'none'})); svg.appendChild(E('rect',{x:x.toFixed(1),y:yb.toFixed(1),width:bw.toFixed(1),height:Math.min(2.2,cb-yb).toFixed(1),rx:1,fill:'rgba(255,255,255,0.55)'})); } }
           tops.push((x+bw/2).toFixed(1)+','+yb.toFixed(1)); }
         if(line){ svg.appendChild(E('polyline',{points:tops.join(' '),fill:'none',stroke:'var('+line+')','stroke-width':1.6,'stroke-linejoin':'round'})); }
         if(xl.length){ xl.forEach((lab,idx)=>{ const x=padL+(xl.length===1?innerW/2:innerW*idx/(xl.length-1)); const tx=svgText(E,Math.max(padL+8,Math.min(padL+innerW-8,x)),padT+innerH+12,lab,'middle'); tx.setAttribute('font-size','8'); svg.appendChild(tx); }); }
@@ -362,14 +404,32 @@ import { buildAssetHeader } from './components/asset-header.js';
         const padL=labelW,padR=8,padT=6,padB=18, innerW=W-padL-padR, innerH=H-padT-padB;
         const svg=E('svg',{viewBox:`0 0 ${W} ${H}`,preserveAspectRatio:'none'});
         ticks.forEach(tk=>{ const x=padL+(tk/xmax)*innerW; svg.appendChild(E('line',{x1:x.toFixed(1),x2:x.toFixed(1),y1:padT,y2:padT+innerH,stroke:'rgba(128,128,128,0.16)','stroke-dasharray':'2 4'})); svg.appendChild(svgText(E,x,padT+innerH+11,tk+'%','middle')); });
-        const m=Math.max(1,cats.length), rh=innerH/m, bh=Math.min(13,rh*0.7), r=rng(seed), cap=Math.max(4,Math.floor(labelW/5));
+        const m3=chartMode(wrap);                                  // honor the Charts-look (iso / glass) knob
+        const m=Math.max(1,cats.length), rh=innerH/m, bh=Math.min(13,rh*0.7), r=rng(seed), labCap=Math.max(4,Math.floor(labelW/5));
+        const hD=Math.max(2,Math.min(bh*0.5,8)), hdx=hD*0.82, hdy=-hD*0.5;
+        const _defs=()=>{ let d=svg.querySelector('defs'); if(!d){ d=E('defs',{}); svg.insertBefore(d,svg.firstChild);} return d; };
+        const _cc={}, _cv=cv=>(_cc[cv]||(_cc[cv]=cssVar(cv,wrap)));
+        const _gc={}, _grad=(cv,glass)=>{ const k=(glass?'g':'i')+cv; if(_gc[k])return _gc[k]; const col=_cv(cv),gid=(glass?'hsg':'hsv')+nextGid(),lg=E('linearGradient',{id:gid,x1:0,y1:0,x2:0,y2:1});
+          if(glass){ lg.appendChild(E('stop',{offset:'0%','stop-color':rgbaC(col,0.95)})); lg.appendChild(E('stop',{offset:'100%','stop-color':rgbaC(col,0.62)})); }
+          else { lg.appendChild(E('stop',{offset:'0%','stop-color':shadeC(col,0.12)})); lg.appendChild(E('stop',{offset:'100%','stop-color':shadeC(col,-0.14)})); }
+          _defs().appendChild(lg); return (_gc[k]=gid); };
         cats.forEach((cat,i)=>{ const cy=padT+rh*i+rh/2, y=cy-bh/2; const t=m>1?i/(m-1):0;
-          const shown=(String(cat).length>cap)?String(cat).slice(0,cap-1)+'\u2026':String(cat);
+          const shown=(String(cat).length>labCap)?String(cat).slice(0,labCap-1)+'\u2026':String(cat);
           const lt=svgText(E,padL-5,cy+3,shown,'end'); lt.setAttribute('font-size','8.5'); svg.appendChild(lt);
           const total=(0.34+0.62*t)*(0.9+r()*0.2)*100;
           const shares=series.map(s=>(s.w||1)*(0.45+0.95*r())), sum=shares.reduce((a,b)=>a+b,0);
-          let x=padL;
-          series.forEach((s,si)=>{ const w=(shares[si]/sum)*(Math.min(total,xmax)/xmax)*innerW; if(w<=0)return; const rect=E('rect',{x:x.toFixed(1),y:y.toFixed(1),width:Math.max(0.4,w).toFixed(1),height:bh.toFixed(1)}); rect.style.fill='var('+(s.c||'--cstop-1a')+')'; svg.appendChild(rect); x+=w; });
+          let x=padL, lastCol=null;
+          series.forEach((s,si)=>{ const w=(shares[si]/sum)*(Math.min(total,xmax)/xmax)*innerW; if(w<=0)return; const cv=s.c||'--cstop-1a';
+            if(m3==='iso'){ const col=_cv(cv);
+              svg.appendChild(E('path',{d:`M${x.toFixed(1)},${y.toFixed(1)} L${(x+hdx).toFixed(1)},${(y+hdy).toFixed(1)} L${(x+w+hdx).toFixed(1)},${(y+hdy).toFixed(1)} L${(x+w).toFixed(1)},${y.toFixed(1)} Z`,fill:shadeC(col,0.30)}));   // top face (tiles along length)
+              svg.appendChild(E('rect',{x:x.toFixed(1),y:y.toFixed(1),width:Math.max(0.4,w).toFixed(1),height:bh.toFixed(1),fill:`url(#${_grad(cv,false)})`}));
+              lastCol=col; }
+            else if(m3==='glass'){ const col=_cv(cv);
+              const fr=E('rect',{x:x.toFixed(1),y:y.toFixed(1),width:Math.max(0.4,w).toFixed(1),height:bh.toFixed(1),fill:`url(#${_grad(cv,true)})`}); fr.style.stroke=rgbaC(col,0.85); fr.style.strokeWidth='0.5'; svg.appendChild(fr); }
+            else { const rect=E('rect',{x:x.toFixed(1),y:y.toFixed(1),width:Math.max(0.4,w).toFixed(1),height:bh.toFixed(1)}); rect.style.fill='var('+cv+')'; svg.appendChild(rect); }
+            x+=w; });
+          if(m3==='iso' && lastCol!=null){ svg.appendChild(E('path',{d:`M${x.toFixed(1)},${y.toFixed(1)} L${(x+hdx).toFixed(1)},${(y+hdy).toFixed(1)} L${(x+hdx).toFixed(1)},${(y+bh+hdy).toFixed(1)} L${x.toFixed(1)},${(y+bh).toFixed(1)} Z`,fill:shadeC(lastCol,-0.26)})); }  // right end cap (rightmost only)
+          else if(m3==='glass' && x>padL){ svg.appendChild(E('rect',{x:padL.toFixed(1),y:y.toFixed(1),width:(x-padL).toFixed(1),height:Math.min(2,bh).toFixed(1),rx:1,fill:'rgba(255,255,255,0.5)','pointer-events':'none'})); }
           hitRect(svg,padL,padT+rh*i,innerW,rh,String(cat),[['Total',Math.round(total)+'%']]); });
         wrap.appendChild(svg);
       }
@@ -402,16 +462,38 @@ import { buildAssetHeader } from './components/asset-header.js';
       // open/close/reorder (no stale cached array to refresh).
       function tabOrder(){ return [...document.querySelectorAll('.tabbar .tabs .ia-tab[data-view]')].map(t=>t.dataset.view); }
       let fxAnimating=false;
+      let fxFinalize=null;          // teardown of the in-flight slide, callable to complete it early
+      let fxTarget=null;            // data-view the in-flight slide is animating TO
       // keep the editor top tabs' active state in sync with the shown view
       function setNavTabActive(v){
         document.querySelectorAll('.tabbar .tabs .ia-tab[data-view]').forEach(t=>t.classList.toggle('active', t.dataset.view===v));
+        const a=document.querySelector('.tabbar .tabs .ia-tab[data-view="'+v+'"]');
+        if(a&&a.scrollIntoView) a.scrollIntoView({inline:'nearest',block:'nearest'});
+      }
+      // Strip any slide-transition residue from a view. The slide uses fill:'forwards'
+      // Web Animations, which keep applying their final opacity/transform AFTER the inline
+      // styles are cleared — so an un-cancelled one can leave a view active but invisible.
+      // Cancelling the animations + clearing the inline + .fx-face state restores it fully.
+      function clearFxState(view){
+        if(!view) return;
+        try{ view.getAnimations().forEach(a=>a.cancel()); }catch(e){}
+        view.classList.remove('fx-face');
+        view.style.left=''; view.style.top=''; view.style.width=''; view.style.height=''; view.style.transform=''; view.style.opacity='';
       }
       function selectView(v){
-        if(fxAnimating) return;
-        const current=document.querySelector('.view.active');
         const next=document.querySelector('.view[data-view="'+v+'"]');
+        // Registered tabs fire selectView twice per click (their own listener + the delegated
+        // strip handler). While a slide to v is already running, ignore the duplicate so it
+        // plays out; only a switch to a DIFFERENT view completes the current slide early — that
+        // keeps rapid switching responsive without piling up or snapping the same animation.
+        if(fxAnimating){
+          if(v===fxTarget) return;
+          if(fxFinalize) fxFinalize();
+        }
+        const current=document.querySelector('.view.active');
         const slide=root.getAttribute('data-tabfx')==='slide';
         if(!next || next===current || !slide || !current){   // !current: reopening from the empty state has nothing to slide from
+          clearFxState(next);        // never show a view that still carries a stale slide effect
           document.querySelectorAll('.view').forEach(s=>s.classList.toggle('active', s.dataset.view===v));
           setNavTabActive(v);
           renderChartsIn(next); runCounters(next);
@@ -425,6 +507,7 @@ import { buildAssetHeader } from './components/asset-header.js';
          (new tab to the right of the old → content enters from the right, and vice-versa) */
       function slideTransition(oldView, newView){
         fxAnimating=true;
+        fxTarget=newView.dataset.view;
         const content=document.getElementById('content');
         const canvas=content.closest('.ctx-canvas')||content;   // the real scroll viewport (#content no longer owns overflow)
         const cs=getComputedStyle(content);
@@ -443,15 +526,25 @@ import { buildAssetHeader } from './components/asset-header.js';
         canvas.classList.remove('is-scrolled');   // new view starts at top → drop the pinned-header shadow
         content.classList.add('fx-scene');
         content.style.height=vh+'px';             // pin the scene to the viewport so the absolute faces keep a full-height box
-        [oldView,newView].forEach(f=>{ f.classList.add('fx-face'); f.style.left=padL+'px'; f.style.top=padT+'px'; f.style.width=w+'px'; f.style.height=h+'px'; });
+        [oldView,newView].forEach(f=>{ f.classList.add('fx-face'); f.style.left=padL+'px'; f.style.top=padT+'px'; f.style.width=w+'px'; f.style.height=h+'px'; f.style.transform=''; f.style.opacity=''; });
         newView.classList.add('active');
         renderChartsIn(newView); runCounters(newView);
 
         const dur=380, ease='cubic-bezier(.33,0,.2,1)';
-        oldView.animate([{transform:'translateX(0)',opacity:1},{transform:`translateX(${-dir*dist}px)`,opacity:0}], {duration:dur, easing:ease, fill:'forwards'});
+        const exit=oldView.animate([{transform:'translateX(0)',opacity:1},{transform:`translateX(${-dir*dist}px)`,opacity:0}], {duration:dur, easing:ease, fill:'forwards'});
         const enter=newView.animate([{transform:`translateX(${dir*dist}px)`,opacity:0},{transform:'translateX(0)',opacity:1}], {duration:dur, easing:ease, fill:'forwards'});
 
-        enter.onfinish=()=>{
+        // Single idempotent teardown. CRUCIAL: cancel() both fill:'forwards' animations so they
+        // stop applying opacity/transform once the inline styles are cleared — otherwise a view
+        // can end up active-but-invisible. Runs on finish, on cancel, via the early-complete hook
+        // (fxFinalize), and a safety timer so fxAnimating can never get stuck.
+        let done=false, safety=0;
+        const finalize=()=>{
+          if(done) return; done=true;
+          clearTimeout(safety);
+          if(fxFinalize===finalize){ fxFinalize=null; fxTarget=null; }
+          try{ exit.cancel(); }catch(e){}
+          try{ enter.cancel(); }catch(e){}
           [oldView,newView].forEach(f=>{ f.classList.remove('fx-face'); f.style.left=''; f.style.top=''; f.style.width=''; f.style.height=''; f.style.transform=''; f.style.opacity=''; });
           oldView.classList.remove('active');
           newView.classList.add('active');
@@ -460,6 +553,10 @@ import { buildAssetHeader } from './components/asset-header.js';
           newView.scrollTop=0;                    // flowy: the card owns the scroll — start it at the top
           fxAnimating=false;
         };
+        fxFinalize=finalize;
+        enter.onfinish=finalize;
+        enter.oncancel=finalize;
+        safety=setTimeout(finalize, dur+150);     // guarantee teardown even if the WAAPI event never arrives
       }
       // Live editor-tab + L1-leaf view switching is owned by the source↔asset bridge
       // in shell.js (delegated on .tabbar .tabs / .l1-leaf). The legacy .nav-leaf/.tab
@@ -524,8 +621,19 @@ import { buildAssetHeader } from './components/asset-header.js';
       // Edit button lives in the shared header component, so wire it by DELEGATION —
       // every view's edit button works, including views registered after boot. Re-query
       // on toggle so newly added headers reflect the pressed state too.
-      function setEdit(on){ if(on) root.setAttribute('data-edit','on'); else root.removeAttribute('data-edit'); document.querySelectorAll('.edit-btn').forEach(b=>b.classList.toggle('on',on)); renderChartsIn(document.querySelector('.view.active')); }
-      document.addEventListener('click',e=>{ if(e.target.closest('.edit-btn')){ setEdit(root.getAttribute('data-edit')!=='on'); return; } if(e.target.closest('.ep-close')) setEdit(false); const t=e.target.closest('.ep-tab'); if(t){ t.parentElement.querySelectorAll('.ep-tab').forEach(x=>x.classList.remove('on')); t.classList.add('on'); } });
+      function closeFbar(){ document.querySelectorAll('.ocpm2-body[data-fbar="open"]').forEach(b=>b.setAttribute('data-fbar','closed')); document.querySelectorAll('.fbar-btn.on').forEach(b=>b.classList.remove('on')); }
+      function setEdit(on){ if(on){ root.setAttribute('data-edit','on'); closeFbar(); } else root.removeAttribute('data-edit'); document.querySelectorAll('.edit-btn').forEach(b=>b.classList.toggle('on',on)); renderChartsIn(document.querySelector('.view.active')); }
+      // Filter drawer (.ocpm2-fbar) toggle — the shared header panel button (.fbar-btn) drives it
+      // in any view that ships a drawer (.ocpm2-body); a no-op elsewhere. Mutually exclusive with
+      // edit mode (both are right-side panels). Re-render so charts reflow to the new content width.
+      function setFbar(open){ const v=document.querySelector('.view.active'); if(!v) return; const body=v.querySelector('.ocpm2-body'); if(!body) return; if(open) setEdit(false); body.setAttribute('data-fbar', open?'open':'closed'); v.querySelectorAll('.fbar-btn').forEach(b=>b.classList.toggle('on',open)); renderChartsIn(v); }
+      document.addEventListener('click',e=>{
+        if(e.target.closest('.edit-btn')){ setEdit(root.getAttribute('data-edit')!=='on'); return; }
+        if(e.target.closest('.ep-close')){ setEdit(false); return; }
+        if(e.target.closest('.fbar-btn')){ const v=document.querySelector('.view.active'); const body=v&&v.querySelector('.ocpm2-body'); setFbar(!(body&&body.getAttribute('data-fbar')==='open')); return; }
+        if(e.target.closest('.ocpm2-fbar-head .x')){ setFbar(false); return; }
+        const t=e.target.closest('.ep-tab'); if(t){ t.parentElement.querySelectorAll('.ep-tab').forEach(x=>x.classList.remove('on')); t.classList.add('on'); }
+      });
       document.addEventListener('dragstart',e=>{ const c=e.target.closest('.ep-card'); if(c){ c.classList.add('dragging'); e.dataTransfer.setData('text/plain',c.textContent.trim()); } });
       document.addEventListener('dragend',e=>{ const c=e.target.closest('.ep-card'); if(c) c.classList.remove('dragging'); });
 
@@ -567,17 +675,45 @@ import { buildAssetHeader } from './components/asset-header.js';
       bColor.onclick=()=>setTheme('color'); bMono.onclick=()=>setTheme('mono'); bVivid.onclick=()=>setTheme('vivid');
       const hueInput=document.getElementById('theme-hue-input'), hueReset=document.getElementById('theme-hue-reset');
       function rgbToHue(hex){ const n=parseInt(hex.slice(1),16); let r=(n>>16&255)/255,g=(n>>8&255)/255,b=(n&255)/255; const mx=Math.max(r,g,b),mn=Math.min(r,g,b),d=mx-mn; let h=0; if(d){ if(mx===r)h=((g-b)/d)%6; else if(mx===g)h=(b-r)/d+2; else h=(r-g)/d+4; h*=60; if(h<0)h+=360; } return h; }
+      // Chart palette for a given surface mode — shared by the hue knob AND per-card Invert.
+      function huePalette(h, light){
+        const S=52, Ls= light?[20,34,44,56,64,74,82,89]:[98,84,76,60,52,40,30,20], hsl=l=>'hsl('+h+' '+S+'% '+l+'%)';
+        return { '--cstop-1a':hsl(Ls[0]),'--cstop-1b':hsl(Ls[1]),'--cstop-2a':hsl(Ls[2]),'--cstop-3a':hsl(Ls[4]),'--cstop-4a':hsl(Ls[6]),
+          '--area-top':'hsl('+h+' '+S+'% '+(light?46:62)+'% / '+(light?0.2:0.42)+')','--area-mid':'hsl('+h+' '+S+'% 50% / 0)','--line-2':hsl(light?42:70),
+          '--legend-1':hsl(Ls[0]),'--legend-2':hsl(Ls[3]),'--legend-3':hsl(Ls[4]),'--legend-4':hsl(Ls[6]),'--success':hsl(light?42:64) }; }
+      const INV_PROPS=['--cstop-1a','--cstop-1b','--cstop-2a','--cstop-3a','--cstop-4a','--area-top','--area-mid','--line-2','--legend-1','--legend-2','--legend-3','--legend-4','--success'];
+      // Static Color theme palettes per surface (mirror tokens.css) — used when no custom hue is set.
+      const COLOR_DARK={'--cstop-1a':'#a78bfa','--cstop-1b':'#7c3aed','--cstop-2a':'#6ee7b7','--cstop-3a':'#fde68a','--cstop-4a':'#f9a8d4','--area-top':'rgba(139,140,248,0.5)','--area-mid':'rgba(139,140,248,0)','--line-2':'#34d399','--legend-1':'#a78bfa','--legend-2':'#34d399','--legend-3':'#fbbf24','--legend-4':'#f472b6','--success':'#34d399'};
+      const COLOR_LIGHT={'--cstop-1a':'#a78bfa','--cstop-1b':'#7c3aed','--cstop-2a':'#6ee7b7','--cstop-3a':'#fde68a','--cstop-4a':'#f9a8d4','--area-top':'rgba(124,58,237,0.42)','--area-mid':'rgba(124,58,237,0)','--line-2':'#7c3aed','--legend-1':'#7c3aed','--legend-2':'#10b981','--legend-3':'#f59e0b','--legend-4':'#ec4899','--success':'#10b981'};
+      // The chart palette an INVERTED Color card should adopt: it flips to the opposite surface, so
+      // it borrows the OPPOSITE mode's palette (recomputed on the opposite ramp for custom hue).
+      // Mono/Vivid return null — their flip is handled in CSS, so there's nothing to set per-card.
+      function colorInvPalette(){ if(root.getAttribute('data-theme')!=='color') return null; const light=root.getAttribute('data-mode')==='light';
+        return customHue ? huePalette(Math.round(rgbToHue(customHue)), !light) : (light?COLOR_DARK:COLOR_LIGHT); }
+      const INV_ACCENT=['--accent','--accent-text'];
+      // The accent (primary-button) colour an INVERTED Color card should adopt: recomputed for the
+      // OPPOSITE surface so .btn-validate & friends flip like they do in Mono/Vivid (those use CSS).
+      // Honors a custom brand colour by re-running the brand legibility logic for the flipped surface.
+      function colorInvAccent(){ if(root.getAttribute('data-theme')!=='color') return null;
+        const targetLight = root.getAttribute('data-mode')!=='light';   // inverted card = the OPPOSITE of the app mode
+        if(brandColor!=null){ const dark=!targetLight, c=(dark && brandLum(brandColor)<0.22)?shadeC(brandColor,0.82):brandColor;
+          return { '--accent':c, '--accent-text': brandLum(c)>0.5?'#15161a':'#ffffff' }; }
+        return { '--accent':'#8b8cf8', '--accent-text': targetLight?'#ffffff':'#15161a' }; }
+      // Re-sync the inline accent on every inverted card (accent-only, no chart re-render) — used when
+      // the brand colour changes via its picker, which doesn't go through applyHue.
+      function refreshInvertedAccent(){ document.querySelectorAll('.card[data-inverted]').forEach(card=>{
+        INV_ACCENT.forEach(p=>card.style.removeProperty(p)); const acc=colorInvAccent();
+        if(acc){ for(const k in acc) card.style.setProperty(k,acc[k]); } }); }
+      // Apply (on) or clear the inverted-card chart palette + accent as inline vars, then re-render charts.
+      function applyCardInvert(card, on){ INV_PROPS.concat(INV_ACCENT).forEach(p=>card.style.removeProperty(p));
+        if(on){ const map=colorInvPalette(); if(map){ for(const k in map) card.style.setProperty(k,map[k]); }
+          const acc=colorInvAccent(); if(acc){ for(const k in acc) card.style.setProperty(k,acc[k]); } }
+        card.querySelectorAll('[data-chart]').forEach(buildChart); }
       function applyHue(){
-        const props=['--cstop-1a','--cstop-1b','--cstop-2a','--cstop-3a','--cstop-4a','--area-top','--area-mid','--line-2','--legend-1','--legend-2','--legend-3','--legend-4','--success'];
-        if(!(root.getAttribute('data-theme')==='color' && customHue)){ props.forEach(p=>root.style.removeProperty(p)); renderChartsIn(document.querySelector('.view.active')); return; }
-        const h=Math.round(rgbToHue(customHue)), light=root.getAttribute('data-mode')==='light', S=52;
-        const Ls= light?[20,34,44,56,64,74,82,89]:[98,84,76,60,52,40,30,20];
-        const hsl=l=>'hsl('+h+' '+S+'% '+l+'%)', set=(k,v)=>root.style.setProperty(k,v);
-        set('--cstop-1a',hsl(Ls[0]));set('--cstop-1b',hsl(Ls[1]));set('--cstop-2a',hsl(Ls[2]));set('--cstop-3a',hsl(Ls[4]));set('--cstop-4a',hsl(Ls[6]));
-        set('--area-top','hsl('+h+' '+S+'% '+(light?46:62)+'% / '+(light?0.2:0.42)+')'); set('--area-mid','hsl('+h+' '+S+'% 50% / 0)');
-        set('--line-2',hsl(light?42:70));
-        set('--legend-1',hsl(Ls[0]));set('--legend-2',hsl(Ls[3]));set('--legend-3',hsl(Ls[4]));set('--legend-4',hsl(Ls[6]));
-        set('--success',hsl(light?42:64));
+        const active = root.getAttribute('data-theme')==='color' && customHue;
+        if(!active){ INV_PROPS.forEach(p=>root.style.removeProperty(p)); }
+        else { const map=huePalette(Math.round(rgbToHue(customHue)), root.getAttribute('data-mode')==='light'); for(const k in map) root.style.setProperty(k,map[k]); }
+        document.querySelectorAll('.card[data-inverted]').forEach(c=>applyCardInvert(c,true));   // keep inverted cards synced to the new palette / mode
         renderChartsIn(document.querySelector('.view.active'));
       }
       hueInput.addEventListener('input',()=>{ customHue=hueInput.value; applyHue(); });
@@ -588,13 +724,14 @@ import { buildAssetHeader } from './components/asset-header.js';
       function brandLum(hex){ const {r,g,b}=toRGB(hex); const f=c=>{c/=255; return c<=0.03928?c/12.92:Math.pow((c+0.055)/1.055,2.4);}; return 0.2126*f(r)+0.7152*f(g)+0.0722*f(b); }
       function applyBrand(){
         // Mono is monochrome — the accent auto-resolves to ink, so a custom brand never applies (its knob is hidden too).
-        if(brandColor==null || !root.getAttribute('data-theme')){ root.style.removeProperty('--accent'); root.style.removeProperty('--accent-text'); return; }
+        if(brandColor==null || !root.getAttribute('data-theme')){ root.style.removeProperty('--accent'); root.style.removeProperty('--accent-text'); refreshInvertedAccent(); return; }
         const dark = root.getAttribute('data-mode')!=='light';
         // a near-black brand would disappear on the dark shell — lighten it toward white for legibility.
         const c = (dark && brandLum(brandColor) < 0.22) ? shadeC(brandColor, 0.82) : brandColor;
         root.style.setProperty('--accent', c);
         // legible label colour on accent-filled buttons (white on dark accents, ink on light ones)
         root.style.setProperty('--accent-text', brandLum(c) > 0.5 ? '#15161a' : '#ffffff');
+        refreshInvertedAccent();   // inverted Color cards recompute their accent for the flipped surface
       }
       if(brandInput) brandInput.addEventListener('input',()=>{ brandColor=brandInput.value; applyBrand(); });
       if(brandReset) brandReset.addEventListener('click',()=>{ brandColor=null; if(brandInput) brandInput.value='#000000'; applyBrand(); });
@@ -608,19 +745,21 @@ import { buildAssetHeader } from './components/asset-header.js';
       var _ap=document.querySelector('.app')||document.getElementById('app'); if(_ap)_ap.style.borderRadius=CONFIG.appRadius+'px';
       bSp.onclick=()=>setDensity('spacious'); bCo.onclick=()=>setDensity('compact'); bDn.onclick=()=>setDensity('dense'); setDensity('spacious');
 
-      const bLayDef=document.getElementById('layout-default'), bLayFlow=document.getElementById('layout-flowy');
-      function setLayout(m){ if(m==='flowy')root.setAttribute('data-layout','flowy'); else root.removeAttribute('data-layout');
-        bLayDef.classList.toggle('on',m!=='flowy'); bLayFlow.classList.toggle('on',m==='flowy');
-        // Flowy is its own complete surface treatment — Shell separation conflicts with it, so hide it and reset to default
+      const bLayDef=document.getElementById('layout-default'), bLayFlow=document.getElementById('layout-flowy'), bLayFlap=document.getElementById('layout-flap');
+      // Flap inherits Flowy's surface treatment + a fused active-tab "flap" — both are "layered" modes.
+      function setLayout(m){ if(m==='flowy')root.setAttribute('data-layout','flowy'); else if(m==='flap')root.setAttribute('data-layout','flap'); else root.removeAttribute('data-layout');
+        bLayDef.classList.toggle('on',m!=='flowy'&&m!=='flap'); bLayFlow.classList.toggle('on',m==='flowy'); if(bLayFlap) bLayFlap.classList.toggle('on',m==='flap');
+        // Flowy/Flap are complete surface treatments — Shell separation conflicts with them, so hide it and reset to tinted
+        const layered=(m==='flowy'||m==='flap');
         const sg=document.getElementById('shell-sep-grp');
-        if(m==='flowy'){
+        if(layered){
           root.removeAttribute('data-shell');
           ['shell-seamless','shell-contrast'].forEach(id=>document.getElementById(id)&&document.getElementById(id).classList.remove('on'));
           const st=document.getElementById('shell-tinted'); if(st) st.classList.add('on');
           if(sg) sg.style.display='none';
         } else if(sg){ sg.style.display=''; }
         renderChartsIn(document.querySelector('.view.active')); }
-      bLayDef.onclick=()=>setLayout('default'); bLayFlow.onclick=()=>setLayout('flowy');
+      bLayDef.onclick=()=>setLayout('default'); bLayFlow.onclick=()=>setLayout('flowy'); if(bLayFlap) bLayFlap.onclick=()=>setLayout('flap');
 
       /* tab transition: default vs slide-fade */
       const bFxFlat=document.getElementById('tabfx-flat'), bFxSlide=document.getElementById('tabfx-slide');
@@ -692,7 +831,7 @@ import { buildAssetHeader } from './components/asset-header.js';
         'mode-light':()=>setMode('light'), 'mode-dark':()=>setMode('dark'),
         'theme-mono':()=>setTheme('mono'), 'theme-color':()=>setTheme('color'), 'theme-vivid':()=>setTheme('vivid'),
         'density-spacious':()=>setDensity('spacious'), 'density-compact':()=>setDensity('compact'), 'density-dense':()=>setDensity('dense'),
-        'layout-default':()=>setLayout('default'), 'layout-flowy':()=>setLayout('flowy'),
+        'layout-default':()=>setLayout('default'), 'layout-flowy':()=>setLayout('flowy'), 'layout-flap':()=>setLayout('flap'),
         'tabfx-flat':()=>setTabFx('flat'), 'tabfx-slide':()=>setTabFx('slide'),
         'c3d-default':()=>setCharts3d('default'), 'c3d-iso':()=>setCharts3d('iso'), 'c3d-glass':()=>setCharts3d('glass'),
         'kf-sans':()=>setKpiFont('sans'), 'kf-mono':()=>setKpiFont('mono'), 'kf-serif':()=>setKpiFont('serif'),
@@ -1006,8 +1145,9 @@ import { buildAssetHeader } from './components/asset-header.js';
             const inv=card.hasAttribute('data-inverted');
             menu.appendChild(item(inv?'Reset surface':'Invert surface', inv, ()=>{
               if(inv) card.removeAttribute('data-inverted'); else card.setAttribute('data-inverted','');
-              // re-render so baked colours (3D bars, pie slices, value labels) pick up the card's flipped tokens
-              card.querySelectorAll('[data-chart]').forEach(buildChart);
+              // flip the card's chart palette to the opposite surface (Color / custom hue) + re-render so
+              // flat AND baked colours (3D bars, pie slices, donut, value labels) follow the flipped surface
+              applyCardInvert(card, !inv);
             }));
           }
           menu.classList.add('open');
@@ -1032,7 +1172,9 @@ import { buildAssetHeader } from './components/asset-header.js';
         const sel=document.getElementById('preset-select'); if(!sel) return;
         const $=id=>document.getElementById(id);
         const proto=document.getElementById('proto');
-        const flag=$('preset-flag');
+        const track=$('preset-track'), dots=$('preset-dots');
+        const prevBtn=$('preset-prev'), nextBtn=$('preset-next');
+        let customCard=null;
         const editRow=$('preset-edit'), nameInp=$('preset-name');
         const confirmRow=$('preset-confirm'), confirmText=$('preset-confirm-text');
         const DEFAULTS=[
@@ -1092,22 +1234,188 @@ import { buildAssetHeader } from './components/asset-header.js';
             ga:!!st.glassAdv, go:st.glassAdv?String(st.glassOp):null, gb:st.glassAdv?String(st.glassBl):null }); }
         function snap(){ lastSnap=sig(captureState()); }   // record the baseline right after apply/save
 
+        /* ---- shared theme library (auto-sync to the cloud themes bin) ----
+           Built-in DEFAULTS stay local; user-made presets sync, tagged by owner.
+           Reading other people's presets needs no name; pushing mine prompts once. */
+        const DEFAULT_IDS = new Set(DEFAULTS.map(d=>d.id));
+        const isMine = (p, me)=> me ? p.owner===me : (!DEFAULT_IDS.has(p.id) && !p.owner);
+        const myPresets = (me)=> store.presets.filter(p=>!DEFAULT_IDS.has(p.id) && isMine(p,me));
+        let pushT;
+        function pushMine(){
+          clearTimeout(pushT);
+          pushT=setTimeout(async ()=>{
+            try{
+              const me = await ensureAuthor();
+              if(!me) return;
+              let changed=false;
+              store.presets.forEach(p=>{ if(!DEFAULT_IDS.has(p.id) && !p.owner){ p.owner=me; changed=true; } });
+              if(changed) persist();
+              await syncOwnerThemes(me, myPresets(me));
+            }catch(e){ console.error('[themes] sync failed', e); }
+          }, 250);
+        }
+        function mergeShared(shared){
+          const arr = Array.isArray(shared)?shared:[];
+          if(!arr.length) return;
+          const me = getAuthor();
+          const keep = store.presets.filter(p => DEFAULT_IDS.has(p.id) || isMine(p, me));
+          const keepIds = new Set(keep.map(p=>p.id));
+          const others = arr.filter(p => p && p.id && !DEFAULT_IDS.has(p.id) && !(me && p.owner===me) && !keepIds.has(p.id));
+          store.presets = [...keep, ...others];
+          persist(); render(); refresh();
+        }
+
+        /* One-time upload of presets that were created before cloud sync existed.
+           Runs after the shared pull so we never clobber the server. */
+        const MIGRATED_KEY='sb-presets-synced-v1';
+        async function migrateOnce(){
+          try{
+            if(!isCloudEnabled()) return;                 // nothing to push to; retry once configured
+            if(localStorage.getItem(MIGRATED_KEY)) return;
+            const localUser = store.presets.filter(p=>!DEFAULT_IDS.has(p.id));
+            if(!localUser.length){ localStorage.setItem(MIGRATED_KEY,'1'); return; } // nothing to migrate
+            const me = await ensureAuthor();              // prompt once for a name (skipped if already set)
+            if(!me) return;                               // dismissed — try again next boot
+            let changed=false;
+            store.presets.forEach(p=>{ if(!DEFAULT_IDS.has(p.id) && !p.owner){ p.owner=me; changed=true; } });
+            if(changed) persist();
+            const ok = await syncOwnerThemes(me, myPresets(me));
+            if(ok){ localStorage.setItem(MIGRATED_KEY,'1'); render();
+              console.info('[themes] uploaded', myPresets(me).length, 'preset(s) to the shared library'); }
+          }catch(e){ console.error('[themes] migration failed', e); }
+        }
+
+        /* ---- carousel: tiny DOM builder + an abstract mini-mock "preview" generated
+           straight from a preset's saved knobs (mode, palette, corners, composition,
+           density, glass) so each card visualises what the theme actually does. ---- */
+        const elc=(tag,cls,style)=>{ const n=document.createElement(tag); if(cls) n.className=cls; if(style) n.setAttribute('style',style); return n; };
+        const hasBtn=(st,id)=>!!(st&&st.buttons&&st.buttons.includes(id));
+        const pickBtn=(st,ids,fb)=>{ for(const id of ids) if(hasBtn(st,id)) return id; return fb; };
+        const clampn=(v,a,b)=>Math.max(a,Math.min(b,v));
+        const VIVID=['#6366f1','#10b981','#f59e0b','#ec4899'];
+
+        function previewSpec(st){
+          st=st||{};
+          const dark=hasBtn(st,'mode-dark');
+          const palette=pickBtn(st,['theme-vivid','theme-color','theme-mono'],'theme-mono');
+          const comp=pickBtn(st,['comp-hero','comp-uniform','comp-bento'],'comp-bento');
+          const density=pickBtn(st,['density-dense','density-compact','density-spacious'],'density-spacious');
+          const intensity=pickBtn(st,['color-expressive','color-calm','color-strategic'],'color-strategic');
+          const tabs=pickBtn(st,['tabs-color','tabs-underline','tabs-filled'],'tabs-filled');
+          const sl=st.sliders||{};
+          const rSurf=clampn(+sl['r-surface']||0,0,28), rInt=clampn(+sl['r-interactive']||0,0,20);
+          const glass=clampn(+sl['r-glass']||0,0,100);
+          let accent;
+          if(palette==='theme-mono') accent=dark?'#cbd0d9':'#3b3e45';
+          else if(palette==='theme-color') accent=(st.brandActive&&st.brand)?st.brand:((st.hueActive&&st.hue)?st.hue:'#6366f1');
+          else accent=VIVID[0];
+          return { dark, palette, comp, density, tabs, accent,
+            tileR:Math.round(rSurf*0.32), tabR:Math.round(rInt*0.35), glass,
+            gap: density==='density-dense'?2:density==='density-compact'?3:5,
+            pad: density==='density-dense'?5:density==='density-compact'?7:9,
+            shadow: intensity==='color-expressive'?0.5:intensity==='color-calm'?0.12:0.28 };
+        }
+        function themePreview(st){
+          const s=previewSpec(st);
+          const bg=s.dark?'#0e0f13':'#eef0f4', tile=s.dark?'#1b1e25':'#ffffff';
+          const line=s.dark?'rgba(255,255,255,0.10)':'rgba(0,0,0,0.08)', faint=s.dark?'rgba(255,255,255,0.18)':'rgba(0,0,0,0.13)';
+          const wrap=elc('div','tp-preview',`background:${bg};border-radius:${s.tileR+3}px;padding:${s.pad}px;gap:${s.gap}px`);
+          // mini tab row — active tab carries the picked tab style (filled · underline · color)
+          const bar=elc('div','tp-pv-bar',`gap:${s.gap}px`);
+          for(let i=0;i<3;i++){ const on=i===0; let cs=`border-radius:${s.tabR}px`;
+            if(on){ if(s.tabs==='tabs-color') cs+=`;background:${s.accent}`;
+              else if(s.tabs==='tabs-underline') cs+=`;background:transparent;box-shadow:inset 0 -2px 0 ${s.accent}`;
+              else cs+=`;background:${faint}`; }
+            else cs+=`;background:${line}`;
+            bar.appendChild(elc('span','tp-pv-tab'+(on?' on':''),cs)); }
+          wrap.appendChild(bar);
+          // mini card grid — arrangement = composition, gap = density, corners = surface radius
+          const grid=elc('div','tp-pv-grid tp-'+s.comp,`gap:${s.gap}px`);
+          const tShadow=`box-shadow:0 ${1+Math.round(s.shadow*4)}px ${2+Math.round(s.shadow*8)}px -2px rgba(0,0,0,${((s.dark?0.5:0.18)+s.shadow*0.2).toFixed(2)})`;
+          const mkTile=(extra,accentFill,ci)=>{
+            const fill=accentFill?(s.palette==='theme-vivid'?VIVID[ci%VIVID.length]:s.accent):tile;
+            const t=elc('span','tp-pv-tile'+(extra?' '+extra:''),`background:${fill};border-radius:${s.tileR}px;${tShadow}`);
+            if(!accentFill){ const dc=s.palette==='theme-vivid'?VIVID[(ci+1)%VIVID.length]:s.accent; t.appendChild(elc('i','tp-pv-dot',`background:${dc}`)); }
+            return t;
+          };
+          if(s.comp==='comp-hero'){ grid.appendChild(mkTile('big',true,0)); grid.appendChild(mkTile('',false,1)); grid.appendChild(mkTile('',false,2)); }
+          else if(s.comp==='comp-uniform'){ grid.appendChild(mkTile('',true,0)); grid.appendChild(mkTile('',false,1)); grid.appendChild(mkTile('',false,2)); grid.appendChild(mkTile('',false,3)); }
+          else { grid.appendChild(mkTile('wide',true,0)); grid.appendChild(mkTile('',false,1)); grid.appendChild(mkTile('',false,2)); }
+          wrap.appendChild(grid);
+          if(s.glass>0) wrap.appendChild(elc('div','tp-pv-frost',`opacity:${(0.10+s.glass/100*0.45).toFixed(2)}`));
+          return wrap;
+        }
+        function metaLine(st){
+          const s=previewSpec(st);
+          const pal={'theme-mono':'Mono','theme-color':'Color','theme-vivid':'Vivid'}[s.palette];
+          const comp={'comp-bento':'Bento','comp-uniform':'Uniform','comp-hero':'Hero'}[s.comp];
+          const dens={'density-spacious':'Spacious','density-compact':'Compact','density-dense':'Dense'}[s.density];
+          return [s.dark?'Dark':'Light',pal,comp,dens].join(' \u00B7 ');
+        }
+        function buildCard(id,name,state,owner,me){
+          const card=elc('button','tp-card'); card.type='button'; card.dataset.id=id||''; card.setAttribute('role','tab');
+          const head=elc('div','tp-card-head');
+          const nm=elc('span','tp-name'); nm.textContent=name; head.appendChild(nm);
+          const badge=elc('span','tp-badge'); badge.textContent='Modified'; badge.hidden=true; badge.title='Current settings differ from this preset'; head.appendChild(badge);
+          card.appendChild(head); card.appendChild(themePreview(state));
+          const meta=elc('div','tp-meta'); meta.textContent=metaLine(state); card.appendChild(meta);
+          if(owner&&owner!==me){ const ow=elc('div','tp-owner'); ow.textContent='by '+owner; card.appendChild(ow); }
+          return card;
+        }
+        const cardEls=()=> track?[...track.children]:[];
+        function centerCard(card,smooth){ if(!track||!card) return; const left=card.offsetLeft-(track.clientWidth-card.clientWidth)/2; track.scrollTo({left:Math.max(0,left),behavior:smooth?'smooth':'auto'}); }
+        function markActive(){ const cur=store.selected||''; let act=null;
+          cardEls().forEach(c=>{ const on=(c.dataset.id||'')===cur; c.classList.toggle('is-active',on); c.setAttribute('aria-selected',on?'true':'false'); if(on) act=c; });
+          if(dots){ const idx=cardEls().indexOf(act); [...dots.children].forEach((d,i)=>d.classList.toggle('on',i===idx)); }
+          return act; }
+        function orderIds(){ return ['',...store.presets.map(p=>p.id)]; }
+        // every nav action also selects → applies, matching "switch between themes"
+        function selectId(id,smooth){ sel.value=id||''; sel.dispatchEvent(new Event('change')); const act=markActive(); if(act) centerCard(act,smooth!==false); }
+        function step(dir){ const ids=orderIds(); let i=ids.indexOf(store.selected||''); i=clampn(i+dir,0,ids.length-1); selectId(ids[i],true); }
+
         function render(){
+          // hidden <select> stays the selection source of truth (unchanged data path)
           sel.innerHTML='';
-          const ph=document.createElement('option'); ph.value=''; ph.textContent='— Custom —'; sel.appendChild(ph);
-          store.presets.forEach(p=>{ const o=document.createElement('option'); o.value=p.id; o.textContent=p.name; sel.appendChild(o); });
+          const me=getAuthor();
+          const ph=document.createElement('option'); ph.value=''; ph.textContent='\u2014 Custom \u2014'; sel.appendChild(ph);
+          store.presets.forEach(p=>{ const o=document.createElement('option'); o.value=p.id;
+            o.textContent = (p.owner && p.owner!==me) ? (p.name+' \u00B7 '+p.owner) : p.name; sel.appendChild(o); });
           sel.value=store.selected||'';
+          // visible carousel: a leading live "Custom" card, then one card per preset
+          if(track){
+            track.innerHTML='';
+            customCard=buildCard('','Custom',captureState(),null,me); customCard.classList.add('tp-custom');
+            track.appendChild(customCard);
+            store.presets.forEach(p=> track.appendChild(buildCard(p.id,p.name,p.state,p.owner,me)) );
+            if(dots){ dots.innerHTML=''; const n=track.children.length;
+              for(let i=0;i<n;i++){ const d=elc('button','tp-dot'); d.type='button'; d.dataset.idx=i; d.setAttribute('aria-label','Theme '+(i+1)); dots.appendChild(d); } }
+            const act=markActive(); if(act) centerCard(act,false);
+          }
         }
         function current(){ return store.presets.find(p=>p.id===sel.value); }
 
         function refresh(){
           const p=current();
           const dirty = !!p && sig(captureState())!==lastSnap;
-          if(flag) flag.hidden=!dirty;
+          // keep the live "Custom" card mirroring the current (unsaved) settings
+          if(customCard){ const cs=captureState(); const old=customCard.querySelector('.tp-preview'); if(old) old.replaceWith(themePreview(cs));
+            const m=customCard.querySelector('.tp-meta'); if(m) m.textContent=metaLine(cs); }
+          // "Modified" badge now lives inside the active preset card
+          cardEls().forEach(c=>{ const b=c.querySelector('.tp-badge'); if(b) b.hidden = !((c.dataset.id||'')===(store.selected||'') && dirty); });
           $('preset-save').disabled   = p ? !dirty : false;   // Custom → enabled (acts as "New"); preset → only when drifted
           $('preset-rename').disabled = !p;                    // nothing to rename on "— Custom —"
           $('preset-del').disabled    = !p;
+          markActive();
         }
+
+        // ---- carousel navigation (click card · chevrons · dots) ----
+        if(track) track.addEventListener('click', e=>{ const c=e.target.closest('.tp-card'); if(!c) return; selectId(c.dataset.id,true); });
+        if(dots) dots.addEventListener('click', e=>{ const d=e.target.closest('.tp-dot'); if(!d) return; const ids=orderIds(); selectId(ids[clampn(+d.dataset.idx,0,ids.length-1)],true); });
+        if(prevBtn) prevBtn.onclick=()=>step(-1);
+        if(nextBtn) nextBtn.onclick=()=>step(1);
+        // center the active card the first time the panel opens (its width is 0 while hidden)
+        if(proto){ const mo=new MutationObserver(()=>{ if(proto.classList.contains('open')){ const act=markActive(); if(act) centerCard(act,false); } });
+          mo.observe(proto,{attributes:true,attributeFilter:['class']}); }
 
         function closeRows(){ editMode=null; if(editRow) editRow.hidden=true; if(confirmRow) confirmRow.hidden=true; }
         function openEdit(mode, value){
@@ -1117,8 +1425,8 @@ import { buildAssetHeader } from './components/asset-header.js';
         }
         function commitEdit(){
           const name=(nameInp.value||'').trim(); if(!name){ nameInp.focus(); return; }
-          if(editMode==='new'){ const p={id:uid(),name,state:captureState()}; store.presets.push(p); store.selected=p.id; persist(); render(); snap(); }
-          else if(editMode==='rename'){ const p=current(); if(p){ p.name=name; persist(); render(); } }
+          if(editMode==='new'){ const p={id:uid(),name,state:captureState()}; store.presets.push(p); store.selected=p.id; persist(); render(); snap(); pushMine(); }
+          else if(editMode==='rename'){ const p=current(); if(p){ p.name=name; persist(); render(); pushMine(); } }
           closeRows(); refresh();
         }
         function openConfirm(text){ if(editRow) editRow.hidden=true; confirmText.textContent=text; confirmRow.hidden=false; }
@@ -1126,26 +1434,48 @@ import { buildAssetHeader } from './components/asset-header.js';
         // ---- consume: applying a preset is the primary "use" path ----
         sel.addEventListener('change', ()=>{ store.selected=sel.value; persist(); closeRows(); const p=current(); if(p) applyState(p.state); snap(); refresh(); });
         // ---- create / update ----
-        $('preset-save').onclick=()=>{ const p=current(); if(p){ p.state=captureState(); persist(); snap(); refresh(); } else { openEdit('new','My preset'); } };
+        $('preset-save').onclick=()=>{ const p=current(); if(p){ p.state=captureState(); persist(); snap(); refresh(); pushMine(); } else { openEdit('new','My preset'); } };
         $('preset-new').onclick=()=>{ openEdit('new','My preset'); };
-        $('preset-dup').onclick=()=>{ const p=current(); if(!p){ openEdit('new','My preset'); return; } const c={id:uid(),name:p.name+' copy',state:JSON.parse(JSON.stringify(p.state))}; store.presets.push(c); store.selected=c.id; persist(); render(); snap(); refresh(); };
+        $('preset-dup').onclick=()=>{ const p=current(); if(!p){ openEdit('new','My preset'); return; } const c={id:uid(),name:p.name+' copy',state:JSON.parse(JSON.stringify(p.state))}; delete c.owner; store.presets.push(c); store.selected=c.id; persist(); render(); snap(); refresh(); pushMine(); };
         $('preset-rename').onclick=()=>{ const p=current(); if(!p) return; openEdit('rename',p.name); };
         $('preset-del').onclick=()=>{ const p=current(); if(!p) return; openConfirm('Delete \u201C'+p.name+'\u201D?'); };
         // ---- inline editor / confirm wiring ----
         $('preset-ok').onclick=commitEdit;
         $('preset-cancel').onclick=closeRows;
         nameInp.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); commitEdit(); } else if(e.key==='Escape'){ e.preventDefault(); closeRows(); } });
-        $('preset-confirm-ok').onclick=()=>{ const p=current(); if(p){ store.presets=store.presets.filter(x=>x.id!==p.id); store.selected=''; persist(); render(); } closeRows(); snap(); refresh(); };
+        $('preset-confirm-ok').onclick=()=>{ const p=current(); if(p){ store.presets=store.presets.filter(x=>x.id!==p.id); store.selected=''; persist(); render(); pushMine(); } closeRows(); snap(); refresh(); };
         $('preset-confirm-cancel').onclick=closeRows;
 
         // ---- live drift tracking: any knob change re-evaluates the Modified flag ----
         if(proto){ let t; const ping=()=>{ clearTimeout(t); t=setTimeout(refresh,0); };
           proto.addEventListener('input', e=>{ if(!e.target.closest('.preset-grp')) ping(); });
           proto.addEventListener('click', e=>{ if(!e.target.closest('.preset-grp')) ping(); }); }
+        window.addEventListener('ia:theme-presets-changed', e=>{
+          const d=e.detail||{};
+          if(d.preset&&d.preset.id){
+            const ix=store.presets.findIndex(p=>p.id===d.preset.id);
+            if(ix>=0) store.presets[ix]=d.preset; else store.presets.push(d.preset);
+            store.selected=d.selected||d.preset.id;
+          } else {
+            store=load();
+            if(d.selected) store.selected=d.selected;
+          }
+          persist(); render();
+          const p=current(); if(p) applyState(p.state);
+          snap(); refresh(); pushMine();
+        });
 
         render();
         if(store.selected){ const p=current(); if(p) applyState(p.state); }   // restore last-applied preset
         snap(); refresh();
+
+        // Snapshot bridge for the feedback feature (built on top, never touches the proto).
+        window.IA = window.IA || {};
+        window.IA.captureState = captureState;
+        window.IA.applyState = applyState;
+        // Pull the shared theme library in (read-only path — no name prompt on boot),
+        // then upload any locally-made presets that predate cloud sync (one-time).
+        getThemes().then(mergeShared).catch(()=>{}).finally(migrateOnce);
       })();
 
 export { selectView, renderChartsIn, runCounters, registerView, getViews };
