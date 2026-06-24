@@ -361,6 +361,36 @@
   [data-layout="flap"] .view.active { border-top:0; box-shadow:0 28px 60px -30px rgba(0,0,0,0.7); }
   [data-mode="light"][data-layout="flap"] .view.active { box-shadow:0 24px 52px -28px rgba(0,0,0,0.18); }
 
+  /* Dark mode only: the flap surface (#08090b) sits on the near-black chrome (--chrome-0 #050506)
+     barely a shade apart, so the folder-tab silhouette reads muddy and undefined. Trace one crisp
+     hairline around the flap as a self-contained folder tab that fuses into the card WITHOUT a seam
+     across its open mouth:
+       • flap body top + sides   → ::before border (top corners ride the surface radius)
+       • the two base flares      → ::after arc rings (below)
+       • the card side + bottom   → .view.active border-color (top stays OPEN so the tab opens into
+                                     the card with no divider line under it)
+     The flares live on the masked ::after, so a normal border would be clipped by the mask. Instead
+     we paint a 1px ring as a background layer at radius = --flap-flare from each outer corner: it
+     sits just OUTSIDE the mask's transparent cut, so it survives the mask and hugs the exact curve
+     the fill already carves, sweeping the bordered tab down into the card surface. */
+  [data-layout="flap"]:not([data-mode="light"]) #route-context { --flap-edge:rgba(255,255,255,0.16); }
+  [data-layout="flap"]:not([data-mode="light"]) #route-context .ia-tab.active::before{
+    border:1px solid var(--flap-edge); border-bottom:0; bottom:-1px;
+  }
+  [data-layout="flap"]:not([data-mode="light"]) #route-context .ia-tab.active::after{
+    bottom:-1px;
+    /* Top layer = a short surface-coloured wash over the bottom few px: the arc rings sweep down
+       and would otherwise STOP dead at the card's open top edge. Washing their tail back into the
+       surface dissolves that hard cut so each flare fades to nothing — reading as a deliberate
+       effect, matching the way the card's side borders taper off into the open top corners. */
+    background:
+      linear-gradient(to top, var(--flowy-surface) 1px, transparent 6px) no-repeat,
+      radial-gradient(circle at left top,  transparent var(--flap-flare), var(--flap-edge) var(--flap-flare), var(--flap-edge) calc(var(--flap-flare) + 1px), transparent calc(var(--flap-flare) + 1px)) no-repeat,
+      radial-gradient(circle at right top, transparent var(--flap-flare), var(--flap-edge) var(--flap-flare), var(--flap-edge) calc(var(--flap-flare) + 1px), transparent calc(var(--flap-flare) + 1px)) no-repeat,
+      var(--flowy-surface);
+  }
+  [data-layout="flap"]:not([data-mode="light"]) .view.active { border-color:var(--flap-edge); }
+
   /* =====================================================================
      Colour picker field — shared by the Palette "Single hue", Brand colour
      and Tab colour rows. Styled like the .toggle groups: a rounded hairline

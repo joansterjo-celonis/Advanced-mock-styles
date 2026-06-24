@@ -111,6 +111,10 @@ body.sv-dragging, body.sv-dragging * { cursor: col-resize !important; user-selec
 [data-layout="flap"] .sv-split { padding-top: 0; }
 [data-layout="flap"] .sv-pane > .view { border-top: 0; box-shadow: 0 28px 60px -30px rgba(0,0,0,0.7); }
 [data-mode="light"][data-layout="flap"] .sv-pane > .view { box-shadow: 0 24px 52px -28px rgba(0,0,0,0.18); }
+/* Dark flap: both panes carry the same crisp --flap-edge frame as the single-view card (the flaps
+   themselves already inherit the body + flare borders via .ia-tab.active), so split reads framed too.
+   Top stays open per pane so each flap fuses into its pane with no divider. */
+[data-layout="flap"]:not([data-mode="light"]) .sv-pane > .view { border-color: var(--flap-edge); }
 
 /* Inert flex spacer split-view.js inserts into the tab strip to push the secondary flap over
    the right pane. No fill, no pointer target — it only reserves horizontal space. */
