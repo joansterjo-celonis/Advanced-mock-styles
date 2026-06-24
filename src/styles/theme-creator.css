@@ -205,7 +205,7 @@
   background:var(--ia-hover);
   color:var(--ia-muted);
   font-size:11px;
-  font-weight:800;
+  font-weight:650;
 }
 .tc-step.active .tc-step-dot {
   color:var(--accent-text,#fff);
@@ -232,7 +232,7 @@
   display:block;
   max-width:100%;
   font-size:12.5px;
-  font-weight:700;
+  font-weight:600;
   white-space:nowrap;
   overflow:hidden;
   text-overflow:ellipsis;
@@ -248,7 +248,7 @@
 .tc-step.done b { color:color-mix(in srgb, var(--ia-ink) 86%, var(--ia-muted)); }
 .tc-step.done small {
   color:var(--ia-muted-2);
-  font-weight:800;
+  font-weight:650;
 }
 
 .tc-stage {
