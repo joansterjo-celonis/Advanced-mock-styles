@@ -29,7 +29,12 @@
   /* Seamless: shell surfaces collapse onto the gray workspace (no distinction). Flatten the
      full chrome tier — rail/side AND the panel that feeds glass-chrome (#l1/.tabbar/.statusbar)
      — to --chrome-0, so seamless reads as one continuous gray and differs from tinted. */
-  [data-shell="seamless"] { --chrome-rail:var(--chrome-0); --chrome-side:var(--chrome-0); --chrome-panel:var(--chrome-0); --glass-tint-chrome:var(--chrome-0); }
+  /* --glass-fill-chrome:1 keeps the chrome tier SOLID so the rails/tab-bar paint the exact
+     --chrome-0 of the workspace (no ~1% glass bleed). Without it the rail reads as chrome-0 at
+     99% alpha — the same hue but a hair off the solid view, breaking the "one material" illusion
+     (and worsening as the Global glass slider drops --glass-fill-chrome). Overlays still glassify
+     via --glass-fill. Mirrors the Contrast shell's solid-chrome treatment. */
+  [data-shell="seamless"] { --chrome-rail:var(--chrome-0); --chrome-side:var(--chrome-0); --chrome-panel:var(--chrome-0); --glass-tint-chrome:var(--chrome-0); --glass-fill-chrome:1; }
   [data-shell="seamless"] .sidebar { border-color:transparent; }
   [data-shell="seamless"] .tabbar { border-color:var(--chrome-border-soft); }
   /* Contrast: strong surface contrast — dark shell against the light workspace (and deeper black in dark mode) */

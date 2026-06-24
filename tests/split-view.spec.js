@@ -19,7 +19,9 @@
 //     [ ] Dragging the centre gap resizes both; charts reflow to new widths.
 //     [ ] Each pane scrolls independently; its header pins + shadows.
 //     [ ] Exit via divider ✕, via clicking any tab, and via closing a tab x.
-//     [ ] Repeat the split matrix in Flowy layout.
+//     [ ] Repeat the split matrix in Flowy AND Flap layouts.
+//     [ ] In Flap, BOTH flaps stay fused to their pane as the divider/window resizes
+//         (left flap leads the strip over the left pane; right flap tracks the right pane).
 // ------------------------------------------------------------
 
 import { test, expect } from '@playwright/test';
@@ -191,4 +193,46 @@ test('split works in the Flowy layout too', async ({ page }) => {
 
   await page.locator('.sv-divider-close').click({ force: true });
   await expect(page.locator('.sv-split')).toHaveCount(0);
+});
+
+test('Flap layout anchors BOTH flaps over their panes (left flap reflows like the right)', async ({ page }) => {
+  await page.evaluate(() => document.documentElement.setAttribute('data-layout', 'flap'));
+
+  // Make a NON-first tab the active/left view so its natural strip slot is mid-strip — the
+  // exact case where the old code left the left flap floating off its pane.
+  await page.locator(TAB('rework-quality')).click();
+  await expect(page.locator('#content .view[data-view="rework-quality"].active')).toBeVisible();
+
+  // Split with another asset on the right.
+  await page.locator(TAB('purchase-order')).click({ button: 'right' });
+  await page.locator('#sv-tab-ctxmenu [data-sv-action="split"]').click();
+  await expect(page.locator('.sv-split')).toHaveCount(1);
+
+  // The left flap now LEADS the strip: the first real tab is the active/left flap, not an
+  // inactive tab that used to sit ahead of it (only an inert spacer may precede it).
+  const firstTabView = await page.locator('#main .tabs .ia-tab').first().evaluate((el) => el.dataset.view);
+  expect(firstTabView).toBe('rework-quality');
+
+  // A flap is "connected" to its pane when its box sits within that pane horizontally.
+  const flapInPane = (tabView, paneSel) => page.evaluate(({ tv, ps }) => {
+    const f = document.querySelector(`#main .tabs .ia-tab[data-view="${tv}"]`).getBoundingClientRect();
+    const p = document.querySelector(ps).getBoundingClientRect();
+    return f.left >= p.left - 1 && f.right <= p.right + 1;
+  }, { tv: tabView, ps: paneSel });
+
+  // Both flaps start within their own pane.
+  expect(await flapInPane('rework-quality', '.sv-pane-left')).toBe(true);
+  expect(await flapInPane('purchase-order', '.sv-pane-right')).toBe(true);
+
+  // Drag the divider left → the left pane shrinks. The left flap must REFLOW to stay within it
+  // (the regression: it used to keep its slot and spill across the divider).
+  const divider = page.locator('.sv-divider');
+  const box = await divider.boundingBox();
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(box.x - 160, box.y + box.height / 2, { steps: 12 });
+  await page.mouse.up();
+
+  await expect.poll(() => flapInPane('rework-quality', '.sv-pane-left')).toBe(true);
+  expect(await flapInPane('purchase-order', '.sv-pane-right')).toBe(true);
 });

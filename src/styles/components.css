@@ -550,7 +550,7 @@
    min-height to its content (the rail's tall calc(100vh-60px)), over-constraining the #route-context
    column so the 40px statusbar is pushed past the clipped fold (disappears) and the canvas scroll
    height is starved. Resetting it to 0 keeps the shadow bleed without breaking the layout. */
-:is([data-layout="flowy"],[data-layout="flap"]) .ctx-body{overflow:visible !important;min-height:0;}
+:is([data-layout="flowy"],[data-layout="flap"]) .ctx-body{overflow:visible !important;min-height:0;background:var(--chrome-0);}
 /* Flap delta: drop the tab→card top gap so the flap tab meets the card with no seam.
    (Lives here, after the shared Flowy #content rule, so it wins on source order — this
    file loads after shell.css.) The active tab in .tabbar fuses into this card; see the

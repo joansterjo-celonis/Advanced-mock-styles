@@ -133,7 +133,7 @@ function enterSplit(secondaryId) {
   const rt = tabFor(right.dataset.view);
   if (rt) rt.classList.add('active', 'sv-tab-split');
 
-  state = { splitEl, divider, leftView: left, rightView: right, leftAnchor, rightAnchor, roTimer: null, flapSpacer: null, rightTabAnchor: null };
+  state = { splitEl, divider, leftView: left, rightView: right, leftAnchor, rightAnchor, roTimer: null, flapSpacers: [], leftTabAnchor: null, rightTabAnchor: null };
 
   wireDivider(divider, splitEl);
   wireResizeObserver(left, right);
@@ -150,9 +150,9 @@ function swapRight(newRight) {
   const paneB = state.splitEl.querySelector('.sv-pane-right');
   // Return the outgoing secondary flap to its natural tab slot before it loses its role, then
   // forget the anchor so relayout records a fresh one for the incoming secondary tab.
-  restoreRightTab();
+  restoreFlapTab(tabFor(oldRight.dataset.view), state.rightTabAnchor);
   state.rightTabAnchor = null;
-  removeFlapSpacer();
+  removeFlapSpacers();
   // Park the outgoing view back where it belongs (hidden #content), unmark its tab.
   const ot = tabFor(oldRight.dataset.view); if (ot) ot.classList.remove('sv-tab-split', 'active');
   if (state.onPaneScroll) oldRight.removeEventListener('scroll', state.onPaneScroll);
@@ -246,76 +246,96 @@ function wirePaneScroll(left, right) {
 
 /* ===================== flap-layout tab anchoring ===================== */
 // In the Flap layout BOTH paired tabs render as folder "flaps" (shell.css targets every
-// .ia-tab.active). The active/left flap already sits over the left pane in natural tab order;
-// here we anchor the SECONDARY (right) flap over the RIGHT pane by MOVING it to the tab slot
-// where its left edge first reaches that pane. The other (inactive) tabs flow in to fill the
-// space it vacated, so the strip stays gap-free and tight — no empty spacer is left behind.
-// Only when there aren't enough tabs to reach the pane do we fall back to a small residual
-// spacer. The slot is recomputed as the divider/window resizes, so the flap tracks its pane.
+// .ia-tab.active). Each flap must sit horizontally over its OWN pane so it stays fused to that
+// pane's body — otherwise a flap whose natural tab slot lands over the other pane (or the
+// divider) floats detached from its card. So we anchor BOTH flaps to the LEFT edge of their
+// pane, far enough in that the flap's outer flare clears the pane's rounded top-left corner:
+//   • the RIGHT flap is moved to the tab slot where a tab's left edge first reaches the right
+//     pane — the inactive tabs flow in to fill the space before it, gap-free;
+//   • the LEFT flap is moved to the head of the strip and nudged in by a small leading spacer
+//     so its flare meets the left pane's corner cleanly.
+// A small residual/leading spacer is only used to finish a push the tabs can't make on their
+// own. Everything is recomputed as the divider/window resizes, so each flap tracks its pane.
 function isFlapLayout() { return document.documentElement.getAttribute('data-layout') === 'flap'; }
 
-function removeFlapSpacer() {
-  if (state && state.flapSpacer && state.flapSpacer.parentNode) state.flapSpacer.parentNode.removeChild(state.flapSpacer);
-  if (state) state.flapSpacer = null;
+function removeFlapSpacers() {
+  if (!state || !state.flapSpacers) return;
+  state.flapSpacers.forEach((s) => { if (s.parentNode) s.parentNode.removeChild(s); });
+  state.flapSpacers = [];
 }
 
-// Return the secondary flap to its natural slot in the tab strip (used on exit, swap, and when
-// the layout isn't Flap). Other tabs never change relative order, so the recorded next-sibling
-// restores the exact original sequence.
-function restoreRightTab() {
-  if (!state || !state.rightTabAnchor) return;
-  const tab = state.rightView && tabFor(state.rightView.dataset.view);
-  if (!tab) return;
-  const a = state.rightTabAnchor;
-  if (a.next && a.next.parentNode === a.parent) a.parent.insertBefore(tab, a.next);
-  else if (a.parent) a.parent.appendChild(tab);
+function makeFlapSpacer(width) {
+  const spacer = document.createElement('div');
+  spacer.className = 'sv-flap-spacer';
+  spacer.setAttribute('aria-hidden', 'true');
+  spacer.style.width = width + 'px';
+  if (state) state.flapSpacers.push(spacer);
+  return spacer;
+}
+
+// The x where a flap's body must start so its outer flare clears the pane's rounded top-left
+// corner (and, for the right pane, the divider).
+function paneFlapX(pane) {
+  const card = pane.querySelector('.view');
+  const cornerR = card ? (parseFloat(getComputedStyle(card).borderTopLeftRadius) || 0) : 0;
+  return pane.getBoundingClientRect().left + FLAP_FLARE + cornerR;
+}
+
+// Return a flap to its natural slot in the tab strip (used on exit, swap, and when the layout
+// isn't Flap). Other tabs never change relative order, so the recorded next-sibling restores
+// the exact original sequence.
+function restoreFlapTab(tab, anchor) {
+  if (!tab || !anchor) return;
+  if (anchor.next && anchor.next.parentNode === anchor.parent) anchor.parent.insertBefore(tab, anchor.next);
+  else if (anchor.parent) anchor.parent.appendChild(tab);
 }
 
 function relayoutFlapTabs() {
   if (!state) return;
-  removeFlapSpacer();
+  removeFlapSpacers();
 
   const tabsC = tabsEl();
+  const leftPane = state.splitEl.querySelector('.sv-pane-left');
   const rightPane = state.splitEl.querySelector('.sv-pane-right');
   const leftTab = tabFor(state.leftView.dataset.view);
   const rightTab = tabFor(state.rightView.dataset.view);
-  if (!tabsC || !rightPane || !leftTab || !rightTab) return;
+  if (!tabsC || !leftPane || !rightPane || !leftTab || !rightTab) return;
 
-  // Remember the secondary tab's home once, so exit/swap can restore the natural order.
+  // Remember each flap's home once, so exit/swap can restore the natural order.
+  if (!state.leftTabAnchor) state.leftTabAnchor = { parent: leftTab.parentNode, next: leftTab.nextSibling };
   if (!state.rightTabAnchor) state.rightTabAnchor = { parent: rightTab.parentNode, next: rightTab.nextSibling };
 
-  // Other layouts never reorder — keep the tab in its natural spot.
-  if (!isFlapLayout()) { restoreRightTab(); return; }
+  // Other layouts never reorder — keep both flaps in their natural spots.
+  if (!isFlapLayout()) { restoreFlapTab(leftTab, state.leftTabAnchor); restoreFlapTab(rightTab, state.rightTabAnchor); return; }
 
-  // The flap must sit far enough into the right pane that its body + outer flare clear the
-  // divider and the pane's rounded top-left corner.
-  const card = rightPane.querySelector('.view');
-  const cornerR = card ? (parseFloat(getComputedStyle(card).borderTopLeftRadius) || 0) : 0;
-  const desiredX = rightPane.getBoundingClientRect().left + FLAP_FLARE + cornerR;
+  const skip = (el) => el === leftTab || el === rightTab || (el.classList && el.classList.contains('sv-flap-spacer'));
 
-  // Find the slot in the gap-free layout (secondary flap detached, siblings collapsed tight)
-  // where a tab's left edge first reaches desiredX; the flap goes there and the tabs before it
-  // fill the space. Detach + reinsert happen in one synchronous pass, so there is no flicker.
+  // --- LEFT flap → head of the strip, over the left pane's left edge. ---
+  // Lead with the active flap so no inactive tab sits before it, then nudge it in with a small
+  // spacer so its outer flare meets the left pane's corner (the strip start rarely lines up
+  // exactly with the pane's flat top). Detach + reinsert in one synchronous pass — no flicker.
+  leftTab.remove();
+  tabsC.insertBefore(leftTab, tabsC.firstChild);
+  const leftGap = Math.round(paneFlapX(leftPane) - leftTab.getBoundingClientRect().left);
+  if (leftGap > 1) tabsC.insertBefore(makeFlapSpacer(leftGap), leftTab);
+
+  // --- RIGHT flap → the slot where a tab's left edge first reaches the right pane. ---
+  // The tabs before it fill the space tight; only fall back to a residual spacer when there
+  // aren't enough tabs to reach the pane.
+  const rightDesiredX = paneFlapX(rightPane);
   rightTab.remove();
   let targetNext = null;
   for (const el of tabsC.children) {
-    if (el === leftTab) continue;                         // never land before the active flap
-    if (el.getBoundingClientRect().left >= desiredX) { targetNext = el; break; }
+    if (skip(el)) continue;
+    if (el.getBoundingClientRect().left >= rightDesiredX) { targetNext = el; break; }
   }
 
   if (targetNext) {
     tabsC.insertBefore(rightTab, targetNext);             // tabs fill up to here — tight, no gap
   } else {
     tabsC.appendChild(rightTab);                          // not enough tabs to reach the pane…
-    const gap = Math.round(desiredX - rightTab.getBoundingClientRect().left);
-    if (gap > 1) {                                        // …so a small residual spacer finishes the push
-      const spacer = document.createElement('div');
-      spacer.className = 'sv-flap-spacer';
-      spacer.setAttribute('aria-hidden', 'true');
-      spacer.style.width = gap + 'px';
-      tabsC.insertBefore(spacer, rightTab);
-      state.flapSpacer = spacer;
-    }
+    const gap = Math.round(rightDesiredX - rightTab.getBoundingClientRect().left);
+    if (gap > 1) tabsC.insertBefore(makeFlapSpacer(gap), rightTab);   // …so a small residual spacer finishes the push
   }
 }
 
@@ -328,10 +348,11 @@ function restoreView(view, anchor) {
 
 function exitSplit() {
   if (!state) return;
-  // Put the secondary flap back in its natural tab slot + drop any residual spacer while state
-  // (and its anchor) is still live, then clear state so observers/handlers no-op.
-  restoreRightTab();
-  removeFlapSpacer();
+  // Put BOTH flaps back in their natural tab slots + drop any spacers while state (and its
+  // anchors) is still live, then clear state so observers/handlers no-op.
+  restoreFlapTab(tabFor(state.leftView.dataset.view), state.leftTabAnchor);
+  restoreFlapTab(tabFor(state.rightView.dataset.view), state.rightTabAnchor);
+  removeFlapSpacers();
   const s = state;
   state = null;
 
@@ -391,4 +412,7 @@ export function initSplitView() {
   // Scrolling the tab strip or resizing shouldn't leave a stray menu floating.
   tabs.addEventListener('scroll', closeMenu, { passive: true });
   window.addEventListener('resize', () => { closeMenu(); relayoutFlapTabs(); });
+  window.IA = window.IA || {};
+  window.IA.exitSplitView = exitSplit;
+  window.IA.isSplitViewActive = () => !!state;
 }

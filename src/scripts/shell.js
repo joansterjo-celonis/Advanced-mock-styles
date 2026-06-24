@@ -261,6 +261,52 @@ import { icons } from './icons.js';
       var rc=document.getElementById('route-context'); rc.classList.remove('mode-overview'); rc.classList.add('mode-editor');
       makeTab(v); hideEmpty(); activateTab(v); selectView(v);
     }
+    function escAttr(v){ return String(v||'').replace(/["\\]/g,'\\$&'); }
+    function activateLeaf(v){
+      document.querySelectorAll('.l1-leaf[data-view]').forEach(function(l){ l.classList.toggle('active', l.dataset.view===v); });
+    }
+    function ensureContextEditor(){
+      var app=document.getElementById('app');
+      var routeIds={ home:'route-home', studio:'route-studio', context:'route-context', datalake:'route-datalake', space:'route-space' };
+      Object.keys(routeIds).forEach(function(k){
+        var el=document.getElementById(routeIds[k]);
+        if(el) el.classList.toggle('active', k==='context');
+      });
+      if(app) app.dataset.route='context';
+      document.querySelectorAll('.nav-item').forEach(function(n){ n.classList.toggle('active', n.dataset.nav==='context'); });
+      var rc=document.getElementById('route-context');
+      if(rc){ rc.classList.remove('mode-overview'); rc.classList.add('mode-editor'); }
+    }
+    function forceView(v){
+      var target=document.querySelector('.view[data-view="'+escAttr(v)+'"]');
+      if(!target) return false;
+      if(content){
+        content.classList.remove('is-empty','fx-scene');
+        content.style.height='';
+      }
+      document.querySelectorAll('.view.fx-face').forEach(function(face){
+        face.classList.remove('fx-face');
+        face.style.left=''; face.style.top=''; face.style.width=''; face.style.height='';
+        face.style.transform=''; face.style.opacity='';
+      });
+      document.querySelectorAll('.view').forEach(function(s){ s.classList.toggle('active', s===target); });
+      activateTab(v); activateLeaf(v);
+      renderChartsIn(target); runCounters(target);
+      return true;
+    }
+    function restoreScreen(screen){
+      var s=screen||{};
+      var v=s.viewId || s.id || s.tabViewId || (s.view && s.view.id);
+      if(window.IA && typeof window.IA.exitSplitView==='function') window.IA.exitSplitView();
+      ensureContextEditor();
+      if(!v) return false;
+      openTab(v);
+      activateLeaf(v);
+      if(!document.querySelector('.view[data-view="'+escAttr(v)+'"].active')) forceView(v);
+      return true;
+    }
+    window.IA = window.IA || {};
+    window.IA.restoreScreen = restoreScreen;
     function closeTab(tab){
       if(!tab) return;
       var wasActive=tab.classList.contains('active');

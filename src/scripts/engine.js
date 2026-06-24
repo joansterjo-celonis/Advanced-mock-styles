@@ -65,26 +65,27 @@ import { getThemes, syncOwnerThemes, getAuthor, ensureAuthor, isCloudEnabled } f
       /* ---- COMBO chart (bars + line, dual axis) — size-aware ---- */
       function combo(wrap){
         const key = wrap.dataset.key, rightMax = parseFloat(wrap.dataset.rightmax)||40, leftLabel = wrap.dataset.leftlabel||'';
+        const n = Math.max(2, parseInt(wrap.dataset.n,10) || N);   // bar/line count; data-n trims it (e.g. theme-creator art)
         const W=Math.max(Math.round(wrap.clientWidth),220), H=Math.max(Math.round(wrap.clientHeight),110);
         const padL=30, padR=34, padT=8, padB=18, innerW=W-padL-padR, innerH=H-padT-padB;
         let bars, line;
-        if(key==='otd'){ bars=series(11,N,18,26,0.4); line=series(21,N,30,8,0.1); }
-        else if(key==='touch'){ bars=series(31,N,30,24,0.6); line=series(41,N,2.6,1.2,0.04); }
-        else if(key==='blocks'){ bars=series(51,N,28,22,0.5); line=series(61,N,10,3,0.05); }
-        else { bars=series(71,N,50,30,0.5); line=series(81,N,60,18,0.4); }
+        if(key==='otd'){ bars=series(11,n,18,26,0.4); line=series(21,n,30,8,0.1); }
+        else if(key==='touch'){ bars=series(31,n,30,24,0.6); line=series(41,n,2.6,1.2,0.04); }
+        else if(key==='blocks'){ bars=series(51,n,28,22,0.5); line=series(61,n,10,3,0.05); }
+        else { bars=series(71,n,50,30,0.5); line=series(81,n,60,18,0.4); }
         const barMax=Math.max(...bars)*1.15, lineMax=rightMax;
         const tint=vividTint(key);
         const svg=E('svg',{viewBox:`0 0 ${W} ${H}`,preserveAspectRatio:'none'});
-        const defs=E('defs',{}); const g=E('linearGradient',{id:'cb_'+key,x1:0,x2:0,y1:0,y2:1});
+        const defs=E('defs',{}); const gid='cb_'+key+'_'+nextGid(); const g=E('linearGradient',{id:gid,x1:0,x2:0,y1:0,y2:1});
         if(tint){ g.appendChild(E('stop',{offset:'0%','stop-color':shade(tint,0.22)})); g.appendChild(E('stop',{offset:'100%','stop-color':shade(tint,-0.12)})); }
         else { g.appendChild(E('stop',{offset:'0%','class':'stop-1a'})); g.appendChild(E('stop',{offset:'100%','class':'stop-1b'})); }
         defs.appendChild(g); svg.appendChild(defs);
         [0,0.5,1].forEach(f=>{ const y=padT+innerH*f; svg.appendChild(E('line',{x1:padL,x2:padL+innerW,y1:y,y2:y,stroke:'rgba(128,128,128,0.18)','stroke-dasharray':'2 4'})); });
-        const step=innerW/N, bw=step*0.6;
+        const step=innerW/n, bw=step*0.6;
         const m3=chartMode(wrap), barCol = tint || cssVar('--cstop-1a', wrap);
         bars.forEach((v,i)=>{ const h=Math.max(2,(v/barMax)*innerH); const x=padL+step*i+(step-bw)/2; const y=padT+innerH-h;
           if(m3){ bar3dV(svg,x,y,bw,h,barCol,m3); }
-          else svg.appendChild(E('rect',{x:x.toFixed(1),y:y.toFixed(1),width:bw.toFixed(1),height:h.toFixed(1),rx:1.5,fill:`url(#cb_${key})`})); });
+          else svg.appendChild(E('rect',{x:x.toFixed(1),y:y.toFixed(1),width:bw.toFixed(1),height:h.toFixed(1),rx:1.5,fill:`url(#${gid})`})); });
         let d=''; line.forEach((v,i)=>{ const x=padL+step*i+step/2; const y=padT+innerH-(Math.min(v,lineMax)/lineMax)*innerH; d+=(i?'L':'M')+x.toFixed(1)+','+y.toFixed(1); });
         const path=E('path',{d:d,fill:'none','stroke-width':2,'stroke-linecap':'round','stroke-linejoin':'round','vector-effect':'non-scaling-stroke'});
         path.style.stroke = tint ? shade(tint,-0.28) : (wrap.dataset.rightline==='green' ? 'var(--line-2)' : 'var(--text)'); svg.appendChild(path);
@@ -132,7 +133,7 @@ import { getThemes, syncOwnerThemes, getAuthor, ensureAuthor, isCloudEnabled } f
         const mx=Math.max(...pts)*1.15;
         const tint=vividTint(key);
         const svg=E('svg',{viewBox:`0 0 ${W} ${H}`,preserveAspectRatio:'none'});
-        const defs=E('defs',{}); const g=E('linearGradient',{id:'ar_'+key,x1:0,x2:0,y1:0,y2:1});
+        const defs=E('defs',{}); const gid='ar_'+key+'_'+nextGid(); const g=E('linearGradient',{id:gid,x1:0,x2:0,y1:0,y2:1});
         if(tint){ g.appendChild(E('stop',{offset:'0%','stop-color':tint,'stop-opacity':'0.5'})); g.appendChild(E('stop',{offset:'100%','stop-color':tint,'stop-opacity':'0'})); }
         else { g.appendChild(E('stop',{offset:'0%','class':'stop-area-top'})); g.appendChild(E('stop',{offset:'100%','class':'stop-area-mid'})); }
         defs.appendChild(g); svg.appendChild(defs);
@@ -142,8 +143,8 @@ import { getThemes, syncOwnerThemes, getAuthor, ensureAuthor, isCloudEnabled } f
         const m3=chartMode(wrap), glassCol = tint || cssVar('--cstop-1a', wrap);
         if(m3){
           // frosted fill in the chart primary colour
-          const fg=svg.querySelector('#ar_'+key); if(fg){ fg.innerHTML=''; fg.appendChild(E('stop',{offset:'0%','stop-color':rgbaC(glassCol,0.55)})); fg.appendChild(E('stop',{offset:'100%','stop-color':rgbaC(glassCol,0.05)})); }
-          svg.appendChild(E('path',{d:d+`L${padL+innerW},${padT+innerH}L${padL},${padT+innerH}Z`,fill:`url(#ar_${key})`}));
+          const fg=svg.querySelector('#'+gid); if(fg){ fg.innerHTML=''; fg.appendChild(E('stop',{offset:'0%','stop-color':rgbaC(glassCol,0.55)})); fg.appendChild(E('stop',{offset:'100%','stop-color':rgbaC(glassCol,0.05)})); }
+          svg.appendChild(E('path',{d:d+`L${padL+innerW},${padT+innerH}L${padL},${padT+innerH}Z`,fill:`url(#${gid})`}));
           if(m3==='iso'){ // depth lip under the line
             const lip=E('path',{d:d,fill:'none','stroke-width':6,'stroke-linecap':'round','stroke-linejoin':'round',transform:'translate(0 4)'}); lip.style.stroke=shadeC(glassCol,-0.3); lip.style.opacity='0.85'; svg.appendChild(lip);
           }
@@ -151,7 +152,7 @@ import { getThemes, syncOwnerThemes, getAuthor, ensureAuthor, isCloudEnabled } f
           const gloss=E('path',{d:d,fill:'none','stroke-width':1,'stroke-linecap':'round','transform':'translate(0 -1.4)'}); gloss.style.stroke='rgba(255,255,255,0.55)'; svg.appendChild(gloss);
           pts.forEach((v,i)=>{ if(i%3)return; const x=padL+step*i,y=padT+innerH-(v/mx)*innerH; sphere(svg,+x.toFixed(1),+y.toFixed(1),3,glassCol); });
         } else {
-          svg.appendChild(E('path',{d:d+`L${padL+innerW},${padT+innerH}L${padL},${padT+innerH}Z`,fill:`url(#ar_${key})`}));
+          svg.appendChild(E('path',{d:d+`L${padL+innerW},${padT+innerH}L${padL},${padT+innerH}Z`,fill:`url(#${gid})`}));
           const lineCol = tint ? shade(tint,-0.1) : 'var(--text)';
           const lp=E('path',{d:d,fill:'none','stroke-width':2,'stroke-linecap':'round','stroke-linejoin':'round','vector-effect':'non-scaling-stroke'}); lp.style.stroke=lineCol; svg.appendChild(lp);
           pts.forEach((v,i)=>{ if(i%2)return; const x=padL+step*i,y=padT+innerH-(v/mx)*innerH; const c=E('circle',{cx:x.toFixed(1),cy:y.toFixed(1),r:2.2}); c.style.fill=lineCol; svg.appendChild(c); });
@@ -461,18 +462,38 @@ import { getThemes, syncOwnerThemes, getAuthor, ensureAuthor, isCloudEnabled } f
       // open/close/reorder (no stale cached array to refresh).
       function tabOrder(){ return [...document.querySelectorAll('.tabbar .tabs .ia-tab[data-view]')].map(t=>t.dataset.view); }
       let fxAnimating=false;
+      let fxFinalize=null;          // teardown of the in-flight slide, callable to complete it early
+      let fxTarget=null;            // data-view the in-flight slide is animating TO
       // keep the editor top tabs' active state in sync with the shown view
       function setNavTabActive(v){
         document.querySelectorAll('.tabbar .tabs .ia-tab[data-view]').forEach(t=>t.classList.toggle('active', t.dataset.view===v));
         const a=document.querySelector('.tabbar .tabs .ia-tab[data-view="'+v+'"]');
         if(a&&a.scrollIntoView) a.scrollIntoView({inline:'nearest',block:'nearest'});
       }
+      // Strip any slide-transition residue from a view. The slide uses fill:'forwards'
+      // Web Animations, which keep applying their final opacity/transform AFTER the inline
+      // styles are cleared — so an un-cancelled one can leave a view active but invisible.
+      // Cancelling the animations + clearing the inline + .fx-face state restores it fully.
+      function clearFxState(view){
+        if(!view) return;
+        try{ view.getAnimations().forEach(a=>a.cancel()); }catch(e){}
+        view.classList.remove('fx-face');
+        view.style.left=''; view.style.top=''; view.style.width=''; view.style.height=''; view.style.transform=''; view.style.opacity='';
+      }
       function selectView(v){
-        if(fxAnimating) return;
-        const current=document.querySelector('.view.active');
         const next=document.querySelector('.view[data-view="'+v+'"]');
+        // Registered tabs fire selectView twice per click (their own listener + the delegated
+        // strip handler). While a slide to v is already running, ignore the duplicate so it
+        // plays out; only a switch to a DIFFERENT view completes the current slide early — that
+        // keeps rapid switching responsive without piling up or snapping the same animation.
+        if(fxAnimating){
+          if(v===fxTarget) return;
+          if(fxFinalize) fxFinalize();
+        }
+        const current=document.querySelector('.view.active');
         const slide=root.getAttribute('data-tabfx')==='slide';
         if(!next || next===current || !slide || !current){   // !current: reopening from the empty state has nothing to slide from
+          clearFxState(next);        // never show a view that still carries a stale slide effect
           document.querySelectorAll('.view').forEach(s=>s.classList.toggle('active', s.dataset.view===v));
           setNavTabActive(v);
           renderChartsIn(next); runCounters(next);
@@ -486,6 +507,7 @@ import { getThemes, syncOwnerThemes, getAuthor, ensureAuthor, isCloudEnabled } f
          (new tab to the right of the old → content enters from the right, and vice-versa) */
       function slideTransition(oldView, newView){
         fxAnimating=true;
+        fxTarget=newView.dataset.view;
         const content=document.getElementById('content');
         const canvas=content.closest('.ctx-canvas')||content;   // the real scroll viewport (#content no longer owns overflow)
         const cs=getComputedStyle(content);
@@ -504,15 +526,25 @@ import { getThemes, syncOwnerThemes, getAuthor, ensureAuthor, isCloudEnabled } f
         canvas.classList.remove('is-scrolled');   // new view starts at top → drop the pinned-header shadow
         content.classList.add('fx-scene');
         content.style.height=vh+'px';             // pin the scene to the viewport so the absolute faces keep a full-height box
-        [oldView,newView].forEach(f=>{ f.classList.add('fx-face'); f.style.left=padL+'px'; f.style.top=padT+'px'; f.style.width=w+'px'; f.style.height=h+'px'; });
+        [oldView,newView].forEach(f=>{ f.classList.add('fx-face'); f.style.left=padL+'px'; f.style.top=padT+'px'; f.style.width=w+'px'; f.style.height=h+'px'; f.style.transform=''; f.style.opacity=''; });
         newView.classList.add('active');
         renderChartsIn(newView); runCounters(newView);
 
         const dur=380, ease='cubic-bezier(.33,0,.2,1)';
-        oldView.animate([{transform:'translateX(0)',opacity:1},{transform:`translateX(${-dir*dist}px)`,opacity:0}], {duration:dur, easing:ease, fill:'forwards'});
+        const exit=oldView.animate([{transform:'translateX(0)',opacity:1},{transform:`translateX(${-dir*dist}px)`,opacity:0}], {duration:dur, easing:ease, fill:'forwards'});
         const enter=newView.animate([{transform:`translateX(${dir*dist}px)`,opacity:0},{transform:'translateX(0)',opacity:1}], {duration:dur, easing:ease, fill:'forwards'});
 
-        enter.onfinish=()=>{
+        // Single idempotent teardown. CRUCIAL: cancel() both fill:'forwards' animations so they
+        // stop applying opacity/transform once the inline styles are cleared — otherwise a view
+        // can end up active-but-invisible. Runs on finish, on cancel, via the early-complete hook
+        // (fxFinalize), and a safety timer so fxAnimating can never get stuck.
+        let done=false, safety=0;
+        const finalize=()=>{
+          if(done) return; done=true;
+          clearTimeout(safety);
+          if(fxFinalize===finalize){ fxFinalize=null; fxTarget=null; }
+          try{ exit.cancel(); }catch(e){}
+          try{ enter.cancel(); }catch(e){}
           [oldView,newView].forEach(f=>{ f.classList.remove('fx-face'); f.style.left=''; f.style.top=''; f.style.width=''; f.style.height=''; f.style.transform=''; f.style.opacity=''; });
           oldView.classList.remove('active');
           newView.classList.add('active');
@@ -521,6 +553,10 @@ import { getThemes, syncOwnerThemes, getAuthor, ensureAuthor, isCloudEnabled } f
           newView.scrollTop=0;                    // flowy: the card owns the scroll — start it at the top
           fxAnimating=false;
         };
+        fxFinalize=finalize;
+        enter.onfinish=finalize;
+        enter.oncancel=finalize;
+        safety=setTimeout(finalize, dur+150);     // guarantee teardown even if the WAAPI event never arrives
       }
       // Live editor-tab + L1-leaf view switching is owned by the source↔asset bridge
       // in shell.js (delegated on .tabbar .tabs / .l1-leaf). The legacy .nav-leaf/.tab
@@ -1414,6 +1450,20 @@ import { getThemes, syncOwnerThemes, getAuthor, ensureAuthor, isCloudEnabled } f
         if(proto){ let t; const ping=()=>{ clearTimeout(t); t=setTimeout(refresh,0); };
           proto.addEventListener('input', e=>{ if(!e.target.closest('.preset-grp')) ping(); });
           proto.addEventListener('click', e=>{ if(!e.target.closest('.preset-grp')) ping(); }); }
+        window.addEventListener('ia:theme-presets-changed', e=>{
+          const d=e.detail||{};
+          if(d.preset&&d.preset.id){
+            const ix=store.presets.findIndex(p=>p.id===d.preset.id);
+            if(ix>=0) store.presets[ix]=d.preset; else store.presets.push(d.preset);
+            store.selected=d.selected||d.preset.id;
+          } else {
+            store=load();
+            if(d.selected) store.selected=d.selected;
+          }
+          persist(); render();
+          const p=current(); if(p) applyState(p.state);
+          snap(); refresh(); pushMine();
+        });
 
         render();
         if(store.selected){ const p=current(); if(p) applyState(p.state); }   // restore last-applied preset

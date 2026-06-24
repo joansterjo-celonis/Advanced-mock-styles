@@ -26,6 +26,9 @@ import {
 let launcher, menu, panel, overlay, popup, marker, viewbar, toastEl;
 let annotating = false, viewing = false, currentEntry = null;
 
+const SUBTAB_ATTRS = ['data-sub', 'data-rqsub', 'data-ocsub', 'data-acsub', 'data-invsub', 'data-shsub', 'data-trsub'];
+const ROOT_CONTEXT_ATTRS = ['data-layout', 'data-tabfx', 'data-tabmodel', 'data-tabs', 'data-density', 'data-composition'];
+
 export function initFeedback() {
   if (typeof document === 'undefined' || document.querySelector('.fab-feedback')) return; // idempotent
   mountLauncher();
@@ -152,36 +155,66 @@ async function submitComment(rect, ta) {
 
 function snapshot(rect) {
   const cap = (window.IA && typeof window.IA.captureState === 'function') ? safe(window.IA.captureState) : null;
+  const hit = hitContext(rect);
+  const screen = captureScreen(hit.view);
   return {
     id: 'fb-' + Date.now().toString(36) + '-' + Math.floor(Math.random() * 1e6).toString(36),
     author: getAuthor() || 'Anonymous',
     text: '',
     ts: Date.now(),
     controls: cap,
-    view: { id: activeViewId(), sub: activeSub(), scroll: (scrollEl() || {}).scrollTop || 0 },
+    screen,
+    view: { id: screen.viewId, sub: screen.sub, scroll: screen.scroll.top },
     viewport: { w: window.innerWidth, h: window.innerHeight },
     rect,
-    anchor: computeAnchor(rect),
+    anchor: computeAnchor(rect, hit),
+  };
+}
+
+function captureScreen(view) {
+  const app = document.getElementById('app');
+  const rc = document.getElementById('route-context');
+  const scroll = scrollState(view);
+  return {
+    route: (app && app.dataset.route) || null,
+    contextMode: rc && rc.classList.contains('mode-editor') ? 'editor' : (rc && rc.classList.contains('mode-overview') ? 'overview' : null),
+    viewId: view ? view.getAttribute('data-view') : activeViewId(),
+    tabViewId: activeTabId(),
+    sub: activeSub(view),
+    scroll,
+    viewport: { w: window.innerWidth, h: window.innerHeight },
+    rootAttrs: captureRootAttrs(),
+    split: captureSplitState(view),
+  };
+}
+
+function captureRootAttrs() {
+  const attrs = {};
+  const root = document.documentElement;
+  ROOT_CONTEXT_ATTRS.forEach((name) => { attrs[name] = root.hasAttribute(name) ? (root.getAttribute(name) || '') : null; });
+  return attrs;
+}
+
+function captureSplitState(view) {
+  const split = document.querySelector('.sv-split');
+  if (!split) return { active: false };
+  const pane = view && view.closest('.sv-pane');
+  return {
+    active: true,
+    pane: pane && pane.classList.contains('sv-pane-right') ? 'right' : 'left',
+    views: Array.from(split.querySelectorAll('.sv-pane > .view[data-view]')).map((v) => v.getAttribute('data-view')),
   };
 }
 
 // Bind the rectangle to the content element under it (a card or chart) so it
 // re-lands on the right spot at any window size. Returns null when the mark is
 // over empty space / chrome — the viewport-scaled rect is the fallback then.
-function computeAnchor(rect) {
+function computeAnchor(rect, ctx) {
   try {
-    const view = activeView();
+    const context = ctx || hitContext(rect);
+    const view = context.view || activeView();
     if (!view) return null;
-    const cx = rect.x + rect.w / 2, cy = rect.y + rect.h / 2;
-
-    // Hide our own overlays so elementFromPoint sees the real content beneath.
-    const oPrev = overlay ? overlay.style.display : null;
-    const pPrev = popup ? popup.style.display : null;
-    if (overlay) overlay.style.display = 'none';
-    if (popup) popup.style.display = 'none';
-    const hit = document.elementFromPoint(cx, cy);
-    if (overlay) overlay.style.display = oPrev || '';
-    if (popup) popup.style.display = pPrev || '';
+    const hit = context.hit;
 
     const anchorEl = hit ? hit.closest('[data-chart],[data-card]') : null;
     if (!anchorEl || !view.contains(anchorEl)) return null;
@@ -249,6 +282,7 @@ function renderPanel(items) {
 }
 
 function panelRow(entry) {
+  const screen = screenFromEntry(entry);
   const row = document.createElement('div');
   row.className = 'fb-row';
   row.innerHTML =
@@ -256,7 +290,7 @@ function panelRow(entry) {
       '<div class="fb-row-top"><span class="fb-row-author">' + esc(entry.author || 'Anonymous') + '</span>' +
       '<span class="fb-row-time">' + esc(relTime(entry.ts)) + '</span></div>' +
       '<div class="fb-row-text">' + esc(entry.text || '') + '</div>' +
-      '<div class="fb-row-meta">' + icon('view') + '<span>' + esc(viewLabel(entry.view && entry.view.id)) + '</span></div>' +
+      '<div class="fb-row-meta">' + icon('view') + '<span>' + esc(viewLabel(screen.viewId)) + '</span></div>' +
     '</div>' +
     '<button type="button" class="fb-row-del" title="Delete">' + icon('trash') + '</button>';
   row.querySelector('.fb-row-main').addEventListener('click', () => enterView(entry));
@@ -278,28 +312,31 @@ function bumpCount(delta) {
 
 /* ---------------- view mode (replay a snapshot) ---------------- */
 
-function enterView(entry) {
+async function enterView(entry) {
   closePanel();
   exitView();
   viewing = true; currentEntry = entry;
 
+  const screen = screenFromEntry(entry);
+  if (screen.rootAttrs) applyRootAttrs(screen.rootAttrs);
+  if (window.IA && typeof window.IA.restoreScreen === 'function') {
+    safe(() => window.IA.restoreScreen(screen));
+  } else if (screen.viewId && window.IA && typeof window.IA.selectView === 'function') {
+    safe(() => window.IA.selectView(screen.viewId));
+  }
   if (entry.controls && window.IA && typeof window.IA.applyState === 'function') safe(() => window.IA.applyState(entry.controls));
-  if (entry.view && entry.view.id && window.IA && typeof window.IA.selectView === 'function') safe(() => window.IA.selectView(entry.view.id));
+  if (screen.viewId && window.IA && typeof window.IA.selectView === 'function') safe(() => window.IA.selectView(screen.viewId));
 
   showViewbar(entry);
 
-  // Let applyState + any view-slide settle, then restore sub-tab, scroll, draw
-  // the marker and start tracking (scrollEl() is now the settled container).
-  setTimeout(() => {
-    if (!viewing) return;
-    restoreSub(entry.view);
-    setTimeout(() => {
-      if (!viewing) return;
-      restoreScroll(entry.view);
-      drawMarker(entry);
-      attachTracking();
-    }, 260);
-  }, 220);
+  await waitForViewReady(screen.viewId);
+  if (!viewing) return;
+  restoreSub(screen);
+  await waitFrames(2);
+  if (!viewing) return;
+  restoreScroll(screen);
+  drawMarker(entry);
+  attachTracking();
 }
 
 function exitView() {
@@ -417,26 +454,124 @@ function onKey(e) {
 
 function activeView() { return document.querySelector('.view.active'); }
 function activeViewId() { const v = activeView(); return v ? v.getAttribute('data-view') : null; }
-function activeSub() {
-  const v = activeView(); if (!v) return null;
+function activeTabId() {
+  const t = document.querySelector('.tabbar .tabs .ia-tab.active[data-view]:not(.sv-tab-split)');
+  return t ? t.getAttribute('data-view') : null;
+}
+function activeSub(view) {
+  const v = view || activeView(); if (!v) return null;
   const s = v.querySelector('.subtab.on'); if (!s) return null;
-  for (const a of ['data-sub', 'data-rqsub']) { if (s.hasAttribute(a)) return { attr: a, val: s.getAttribute(a) }; }
+  for (const a of SUBTAB_ATTRS) { if (s.hasAttribute(a)) return { attr: a, val: s.getAttribute(a) }; }
+  const dyn = s.getAttributeNames().find((a) => /^data-.+sub$/.test(a));
+  if (dyn) return { attr: dyn, val: s.getAttribute(dyn) };
   return null;
 }
-function scrollEl() {
+function scrollElForView(view) {
+  if (view && view.closest('.sv-pane')) return view;
   if (document.documentElement.getAttribute('data-layout') === 'flowy') {
-    const v = activeView(); if (v) return v;
+    const v = view || activeView(); if (v) return v;
   }
   return document.querySelector('.ctx-canvas') || document.scrollingElement || document.documentElement;
 }
+function scrollEl() { return scrollElForView(activeView()); }
+function scrollState(view) {
+  const el = scrollElForView(view);
+  let source = 'document';
+  if (el && el.classList && el.classList.contains('view')) source = 'view';
+  else if (el && el.classList && el.classList.contains('ctx-canvas')) source = 'ctx-canvas';
+  return {
+    source,
+    top: (el && typeof el.scrollTop === 'number') ? el.scrollTop : 0,
+    viewId: view ? view.getAttribute('data-view') : activeViewId(),
+  };
+}
+function screenFromEntry(entry) {
+  const s = (entry && entry.screen) || null;
+  if (s) {
+    const scroll = (s.scroll && typeof s.scroll === 'object') ? s.scroll : { source: 'legacy', top: Number(s.scroll || 0) || 0 };
+    return { ...s, viewId: s.viewId || s.id || (entry.view && entry.view.id) || null, scroll };
+  }
+  const v = (entry && entry.view) || {};
+  return {
+    route: 'context',
+    contextMode: 'editor',
+    viewId: v.id || null,
+    tabViewId: v.id || null,
+    sub: v.sub || null,
+    scroll: { source: 'legacy', top: Number(v.scroll || 0) || 0, viewId: v.id || null },
+    viewport: entry && entry.viewport,
+    rootAttrs: null,
+    split: { active: false },
+  };
+}
+function applyRootAttrs(attrs) {
+  if (!attrs || typeof attrs !== 'object') return;
+  Object.keys(attrs).forEach((name) => {
+    if (!ROOT_CONTEXT_ATTRS.includes(name)) return;
+    const val = attrs[name];
+    if (val == null) document.documentElement.removeAttribute(name);
+    else document.documentElement.setAttribute(name, String(val));
+  });
+}
+function hitContext(rect) {
+  return withFeedbackChromeHidden(() => {
+    const cx = rect.x + rect.w / 2, cy = rect.y + rect.h / 2;
+    const hit = document.elementFromPoint(cx, cy);
+    return { hit, view: (hit && hit.closest('.view[data-view]')) || activeView() };
+  });
+}
+function withFeedbackChromeHidden(fn) {
+  const oPrev = overlay ? overlay.style.display : null;
+  const pPrev = popup ? popup.style.display : null;
+  try {
+    if (overlay) overlay.style.display = 'none';
+    if (popup) popup.style.display = 'none';
+    return fn();
+  } finally {
+    if (overlay) overlay.style.display = oPrev == null ? '' : oPrev;
+    if (popup) popup.style.display = pPrev == null ? '' : pPrev;
+  }
+}
 function restoreSub(view) {
   if (!view || !view.sub) return;
-  const el = document.querySelector('.view.active .subtab[' + view.sub.attr + '="' + view.sub.val + '"]');
+  const attr = view.sub.attr;
+  if (!/^data-[\w-]+$/.test(attr || '')) return;
+  const scope = view.viewId ? document.querySelector('.view[data-view="' + cssEsc(view.viewId) + '"]') : document.querySelector('.view.active');
+  const el = scope && scope.querySelector('.subtab[' + attr + '="' + cssEsc(view.sub.val) + '"]');
   if (el) el.click();
 }
 function restoreScroll(view) {
-  if (!view) return; const el = scrollEl();
-  if (el && typeof view.scroll === 'number') el.scrollTop = view.scroll;
+  if (!view) return;
+  const target = view.viewId ? document.querySelector('.view[data-view="' + cssEsc(view.viewId) + '"]') : activeView();
+  const scroll = (view.scroll && typeof view.scroll === 'object') ? view.scroll : { source: 'legacy', top: view.scroll };
+  let el = null;
+  if (scroll.source === 'view') el = target;
+  else if (scroll.source === 'ctx-canvas') el = document.querySelector('.ctx-canvas');
+  else el = scrollElForView(target);
+  if (el && typeof scroll.top === 'number') {
+    el.scrollTop = scroll.top;
+    el.dispatchEvent(new Event('scroll', { bubbles: false }));
+  }
+}
+function waitFrames(count) {
+  return new Promise((resolve) => {
+    let left = Math.max(1, count || 1);
+    const tick = () => { if (--left <= 0) resolve(); else requestAnimationFrame(tick); };
+    requestAnimationFrame(tick);
+  });
+}
+function waitForViewReady(viewId) {
+  return new Promise((resolve) => {
+    let tries = 0;
+    const tick = () => {
+      if (!viewing) { resolve(false); return; }
+      const view = viewId ? document.querySelector('.view[data-view="' + cssEsc(viewId) + '"]') : activeView();
+      const ready = !!(view && view.classList.contains('active') && view.getClientRects().length && getComputedStyle(view).display !== 'none');
+      if (ready || tries++ > 45) { resolve(ready); return; }
+      requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  });
 }
 function viewLabel(id) {
   if (!id) return 'Unknown view';
