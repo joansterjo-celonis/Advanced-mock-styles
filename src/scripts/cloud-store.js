@@ -154,13 +154,25 @@ export async function getThemes() {
   return Array.isArray(doc.items) ? doc.items : [];
 }
 
-/** Replace this owner's presets in the shared library, leaving others untouched. */
-export async function syncOwnerThemes(owner, ownerPresets) {
+/** Merge this owner's presets into the shared library by id (upsert). Never drops a
+ *  preset merely because it's absent from `ownerPresets` (other device, partial cache,
+ *  or a name collision) — only ids in `deletedIds`, and only when this owner owns them,
+ *  are removed. This makes save/add non-destructive to peers and to your own devices. */
+export async function syncThemes(owner, ownerPresets, deletedIds = []) {
   const doc = await getBin(THEMES_BIN);
   const items = Array.isArray(doc.items) ? doc.items : [];
-  const others = items.filter(p => p && p.owner !== owner);
-  const mine = (ownerPresets || []).map(p => ({ ...p, owner }));
-  return putBin(THEMES_BIN, { items: [...others, ...mine] });
+  const byId = new Map(items.filter(p => p && p.id).map(p => [p.id, p]));
+  (deletedIds || []).forEach(id => {
+    const ex = byId.get(id);
+    if (ex && ex.owner === owner) byId.delete(id);   // honor explicit deletes of my own only
+  });
+  (ownerPresets || []).forEach(p => { if (p && p.id) byId.set(p.id, { ...p, owner }); });
+  return putBin(THEMES_BIN, { items: [...byId.values()] });
+}
+
+/** Back-compat alias for the previous owner-bucket API (no explicit deletions). */
+export async function syncOwnerThemes(owner, ownerPresets) {
+  return syncThemes(owner, ownerPresets, []);
 }
 
 /* ---------- author identity (asked once, reused everywhere) ---------- */
