@@ -258,8 +258,13 @@ import { icons } from './icons.js';
     }
     function openTab(v){
       if(!v) return;
+      // Opening an asset from the tree (or an overview card) is a navigation, so it must leave
+      // a live side-by-side split first — exactly like clicking a tab does (split-view.js owns
+      // the tab-click exit). Otherwise the chosen view activates while hidden behind the split,
+      // and BOTH flap tabs lose the .active that anchors them over their pane (the flap vanishes).
+      if(window.IA && typeof window.IA.exitSplitView==='function') window.IA.exitSplitView();
       var rc=document.getElementById('route-context'); rc.classList.remove('mode-overview'); rc.classList.add('mode-editor');
-      makeTab(v); hideEmpty(); activateTab(v); selectView(v);
+      makeTab(v); hideEmpty(); activateTab(v); activateLeaf(v); selectView(v);
     }
     function escAttr(v){ return String(v||'').replace(/["\\]/g,'\\$&'); }
     function activateLeaf(v){
@@ -316,7 +321,7 @@ import { icons } from './icons.js';
         var pick=(next && next.matches('.ia-tab[data-view]')) ? next
                : ((prev && prev.matches('.ia-tab[data-view]')) ? prev
                : document.querySelector('.tabbar .tabs .ia-tab[data-view]'));
-        if(pick){ activateTab(pick.dataset.view); selectView(pick.dataset.view); }
+        if(pick){ activateTab(pick.dataset.view); activateLeaf(pick.dataset.view); selectView(pick.dataset.view); }
         else { showEmpty(); }
       } else if(!document.querySelector('.tabbar .tabs .ia-tab[data-view]')){ showEmpty(); }
     }
@@ -328,7 +333,7 @@ import { icons } from './icons.js';
         var x=e.target.closest('.ia-x');
         if(x){ e.stopPropagation(); closeTab(x.closest('.ia-tab')); return; }
         var t=e.target.closest('.ia-tab[data-view]');
-        if(t){ hideEmpty(); activateTab(t.dataset.view); selectView(t.dataset.view); }
+        if(t){ hideEmpty(); activateTab(t.dataset.view); activateLeaf(t.dataset.view); selectView(t.dataset.view); }
       });
       // let a vertical mouse wheel scroll the tab strip horizontally (trackpads already do this)
       tabs.addEventListener('wheel',function(e){
@@ -337,17 +342,19 @@ import { icons } from './icons.js';
       },{passive:false});
     }
 
-    // L1 leaves + overview rows open (and reopen) the editor on the right dashboard
+    // L1 leaves + overview rows open (and reopen) the editor on the right dashboard.
+    // Delegated (not per-element) so leaves added after boot by registerView() — i.e.
+    // every dynamically registered view — open exactly like the built-in ones.
     var map={'operations view':'order-management','order management':'order-management','purchase order':'purchase-order','rework and quality':'rework-quality','insights':'insights'};
-    document.querySelectorAll('.l1-leaf, .ctx-overview .ovrow, .ctx-overview .sp-card, #route-context .ia-ov-card').forEach(function(el){
-      el.addEventListener('click',function(){
-        var t=(el.textContent||'').trim().toLowerCase(); var v=el.dataset.view||map[t];
-        if(v){ openTab(v); }
-        else {
-          var rc=document.getElementById('route-context'); rc.classList.remove('mode-overview'); rc.classList.add('mode-editor');
-          var av=document.querySelector('#content .view.active'); if(av){ renderChartsIn(av); runCounters(av); }
-        }
-      });
+    document.addEventListener('click',function(e){
+      var el=e.target.closest('.l1-leaf, .ctx-overview .ovrow, .ctx-overview .sp-card, #route-context .ia-ov-card');
+      if(!el) return;
+      var t=(el.textContent||'').trim().toLowerCase(); var v=el.dataset.view||map[t];
+      if(v){ openTab(v); }
+      else {
+        var rc=document.getElementById('route-context'); rc.classList.remove('mode-overview'); rc.classList.add('mode-editor');
+        var av=document.querySelector('#content .view.active'); if(av){ renderChartsIn(av); runCounters(av); }
+      }
     });
     // gear / settings opens the prototype controls
     var proto=document.getElementById('proto');

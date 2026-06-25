@@ -13,6 +13,8 @@ import '../styles/effects.css';
 // Side-by-side asset split — isolated, removable layer (after components/effects
 // so its tie-breaking selectors, e.g. .ctx-canvas.sv-host overflow, win the cascade).
 import '../styles/split-view.css';
+// Slide-over drawer — isolated, removable layer (master→detail reveal as a side modal).
+import '../styles/slide-over.css';
 // Theme Creator is an isolated layer over the prototype controls.
 import '../styles/theme-creator.css';
 // Feedback feature is a separate layer on top of the proto (does not touch its logic).
@@ -30,6 +32,9 @@ import './views.js';
 // the source<->asset bridge (and capture-phase exit runs before shell's handler).
 import { initSplitView } from './split-view.js';
 initSplitView();
+// Slide-over drawer: master→detail reveal (Incident List row → Incident Details).
+import { initSlideOver } from './slide-over.js';
+initSlideOver();
 // Shared glass tooltip (delegated; any [data-tip] element opts in).
 import './tooltip.js';
 // Functional chart tooltips (delegated; charts tag data slots with [data-ctip]).

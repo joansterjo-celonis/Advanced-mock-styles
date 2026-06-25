@@ -1,0 +1,70 @@
+/* =====================================================================
+   SLIDE-OVER DRAWER — self-contained, removable layer.
+   --------------------------------------------------------------------
+   Nothing here applies until slide-over.js mounts a .so-scrim + .so-drawer
+   on <body> and moves a registered .view into the drawer. The single-view
+   code paths are untouched: the active view stays mounted (and .active)
+   behind the scrim; the drawered view is shown purely via the
+   `.so-drawer > .view` rule below (it never receives .active).
+   ===================================================================== */
+
+/* Dimming backdrop over the whole viewport. */
+.so-scrim {
+  position: fixed; inset: 0; z-index: 214;
+  background: rgba(0, 0, 0, 0.46);
+  opacity: 0; transition: opacity .28s ease;
+}
+.so-scrim.open { opacity: 1; }
+
+/* The drawer slides in from the right edge. */
+.so-drawer {
+  position: fixed; top: 0; right: 0; bottom: 0; z-index: 215;
+  width: min(820px, 94vw);
+  display: flex; flex-direction: column;
+  background: var(--ia-canvas);
+  border-left: 1px solid var(--border);
+  box-shadow: -28px 0 70px -26px rgba(0, 0, 0, 0.6);
+  transform: translateX(100%);
+  transition: transform .34s cubic-bezier(.32, .72, 0, 1);
+  will-change: transform;
+}
+.so-drawer.open { transform: translateX(0); }
+
+/* The drawered view becomes its own scroll container so its sticky .asset-bar
+   pins to the drawer top (mirrors the split pane / Flowy "view is the scroller"
+   model). It is shown here without ever being marked .active. */
+.so-drawer > .view {
+  display: block;
+  flex: 1 1 auto; min-height: 0; height: 100%;
+  overflow-y: auto; overflow-x: hidden;
+  padding: 0 18px 24px;            /* top inset comes from the sticky .asset-bar */
+}
+
+/* Compact drawer header: the drawered view drops its meta + action clusters
+   (via buildAssetHeader) and shrinks its title, leaving the close button as the
+   sole top-right control. */
+.so-drawer .dash-head h1 { font-size: 18px; }
+
+/* Close affordance — sits at the drawer's top-right, in place of the removed
+   header actions. Raised above the sticky .asset-bar (z-index:6) so it stays
+   visible while the view scrolls beneath it. */
+.so-close {
+  position: absolute; top: 14px; right: 18px; left: auto; z-index: 10;
+  width: 34px; height: 34px; border-radius: 50%;
+  display: grid; place-items: center;
+  background: var(--ia-panel); border: 1px solid var(--border);
+  color: var(--ia-muted); cursor: pointer;
+  box-shadow: var(--ia-shadow-pop, 0 8px 20px -10px rgba(0, 0, 0, .5));
+  transition: color .15s ease, background .15s ease, transform .15s ease;
+}
+.so-close:hover { color: var(--ia-ink); background: var(--ia-hover); transform: scale(1.05); }
+.so-close svg { width: 15px; height: 15px; }
+
+/* Freeze background scroll while the drawer is open. */
+html.so-lock, html.so-lock body { overflow: hidden; }
+
+/* Narrow viewports: full-width sheet, close button stays at the top-right. */
+@media (max-width: 620px) {
+  .so-drawer { width: 100vw; }
+  .so-close { right: 12px; top: 10px; }
+}

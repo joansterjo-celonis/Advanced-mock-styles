@@ -73,11 +73,11 @@
   .l1-tool{width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:7px;color:var(--ia-muted);flex:none;}
   .l1-tool:hover{background:var(--ia-hover);color:var(--ia-ink);}
   .l1-scroll{flex:1;overflow-y:auto;padding:4px 10px 10px;}
-  .l1-new{display:flex;align-items:center;gap:10px;height:36px;padding:0 10px;font-size:14px;font-weight:600;color:var(--ia-navy);border-radius:8px;width:100%;}
+  .l1-new{display:flex;align-items:center;gap:10px;height:31px;padding:0 10px;font-size:14px;font-weight:600;color:var(--ia-navy);border-radius:8px;width:100%;}
   .l1-new:hover{background:var(--ia-hover);}
   .l1-new .icon{color:var(--ia-navy);}
   .l1-group{margin-top:2px;}
-  .l1-grouphead{display:flex;align-items:center;gap:10px;height:36px;padding:0 10px;font-size:14px;font-weight:600;color:var(--ia-ink);border-radius:8px;width:100%;}
+  .l1-grouphead{display:flex;align-items:center;gap:10px;height:31px;padding:0 10px;font-size:14px;font-weight:600;color:var(--ia-ink);border-radius:8px;width:100%;}
   .l1-grouphead:hover{background:var(--ia-hover);}
   .l1-grouphead .icon{color:var(--ia-ink);}
   .l1-grouphead .gchev{margin-left:auto;width:15px;height:15px;color:var(--ia-muted);transition:transform .15s;}
@@ -86,7 +86,7 @@
   .l1-group.collapsed .l1-children{display:none;}
   /* block (not flex) so a long asset name truncates to one line with an ellipsis — line-height
      centers the single row, the leading icon is inline-aligned, nothing trails to be clipped */
-  .l1-leaf{display:block;line-height:34px;height:34px;padding:0 10px 0 38px;font-size:13.5px;color:var(--ia-text);border-radius:8px;width:100%;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .l1-leaf{display:block;line-height:29px;height:29px;padding:0 10px 0 38px;font-size:13.5px;color:var(--ia-text);border-radius:8px;width:100%;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .l1-leaf:hover{background:var(--ia-hover);}
   .l1-leaf.active{background:var(--ia-active);font-weight:500;}
   .l1-leaf.l1-leaf-ic{padding-left:20px;}
@@ -493,10 +493,10 @@
   .ctxmenu-item.danger .icon{color:#dc2626;}
 
   /* ===== L1 New Asset actions ===== */
-  .l1-action{display:flex;align-items:center;gap:11px;height:34px;padding:0 10px;font-size:14px;color:var(--ia-ink);border-radius:8px;width:100%;text-align:left;}
+  .l1-action{display:flex;align-items:center;gap:11px;height:30px;padding:0 10px;font-size:14px;color:var(--ia-ink);border-radius:8px;width:100%;text-align:left;}
   .l1-action:hover{background:var(--ia-hover);}
   .l1-action .icon{width:18px;height:18px;color:var(--ia-ink);}
-  .l1-divider{height:1px;background:var(--ia-line-soft);margin:8px 6px;}
+  .l1-divider{height:1px;background:var(--ia-line-soft);margin:5px 6px;}
 
 /* ===== mount tweaks ===== */
 #app{height:calc(100vh - 0px);} body{overflow:hidden;padding:0;background:var(--chrome-0);}

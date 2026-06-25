@@ -236,3 +236,28 @@ test('Flap layout anchors BOTH flaps over their panes (left flap reflows like th
   await expect.poll(() => flapInPane('rework-quality', '.sv-pane-left')).toBe(true);
   expect(await flapInPane('purchase-order', '.sv-pane-right')).toBe(true);
 });
+
+test('opening an asset from the tree exits a flap split cleanly (no orphaned flaps)', async ({ page }) => {
+  // Regression: navigating via the sidebar tree while split + flap used to leave the split
+  // alive with the chosen view hidden behind it. Both flap tabs then lost .active (the class
+  // that renders the flap), so the flap "moved without repositioning" / vanished for the first
+  // tab. Tree navigation must exit the split first, exactly like a tab click.
+  await page.evaluate(() => document.documentElement.setAttribute('data-layout', 'flap'));
+
+  // Split order-management (active/left) with purchase-order (right).
+  await page.locator(TAB('purchase-order')).click({ button: 'right' });
+  await page.locator('#sv-tab-ctxmenu [data-sv-action="split"]').click();
+  await expect(page.locator('.sv-split')).toHaveCount(1);
+
+  // Open a THIRD asset from the tree.
+  await page.locator('.l1-children .l1-leaf[data-view="rework-quality"]').click();
+
+  // Split tears down → single full-width view, its tab is the sole active flap, no residue.
+  await expect(page.locator('.sv-split')).toHaveCount(0);
+  await expect(page.locator('.sv-flap-spacer')).toHaveCount(0);
+  await expect(page.locator('.ia-tab.sv-tab-split')).toHaveCount(0);
+  await expect(page.locator('#content .view[data-view="rework-quality"].active')).toBeVisible();
+  await expect(page.locator('.view.active')).toHaveCount(1);
+  await expect(page.locator('#main .tabs .ia-tab.active')).toHaveCount(1);
+  await expect(page.locator(TAB('rework-quality'))).toHaveClass(/(^|\s)active(\s|$)/);
+});

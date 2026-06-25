@@ -415,4 +415,8 @@ export function initSplitView() {
   window.IA = window.IA || {};
   window.IA.exitSplitView = exitSplit;
   window.IA.isSplitViewActive = () => !!state;
+  // Programmatic entry: open `viewId` beside the active view (or swap the secondary
+  // pane to it when already split). Lets a master view reveal a detail pane on demand
+  // — e.g. clicking an Incident List row — through the same code path as the menu.
+  window.IA.openSideBySide = (viewId) => { if (viewId) enterSplit(viewId); };
 }
