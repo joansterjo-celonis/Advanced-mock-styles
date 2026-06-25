@@ -806,8 +806,29 @@ import { getThemes, syncThemes, getAuthor, ensureAuthor, isCloudEnabled } from '
       const kpiW=document.getElementById('kpi-weight'), kwVal=document.getElementById('kw-val');
       if(kpiW) kpiW.addEventListener('input',()=>{ root.style.setProperty('--kpi-weight',kpiW.value); kwVal.textContent=kpiW.value; });
       const KF={ sans:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif", mono:"ui-monospace,'SF Mono',Menlo,Consolas,monospace", serif:"'Iowan Old Style','Palatino Linotype',Georgia,'Times New Roman',serif" };
-      function setKpiFont(f){ root.style.setProperty('--kpi-font',KF[f]); ['sans','mono','serif'].forEach(x=>{ const b=document.getElementById('kf-'+x); if(b) b.classList.toggle('on',x===f); }); }
+      function setKpiFont(f){ root.style.setProperty('--kpi-font',KF[f]); ['sans','mono','serif'].forEach(x=>{ const b=document.getElementById('kf-'+x); if(b) b.classList.toggle('on',x===f); });
+        // Inter OpenType features only render on the Sans (Inter) numerals — disable + explain otherwise.
+        const tg=document.getElementById('typo-adv-grp'); if(tg) tg.classList.toggle('feats-na', f!=='sans'); }
       ['sans','mono','serif'].forEach(f=>{ const b=document.getElementById('kf-'+f); if(b) b.onclick=()=>setKpiFont(f); });
+      /* Inter OpenType feature toggles (Typography → Advanced). Scoped to the KPI numerals via
+         --inter-feats (knobs.css). State is held as an explicit numFeats list in captureState/
+         applyState/sig — NOT as .on buttons — so the pills live outside .proto .toggle and are
+         never auto-captured or double-applied (mirrors the glass-advanced fields). */
+      const INTER_FEATS=['zero','ss01','ss02'];
+      const numFeats=new Set();
+      function applyNumFeats(list){
+        numFeats.clear();
+        (Array.isArray(list)?list:[]).forEach(f=>{ if(INTER_FEATS.includes(f)) numFeats.add(f); });
+        const css=INTER_FEATS.filter(f=>numFeats.has(f)).map(f=>`"${f}" 1`).join(', ');
+        if(css) root.style.setProperty('--inter-feats',css); else root.style.removeProperty('--inter-feats');
+        INTER_FEATS.forEach(f=>{ const b=document.getElementById('num-'+f); if(b) b.setAttribute('aria-pressed', numFeats.has(f)?'true':'false'); });
+      }
+      INTER_FEATS.forEach(f=>{ const b=document.getElementById('num-'+f); if(b) b.addEventListener('click',()=>{ if(numFeats.has(f)) numFeats.delete(f); else numFeats.add(f); applyNumFeats([...numFeats]); }); });
+      /* Typography "Advanced" reveal — mirrors gg-adv; the button is NOT inside .proto .toggle,
+         so revealing advanced controls is never recorded as theme state. */
+      const typoAdv=document.getElementById('typo-adv'), typoAdvGrp=document.getElementById('typo-adv-grp');
+      function setTypoAdvanced(adv){ adv=!!adv; if(typoAdvGrp) typoAdvGrp.hidden=!adv; if(typoAdv){ typoAdv.setAttribute('aria-pressed',adv?'true':'false'); typoAdv.textContent=adv?'Less':'Advanced'; } }
+      if(typoAdv) typoAdv.addEventListener('click',()=>setTypoAdvanced(typoAdv.getAttribute('aria-pressed')!=='true'));
       wireKnob('data-tabmodel',   [{id:'tabm-default',val:null},{id:'tabm-seg',val:'seg'}], false);
       wireKnob('data-tables',     [{id:'tbl-comfortable',val:null},{id:'tbl-lined',val:'lined'}], false);
       wireKnob('data-surfacefx',  [{id:'surf-flat',val:null},{id:'surf-frost',val:'frost'}], false);
@@ -1200,7 +1221,8 @@ import { getThemes, syncThemes, getAuthor, ensureAuthor, isCloudEnabled } from '
             hue: hueInput.value, hueActive: customHue!=null, tab: tabColorInput.value,
             brand: brandInput? brandInput.value : '#000000', brandActive: brandColor!=null,
             glassAdv: ggAdv ? ggAdv.getAttribute('aria-pressed')==='true' : false,
-            glassOp: gOp ? gOp.value : null, glassBl: gBl ? gBl.value : null
+            glassOp: gOp ? gOp.value : null, glassBl: gBl ? gBl.value : null,
+            numFeats: [...numFeats]
           };
         }
         if (import.meta.env.DEV) window.__captureState = captureState;   // dev-only hook for the glass self-check
@@ -1215,6 +1237,8 @@ import { getThemes, syncThemes, getAuthor, ensureAuthor, isCloudEnabled } from '
             setGlassMode(!!st.glassAdv);
             if(st.glassAdv){ if(gOp&&st.glassOp!=null){ gOp.value=st.glassOp; setGlassOp(+st.glassOp); } if(gBl&&st.glassBl!=null){ gBl.value=st.glassBl; setGlassBl(+st.glassBl); } }
           }
+          // Explicit set (clears features absent from the preset, so switching presets never leaves stale ones on).
+          applyNumFeats(st.numFeats||[]);
           if(tabColorInput && st.tab){ tabColorInput.value=st.tab; applyTabColor(); }
           if(hueInput){
             if(st.hue) hueInput.value=st.hue;
@@ -1231,7 +1255,8 @@ import { getThemes, syncThemes, getAuthor, ensureAuthor, isCloudEnabled } from '
         function sig(st){ st=st||{}; const sl=st.sliders||{}; const keys=['r-surface','r-interactive','kpi-weight','r-glass'];
           return JSON.stringify({ b:[...(st.buttons||[])].sort(), s:keys.map(k=>String(sl[k]==null?'':sl[k])),
             hue:st.hueActive?st.hue:null, tab:st.tab||null, brand:st.brandActive?st.brand:null,
-            ga:!!st.glassAdv, go:st.glassAdv?String(st.glassOp):null, gb:st.glassAdv?String(st.glassBl):null }); }
+            ga:!!st.glassAdv, go:st.glassAdv?String(st.glassOp):null, gb:st.glassAdv?String(st.glassBl):null,
+            nf:[...(st.numFeats||[])].sort() }); }
         function snap(){ lastSnap=sig(captureState()); }   // record the baseline right after apply/save
 
         /* ---- shared theme library (auto-sync to the cloud themes bin) ----

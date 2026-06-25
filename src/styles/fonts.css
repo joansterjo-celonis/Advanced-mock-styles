@@ -1,0 +1,21 @@
+/* Self-hosted Inter (variable, v4.1 from github.com/rsms/inter — SIL OFL 1.1, see fonts/LICENSE.txt).
+   The 'Inter' family is declared first in every font stack across the app but was never actually
+   bundled, so it fell back to the OS UI font and the Inter-only OpenType features (zero / ss01 / ss02
+   in Typography) had nothing to act on. Bundling it here (instead of a CDN <link>) makes those
+   declarations real and works offline / behind networks that block font CDNs.
+   Vite hashes the relative url() and rewrites it base-aware, so no path edits are needed.
+   The single variable file covers weight 100–900, which feeds the Numeral weight slider. */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('./fonts/InterVariable.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: italic;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('./fonts/InterVariable-Italic.woff2') format('woff2');
+}

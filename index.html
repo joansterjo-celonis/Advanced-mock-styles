@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
 <title>Advanced mock styles</title>
+<!-- Inter is self-hosted (bundled) via src/styles/fonts.css — see that file. This replaces the
+     earlier Google Fonts <link> so the Typography OpenType features work offline / behind networks
+     that block font CDNs. Vite hashes + resolves the font URL from that stylesheet. -->
 <!-- Access gate (separate layer): set your Google OAuth Web client ID here to enable
      "Sign in with Google". Leave blank to use the password only. -->
 <meta name="google-client-id" content=""/>
@@ -3844,9 +3847,21 @@
     <div class="proto-sec">Content &amp; layout</div>
     <div class="grp"><div class="label">Composition</div><div class="toggle"><button id="comp-uniform">Uniform</button><button id="comp-bento" class="on">Bento</button><button id="comp-hero">Hero</button></div></div>
     <div class="grp"><div class="label">Density <span class="hint-i">spacing</span></div><div class="toggle"><button id="density-spacious" class="on">Spacious</button><button id="density-compact">Compact</button><button id="density-dense">Dense</button></div></div>
+    <div class="grp"><div class="label">Tables <span class="hint-i">row treatment</span></div><div class="toggle"><button id="tbl-comfortable" class="on">Plain</button><button id="tbl-lined">Lined</button></div></div>
+
+    <div class="proto-sec proto-sec-row"><span>Typography</span><button type="button" id="typo-adv" class="gg-adv" aria-pressed="false" title="Show advanced Inter OpenType features">Advanced</button></div>
     <div class="grp"><div class="label">Numeral weight <span class="val" id="kw-val">600</span></div><input type="range" id="kpi-weight" class="slider" min="100" max="800" step="100" value="600"></div>
     <div class="grp"><div class="label">Numeral font</div><div class="toggle"><button id="kf-sans" class="on">Sans</button><button id="kf-mono">Mono</button><button id="kf-serif">Serif</button></div></div>
-    <div class="grp"><div class="label">Tables <span class="hint-i">row treatment</span></div><div class="toggle"><button id="tbl-comfortable" class="on">Plain</button><button id="tbl-lined">Lined</button></div></div>
+    <div class="grp typo-adv-grp" id="typo-adv-grp" hidden>
+      <div class="label">Inter features <span class="hint-i">Sans numerals</span></div>
+      <div class="numfeat-na">Set <b>Numeral font</b> to <b>Sans</b> to use these Inter features.</div>
+      <div class="numfeat-row" id="numfeat-row">
+        <button type="button" class="numfeat" id="num-zero" data-feat="zero" aria-pressed="false"><b>0</b><span>Slashed zero</span></button>
+        <button type="button" class="numfeat" id="num-ss01" data-feat="ss01" aria-pressed="false"><b>1</b><span>Alt digits</span></button>
+        <button type="button" class="numfeat" id="num-ss02" data-feat="ss02" aria-pressed="false"><b>Il</b><span>Disambiguation</span></button>
+      </div>
+      <div class="proto-hint">Inter OpenType features for the &ldquo;Sans&rdquo; numerals &mdash; slashed zero, alternate digit shapes, and disambiguated similar glyphs (only visible with the Sans numeral font). <a href="https://rsms.me/inter/#features" target="_blank" rel="noopener">Reference ↗</a></div>
+    </div>
 
     <div class="proto-sec">Data visualization</div>
     <div class="grp"><div class="label">3D charts</div><div class="toggle"><button id="c3d-default" class="on">Flat</button><button id="c3d-iso">Isometric</button><button id="c3d-glass">Glass</button></div></div>

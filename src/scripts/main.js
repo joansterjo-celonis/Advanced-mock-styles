@@ -1,5 +1,8 @@
 // App entry. Vite bundles + hashes the CSS imports; importing them before
 // the engine guarantees styles are applied before any layout measurement.
+// Self-hosted Inter @font-face first so the 'Inter' family (declared across every stack) resolves
+// to the real font — required for the Typography OpenType features (zero / ss01 / ss02) to render.
+import '../styles/fonts.css';
 import '../styles/tokens.css';
 import '../styles/shell.css';
 import '../styles/views.css';
