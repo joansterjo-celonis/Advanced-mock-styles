@@ -100,14 +100,17 @@ const RECORDS = {};
 ROWS.forEach(r => { RECORDS[r[0]] = detailFor(r[0], r[1], r[2]); });
 
 /* ============ KPI strip (2 hero cells) ============ */
-function mkpi(label, valHtml) {
-  return '<div class="kpi"><div class="k">' + label + info + '</div><div class="v">' + valHtml + '</div></div>';
+// Unit (#, d) lives in the label text as "[unit]" (matching the shell's
+// "Net Order Value [EUR]" convention), not a trailing numeral span.
+function mkpi(label, valHtml, unit) {
+  const lbl = unit ? label + ' [' + unit + ']' : label;
+  return '<div class="kpi"><div class="k">' + lbl + info + '</div><div class="v">' + valHtml + '</div></div>';
 }
 const kpiStrip =
   '<section class="card span-12 kpi-strip kpi2" data-card style="min-height:auto;">' +
     '<span class="gloss"></span><span class="sheen"></span><span class="rim"></span>' +
-    mkpi('Open Incidents', '<span data-counter data-to="2000">0</span><span class="u">#</span>') +
-    mkpi('Avg Resolution Time', '<span data-counter data-to="3.4" data-decimals="1">0</span><span class="u">d</span>') +
+    mkpi('Open Incidents', '<span data-counter data-to="2000">0</span>', '#') +
+    mkpi('Avg Resolution Time', '<span data-counter data-to="3.4" data-decimals="1">0</span>', 'd') +
   '</section>';
 
 /* ============ Incidents by Assignment Group (hbarcat) ============ */

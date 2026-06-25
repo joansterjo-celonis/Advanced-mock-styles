@@ -98,6 +98,16 @@
   .metric-val { font-size:26px; font-weight:600; letter-spacing:-0.02em; color:var(--text); margin-top:2px; }
   .chart-wrap { flex:1; margin-top:10px; min-height:0; display:flex; align-items:stretch; }
   .chart-wrap svg { width:100%; height:100%; display:block; }
+  /* hbarcat fills its dashboard metric card responsively, but its SVG carries a
+     preserveAspectRatio:none viewBox sized from the live clientWidth/Height. In a metric
+     card's auto grid-row, an in-flow SVG lets that viewBox aspect ratio drive the row height
+     — so a stale narrow viewBox left over from a small→large window resize balloons the card
+     (the measure→write→measure growth loop). Pinning the SVG out of flow makes the card height
+     depend solely on the flex/min-height, never the chart, while the SVG still stretches to
+     fill (full width responsiveness + crisp, non-scaled text are preserved). Scoped to .metric
+     so the content-sized OCPM hbar charts (flex:none / min-height) are untouched. */
+  .metric > .chart-wrap[data-chart="hbarcat"] { position:relative; }
+  .metric > .chart-wrap[data-chart="hbarcat"] > svg { position:absolute; inset:0; }
   .btn-validate { margin-top:14px; align-self:center; height:34px; padding:0 18px; border-radius:8px; border:0; background:var(--accent); color:var(--accent-text,#fff); font-size:12.5px; font-weight:600; cursor:pointer; font-family:inherit; transition:background .15s, transform .1s; }
   .btn-validate:hover { background:color-mix(in srgb, var(--accent) 85%, #000); } .btn-validate:active { transform:translateY(1px); }
 

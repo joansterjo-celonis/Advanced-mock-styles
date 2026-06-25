@@ -49,15 +49,16 @@ const DEFAULT = {
 
 /* ---- KPI strip (4 hero cells) ---- */
 // Numerals carry data-counter so they count-up and obey the KPI weight/font knob;
-// data-k tags each so a row click can repoint data-to + re-animate. SLA Met keeps
-// the source's "0.0% %" form (a % inside the numeral plus the trailing unit).
+// data-k tags each so a row click can repoint data-to + re-animate. The unit (%, d, #)
+// lives in the label text as "[unit]" (matching the shell's "Net Order Value [EUR]"
+// convention); SLA Met still renders the percent inside the numeral via data-suffix.
 function kpiCell(label, k, opts) {
   opts = opts || {};
   const suf = opts.suffix ? ' data-suffix="' + opts.suffix + '"' : '';
   const dec = opts.decimals ? ' data-decimals="' + opts.decimals + '"' : '';
-  return '<div class="kpi"><div class="k">' + label + (opts.info ? info : '') + '</div>' +
-    '<div class="v"><span data-counter data-k="' + k + '" data-to="0"' + dec + suf + '>0</span>' +
-    (opts.unit ? '<span class="u">' + opts.unit + '</span>' : '') + '</div></div>';
+  const lbl = opts.unit ? label + ' [' + opts.unit + ']' : label;
+  return '<div class="kpi"><div class="k">' + lbl + (opts.info ? info : '') + '</div>' +
+    '<div class="v"><span data-counter data-k="' + k + '" data-to="0"' + dec + suf + '>0</span></div></div>';
 }
 const kpiStrip =
   '<section class="card span-12 kpi-strip kpi4" data-card style="min-height:auto;">' +
@@ -96,7 +97,10 @@ const slaTable = '<div class="ptable-scroll" style="max-height:180px;"><table cl
 const actTable = '<div class="ptable-scroll"><table class="ptable">' + thRow(ACT_COLS) +
   '<tbody data-actbody>' + bodyRows(DEFAULT.activity) + '</tbody></table></div>';
 
-/* ---- detail band: attributes · SLA Records · Related Problem (side by side) ---- */
+/* ---- detail band: attributes (left) | SLA Records over Related Problem (right) ---- */
+// Two tracks: the tall attribute list on the left, and a stacked column on the right
+// where SLA Records sits above Related Problem. The Related Problem card flex-grows to
+// soak up the slack so the right track bottom-aligns with the attributes — no dead gap.
 const cols =
   '<div class="inc-cols">' +
     '<section class="card" data-card>' +
@@ -104,16 +108,18 @@ const cols =
       '<div class="card-title">Incident Attributes</div>' +
       '<div class="inc-attrs" data-attrs>' + attrsHtml(DEFAULT) + '</div>' +
     '</section>' +
-    '<section class="card" data-card>' +
-      '<span class="gloss"></span><span class="rim"></span>' +
-      '<div class="ocpm-cardhead"><div class="card-title">SLA Records</div><span class="ocpm-dl" title="Download">' + DL + '</span></div>' +
-      slaTable +
-    '</section>' +
-    '<section class="card" data-card>' +
-      '<span class="gloss"></span><span class="rim"></span>' +
-      '<div class="card-title">Related Problem</div>' +
-      '<div class="inc-empty">No related problem linked to this incident.</div>' +
-    '</section>' +
+    '<div class="inc-col">' +
+      '<section class="card" data-card>' +
+        '<span class="gloss"></span><span class="rim"></span>' +
+        '<div class="ocpm-cardhead"><div class="card-title">SLA Records</div><span class="ocpm-dl" title="Download">' + DL + '</span></div>' +
+        slaTable +
+      '</section>' +
+      '<section class="card" data-card>' +
+        '<span class="gloss"></span><span class="rim"></span>' +
+        '<div class="card-title">Related Problem</div>' +
+        '<div class="inc-empty">No related problem linked to this incident.</div>' +
+      '</section>' +
+    '</div>' +
   '</div>';
 
 /* ---- activity table (full-width) ---- */

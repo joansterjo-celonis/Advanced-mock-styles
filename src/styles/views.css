@@ -340,7 +340,6 @@
   /* KPI cell (replaces the screenshot's redacted pills) */
   .inv-kpi .k { font-size:11px; color:var(--text-dim); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .inv-kpi .v { font-size:21px; font-weight:600; color:var(--text); font-variant-numeric:tabular-nums; line-height:1.1; white-space:nowrap; }
-  .inv-kpi .v .u { font-size:12px; color:var(--text-dim); font-weight:500; margin-left:2px; }
   .inv-kpi.big .v { font-size:30px; }
   .inv-kpi .d { font-size:11px; font-weight:600; font-variant-numeric:tabular-nums; }
   .inv-kpi .d.up { color:var(--success); } .inv-kpi .d.down { color:var(--danger); }
@@ -367,8 +366,6 @@
   .kpi-strip.kpi2 { grid-template-columns:repeat(2,1fr); }
   .kpi-strip.kpi4 { grid-template-columns:repeat(4,1fr); }
   @media (max-width:680px){ .kpi-strip.kpi4 { grid-template-columns:repeat(2,1fr); } }
-  /* small trailing unit on a kpi-strip numeral (e.g. "#", "d", "%") */
-  .kpi .v .u { font-size:15px; font-weight:500; color:var(--text-dim); margin-left:4px; letter-spacing:0; }
   /* shared little "i" info dot used in KPI labels + card titles */
   .inc-i { display:inline-grid; place-items:center; width:14px; height:14px; border-radius:50%; border:1px solid var(--text-faint); color:var(--text-faint); font-size:9px; font-weight:400; line-height:1; vertical-align:1px; margin-left:4px; cursor:default; flex:none; }
 
@@ -382,14 +379,22 @@
   .inc-link:hover { text-decoration:underline; }
   .ptable tbody tr.is-sel td { background:var(--card-strong); }
 
-  /* detail band: attributes · SLA Records · Related Problem, side by side in one
-     row. SLA Records is weighted widest (it carries a table); the others hold a
-     short attribute list / empty state. Stacks on a narrow drawer. */
-  .inc-cols { grid-column:span 12; display:grid; grid-template-columns:1fr 1.5fr 1fr; gap:var(--gap); align-items:start; }
-  /* reset the bento default (.card{grid-column:span 4}) so each card occupies one
-     track of THIS grid instead of spanning the whole row. */
-  .inc-cols > .card { grid-column:auto; min-width:0; }
-  @media (max-width:760px){ .inc-cols { grid-template-columns:1fr; } .inc-cols > .card { grid-column:auto; } }
+  /* detail band: two tracks — the tall attribute list on the left, and a stacked
+     column on the right (SLA Records above Related Problem). align-items:stretch lets
+     the right track match the attribute card's height; Related Problem then flex-grows
+     to fill the slack so no dead space is left under the SLA table. Stacks on a narrow
+     drawer. */
+  .inc-cols { grid-column:span 12; display:grid; grid-template-columns:1fr 2.5fr; gap:var(--gap); align-items:stretch; }
+  /* reset the bento default (.card{grid-column:span 4}) so each direct child occupies
+     one track of THIS grid instead of spanning the whole row. */
+  .inc-cols > .card, .inc-cols > .inc-col { grid-column:auto; min-width:0; }
+  /* right track: stack the two cards with the standard gap; the last (Related Problem)
+     grows to bottom-align the track with the attribute list and centres its empty state
+     across the full grown height. */
+  .inc-col { display:flex; flex-direction:column; gap:var(--gap); min-width:0; }
+  .inc-col > .card:last-child { flex:1 1 auto; display:flex; flex-direction:column; }
+  .inc-col > .card:last-child .inc-empty { flex:1; }
+  @media (max-width:760px){ .inc-cols { grid-template-columns:1fr; } }
 
   /* attribute list (label + value rows) */
   .inc-attrs { display:flex; flex-direction:column; gap:13px; margin-top:14px; }

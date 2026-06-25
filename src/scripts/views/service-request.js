@@ -23,15 +23,16 @@ const KEBAB = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColo
 
 /* ============ KPI strip (5 hero cells) ============ */
 // Numerals carry data-counter so they count-up and obey the KPI weight/font knob.
-// The "% %" forms (Due Date Compliance / Approval Pending Rate) keep the source's
-// percent-in-numeral plus trailing-unit rendering.
+// The unit (#, %, d) is carried in the label text as "[unit]" (matching the shell's
+// "Net Order Value [EUR]" convention) rather than a trailing numeral span; the
+// compliance cells still render the percent inside the numeral via data-suffix.
 function kpiCell(label, opts) {
   opts = opts || {};
   const suf = opts.suffix ? ' data-suffix="' + opts.suffix + '"' : '';
   const dec = opts.decimals ? ' data-decimals="' + opts.decimals + '"' : '';
-  return '<div class="kpi"><div class="k">' + label + info + '</div>' +
-    '<div class="v"><span data-counter data-to="' + opts.to + '"' + dec + suf + '>0</span>' +
-    (opts.unit ? '<span class="u">' + opts.unit + '</span>' : '') + '</div></div>';
+  const lbl = opts.unit ? label + ' [' + opts.unit + ']' : label;
+  return '<div class="kpi"><div class="k">' + lbl + info + '</div>' +
+    '<div class="v"><span data-counter data-to="' + opts.to + '"' + dec + suf + '>0</span></div></div>';
 }
 const kpiStrip =
   '<section class="card span-12 kpi-strip kpi5" data-card style="min-height:auto;">' +
