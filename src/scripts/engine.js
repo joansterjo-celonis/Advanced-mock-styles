@@ -800,6 +800,9 @@ import { getThemes, syncThemes, getAuthor, ensureAuthor, isCloudEnabled } from '
         } else if(sg){ sg.style.display=''; }
         renderChartsIn(document.querySelector('.view.active')); }
       bLayDef.onclick=()=>setLayout('default'); bLayFlow.onclick=()=>setLayout('flowy'); if(bLayFlap) bLayFlap.onclick=()=>setLayout('flap');
+      const layoutAdv=document.getElementById('layout-adv'), layoutAdvGrp=document.getElementById('layout-adv-grp');
+      function setLayoutAdvanced(adv){ adv=!!adv; if(layoutAdvGrp) layoutAdvGrp.hidden=!adv; if(layoutAdv){ layoutAdv.setAttribute('aria-pressed',adv?'true':'false'); layoutAdv.textContent=adv?'Less':'Advanced'; } }
+      if(layoutAdv) layoutAdv.addEventListener('click',()=>setLayoutAdvanced(layoutAdv.getAttribute('aria-pressed')!=='true'));
 
       /* tab transition: default vs slide-fade */
       const bFxFlat=document.getElementById('tabfx-flat'), bFxSlide=document.getElementById('tabfx-slide');
@@ -840,6 +843,8 @@ import { getThemes, syncThemes, getAuthor, ensureAuthor, isCloudEnabled } from '
       }
       wireKnob('data-coloruse',   [{id:'color-calm',val:'calm'},{id:'color-strategic',val:'strategic'},{id:'color-expressive',val:'expressive'}], false);
       wireKnob('data-shell',      [{id:'shell-seamless',val:'seamless'},{id:'shell-tinted',val:null},{id:'shell-contrast',val:'contrast'}], false);
+      wireKnob('data-pkgpos',     [{id:'pkg-l1',val:null},{id:'pkg-status',val:'status'}], false);
+      wireKnob('data-l0reveal',   [{id:'l0-hover',val:null},{id:'l0-click',val:'click'}], false);
       wireKnob('data-3dscope',    [{id:'d3-accent',val:'accent'},{id:'d3-full',val:'full'}], true);
       wireKnob('data-composition',[{id:'comp-uniform',val:'uniform'},{id:'comp-bento',val:null},{id:'comp-hero',val:'hero'}], true);
       /* KPI numerals: weight slider + font-family toggle */
@@ -906,8 +911,8 @@ import { getThemes, syncThemes, getAuthor, ensureAuthor, isCloudEnabled } from '
           const toggles = Array.from(document.querySelectorAll('.proto .toggle button[id]'));
           const orphanControls = toggles.filter(b => !BTN_ACTIONS[b.id]).map(b => b.id);
           const cssAttrs = ['data-mode','data-theme','data-density','data-layout','data-charts3d','data-coloruse',
-            'data-shell','data-composition','data-tabmodel','data-tables','data-tabs','data-surfacefx'];
-          const jsAttrs = ['data-3dscope','data-tabfx']; // consumed in chartMode() / view-switch, not CSS
+            'data-shell','data-pkgpos','data-composition','data-tabmodel','data-tables','data-tabs','data-surfacefx'];
+          const jsAttrs = ['data-3dscope','data-tabfx','data-l0reveal']; // consumed in chartMode() / view-switch / shell, not CSS
           let cssText = '';
           for (const s of Array.from(document.styleSheets)) {
             try { for (const r of Array.from(s.cssRules)) cssText += r.cssText; } catch (e) { /* cross-origin sheet */ }
@@ -1240,13 +1245,13 @@ import { getThemes, syncThemes, getAuthor, ensureAuthor, isCloudEnabled } from '
         const confirmRow=$('preset-confirm'), confirmText=$('preset-confirm-text');
         const DEFAULTS=[
           { id:'preset-enterprise-calm', name:'Enterprise Calm',
-            state:{ buttons:['mode-light','theme-mono','color-calm','shell-contrast','layout-default','tabm-seg','tabs-filled','tabfx-flat','comp-bento','density-spacious','kf-sans','c3d-default','d3-accent'],
+            state:{ buttons:['mode-light','theme-mono','color-calm','shell-contrast','layout-default','pkg-l1','l0-hover','tabm-seg','tabs-filled','tabfx-flat','comp-bento','density-spacious','kf-sans','c3d-default','d3-accent'],
               sliders:{'r-surface':'10','r-interactive':'8','kpi-weight':'300','r-glass':'0'}, hue:'#6366f1', hueActive:false, tab:'#6366f1' } },
           { id:'preset-bento-bold', name:'Bento Bold',
-            state:{ buttons:['mode-light','theme-mono','color-strategic','shell-tinted','layout-default','tabm-seg','tabs-filled','tabfx-flat','comp-hero','density-spacious','kf-sans','c3d-iso','d3-accent'],
+            state:{ buttons:['mode-light','theme-mono','color-strategic','shell-tinted','layout-default','pkg-l1','l0-hover','tabm-seg','tabs-filled','tabfx-flat','comp-hero','density-spacious','kf-sans','c3d-iso','d3-accent'],
               sliders:{'r-surface':'14','r-interactive':'9','kpi-weight':'200','r-glass':'0'}, hue:'#6366f1', hueActive:false, tab:'#6366f1' } },
           { id:'preset-exec-dark', name:'Executive Dark',
-            state:{ buttons:['mode-dark','theme-color','color-strategic','shell-contrast','layout-default','tabm-seg','tabs-filled','tabfx-slide','comp-bento','density-compact','kf-sans','c3d-glass','d3-accent'],
+            state:{ buttons:['mode-dark','theme-color','color-strategic','shell-contrast','layout-default','pkg-l1','l0-hover','tabm-seg','tabs-filled','tabfx-slide','comp-bento','density-compact','kf-sans','c3d-glass','d3-accent'],
               sliders:{'r-surface':'12','r-interactive':'9','kpi-weight':'300','r-glass':'0'}, hue:'#6366f1', hueActive:false, tab:'#6366f1' } }
         ];
         function load(){ try{ const r=JSON.parse(localStorage.getItem(LS)); if(r&&Array.isArray(r.presets)) return r; }catch(e){} return { presets: JSON.parse(JSON.stringify(DEFAULTS)), selected:'' }; }
@@ -1270,7 +1275,10 @@ import { getThemes, syncThemes, getAuthor, ensureAuthor, isCloudEnabled } from '
         // + .on sync) through the knob registry, instead of replaying .click() in array order.
         function applyState(st){
           if(!st) return;
-          (st.buttons||[]).forEach(id=>{ const fn=BTN_ACTIONS[id]; if(fn) fn(); });
+          const btns=st.buttons||[];
+          if(!btns.some(id=>id==='pkg-l1'||id==='pkg-status')) BTN_ACTIONS['pkg-l1']();
+          if(!btns.some(id=>id==='l0-hover'||id==='l0-click')) BTN_ACTIONS['l0-hover']();
+          btns.forEach(id=>{ const fn=BTN_ACTIONS[id]; if(fn) fn(); });
           if(st.sliders) for(const id in st.sliders){ const el=$(id); if(el){ el.value=st.sliders[id]; el.dispatchEvent(new Event('input')); } }
           // glass split: honor the stored advanced state (else force simple so any live axis overrides clear)
           if(typeof setGlassMode==='function'){

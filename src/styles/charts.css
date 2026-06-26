@@ -112,6 +112,10 @@
   /* Global-glass: single slider by default, "Advanced" splits it into translucency + glassiness */
   .gg-grp > .label { display:flex; align-items:center; gap:8px; }
   .gg-grp > .label .val { float:none; margin-left:auto; }
+  .layout-grp > .label { display:flex; align-items:center; gap:8px; }
+  .layout-grp > .label .gg-adv { margin-left:auto; }
+  .layout-adv-grp[hidden] { display:none; }
+  .layout-adv-grp .layout-adv-label { margin-top:12px; }
   .gg-adv { font-size:10px; font-weight:600; letter-spacing:.02em; text-transform:uppercase; color:var(--chrome-dim); background:rgba(255,255,255,0.05); border:1px solid var(--chrome-border); border-radius:6px; padding:3px 8px; cursor:pointer; transition:color .15s, background .15s, border-color .15s; }
   .gg-adv:hover { color:#fff; background:rgba(255,255,255,0.09); }
   .gg-adv[aria-pressed="true"] { color:#fff; background:rgba(255,255,255,0.12); border-color:rgba(255,255,255,0.22); }

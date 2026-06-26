@@ -831,6 +831,8 @@ function buildState(src) {
     `color-${src.energy}`,
     `shell-${shell}`,
     `layout-${src.layout}`,
+    'pkg-l1',
+    'l0-hover',
     src.finish === 'frost' ? 'surf-frost' : 'surf-flat',
     'comp-bento',
     `density-${src.density}`,
