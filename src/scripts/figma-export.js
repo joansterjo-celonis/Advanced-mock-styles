@@ -148,6 +148,459 @@ export async function createFigmaExportPackage(options = {}) {
   }
 }
 
+// ============================================================
+//  Screenshots export (PNG-per-screen ZIP)
+// ============================================================
+//
+// Captures the whole prototype as flat PNGs: every Context editor view plus the
+// Home page, the Context package-list overview, and the Deploy / Package-history
+// modals. Bundles them into a single .zip. The live screen is restored afterwards.
+
+export async function exportAllScreenshots(preset, options = {}) {
+  const normalized = normalizePreset(preset, options.state);
+  const onProgress = typeof options.onProgress === 'function' ? options.onProgress : () => {};
+  const scale = Math.max(0.5, Math.min(2, Number(options.scale) || 1));
+  const startedAt = new Date().toISOString();
+  const previous = captureRuntimeState();
+  const ctxRoute = document.getElementById('route-context');
+  const ctxMode = ctxRoute ? (ctxRoute.classList.contains('mode-overview') ? 'overview' : 'editor') : null;
+  const openModals = Array.from(document.querySelectorAll('.modal-overlay.open')).map((el) => el.id);
+  const files = {};
+  const screens = [];
+
+  onProgress({ type: 'started', preset: normalized });
+
+  try {
+    if (normalized.state && window.IA && typeof window.IA.applyState === 'function') {
+      window.IA.applyState(normalized.state);
+      await settle();
+    }
+
+    const targets = buildScreenshotTargets(options);
+    const total = targets.length;
+
+    for (let i = 0; i < targets.length; i += 1) {
+      const target = targets[i];
+      let shot = null;
+      try {
+        shot = await target.capture(scale);
+      } catch (err) {
+        console.warn('[screenshot-export] capture failed for ' + target.id + ' ' + JSON.stringify(errorDetails(err)));
+      }
+      if (shot && shot.dataUrl) {
+        files[target.path] = dataUrlToBytes(shot.dataUrl);
+        screens.push({
+          id: target.id,
+          label: target.label,
+          path: target.path,
+          width: shot.width,
+          height: shot.height,
+        });
+      }
+      onProgress({ type: 'screen-captured', index: i + 1, total, screen: { id: target.id, label: target.label } });
+    }
+
+    const manifest = {
+      schema: FIGMA_EXPORT_SCHEMA,
+      kind: 'screenshots',
+      exportedAt: startedAt,
+      preset: { id: normalized.id, name: normalized.name },
+      counts: { screens: screens.length },
+      screens,
+    };
+    files['manifest.json'] = stableJson(manifest);
+
+    const bytes = makeZip(files);
+    const blob = new Blob([bytes], { type: 'application/zip' });
+    const filename = screenshotsFilename(normalized.name, startedAt);
+    onProgress({ type: 'packaged', filename, bytes: bytes.length, screens: screens.length });
+    if (options.download !== false) downloadBlob(blob, filename);
+
+    return { schema: FIGMA_EXPORT_SCHEMA, kind: 'screenshots', manifest, files, bytes, blob, filename };
+  } catch (error) {
+    onProgress({ type: 'failed', error: errorMessage(error) });
+    throw error;
+  } finally {
+    document.querySelectorAll('.modal-overlay.open').forEach((el) => {
+      if (!openModals.includes(el.id)) el.classList.remove('open');
+    });
+    await restoreRuntimeState(previous);
+    if (ctxRoute && ctxMode) {
+      ctxRoute.classList.toggle('mode-overview', ctxMode === 'overview');
+      ctxRoute.classList.toggle('mode-editor', ctxMode === 'editor');
+    }
+    onProgress({ type: 'restored' });
+  }
+}
+
+function buildScreenshotTargets(options = {}) {
+  const targets = [];
+  const viewFilter = Array.isArray(options.viewIds) && options.viewIds.length ? options.viewIds : null;
+  const includeSubtabs = options.includeSubtabs !== false;
+  const appNode = () => document.getElementById('app');
+
+  // Home — the full app shell on the Home route.
+  targets.push({
+    id: 'home',
+    label: 'Home',
+    path: 'screens/home.png',
+    capture: async (scale) => {
+      setRoute('home');
+      await settle();
+      return rasterizeRoot(appNode(), { scale });
+    },
+  });
+
+  // Packages — the Context Models package-list overview.
+  targets.push({
+    id: 'packages',
+    label: 'Packages',
+    path: 'screens/packages.png',
+    capture: async (scale) => {
+      setRoute('context');
+      const route = document.getElementById('route-context');
+      if (route) {
+        route.classList.remove('mode-editor');
+        route.classList.add('mode-overview');
+      }
+      await settle();
+      return rasterizeRoot(appNode(), { scale });
+    },
+  });
+
+  // Every Context editor view, including its inner sub-tabs.
+  primaryViews().filter((view) => !viewFilter || viewFilter.includes(view.id)).forEach((view) => {
+    const variants = includeSubtabs ? variantsForView(view.id) : [defaultVariant()];
+    variants.forEach((variant) => {
+      const isSub = !!(variant && variant.attr);
+      const variantKey = isSub ? `${variant.attr}-${variant.val}` : 'default';
+      targets.push({
+        id: isSub ? `view-${view.id}__${slug(variantKey)}` : `view-${view.id}`,
+        label: isSub ? `${view.label || view.id} \u00B7 ${variant.label || variant.val}` : (view.label || view.id),
+        path: isSub ? `screens/view-${slug(view.id)}__${slug(variantKey)}.png` : `screens/view-${slug(view.id)}.png`,
+        capture: async (scale) => {
+          await activateScreen(view.id, variant);
+          return rasterizeRoot(appNode(), { scale });
+        },
+      });
+    });
+  });
+
+  // Modals — captured in context (full screen, dimmed backdrop over the editor).
+  targets.push({
+    id: 'modal-deploy',
+    label: 'Deploy',
+    path: 'modals/deploy.png',
+    capture: (scale) => captureModalScreenshot('deploy-overlay', scale),
+  });
+  targets.push({
+    id: 'modal-package-history',
+    label: 'Package history',
+    path: 'modals/package-history.png',
+    capture: (scale) => captureModalScreenshot('hist-overlay', scale),
+  });
+
+  return targets;
+}
+
+function variantsForView(viewId) {
+  const variants = subtabVariants(viewId);
+  return variants.length ? variants : [defaultVariant()];
+}
+
+function ensureContextBackdrop() {
+  setRoute('context');
+  const route = document.getElementById('route-context');
+  if (route) {
+    route.classList.remove('mode-overview');
+    route.classList.add('mode-editor');
+  }
+  if (!document.querySelector('#content .view.active')) {
+    const first = primaryViews()[0];
+    if (first && window.IA && typeof window.IA.restoreScreen === 'function') {
+      window.IA.restoreScreen({ viewId: first.id });
+    }
+  }
+}
+
+async function captureModalScreenshot(overlayId, scale) {
+  const overlay = document.getElementById(overlayId);
+  const app = document.getElementById('app');
+  if (!overlay || !app) return null;
+  // Put a real product screen behind the modal so it reads "in context".
+  ensureContextBackdrop();
+  await settle();
+  const wasOpen = overlay.classList.contains('open');
+  const parent = overlay.parentNode;
+  const anchor = overlay.nextSibling;
+  document.querySelectorAll('.modal-overlay.open').forEach((el) => { if (el !== overlay) el.classList.remove('open'); });
+  // The overlay normally lives outside #app. Temporarily reparent it inside #app
+  // so capturing #app alone yields the modal over its dimmed backdrop, without the
+  // huge cost of rasterizing the entire <body> (every route + every other modal).
+  app.appendChild(overlay);
+  overlay.classList.add('open');
+  await settle();
+  let shot = null;
+  try {
+    shot = await rasterizeRoot(app, { scale });
+  } finally {
+    if (anchor) parent.insertBefore(overlay, anchor);
+    else parent.appendChild(overlay);
+    if (!wasOpen) overlay.classList.remove('open');
+  }
+  return shot;
+}
+
+// Capture a live DOM root in place so it keeps the real app layout/styles. We
+// render with html2canvas (normalizing modern color() / oklch() in the clone via
+// onclone), and fall back to html-to-image. Prototype-only chrome is skipped.
+async function rasterizeRoot(root, options = {}) {
+  if (!root) return null;
+  const scale = clamp(Number(options.scale) || 1, 0.5, 2);
+  const isViewport = root === document.body || root === document.documentElement;
+  const rect = root.getBoundingClientRect();
+  const width = Math.max(1, Math.round(isViewport ? window.innerWidth : (root.clientWidth || rect.width)));
+  const height = Math.max(1, Math.round(isViewport ? window.innerHeight : (root.clientHeight || rect.height)));
+  const background = options.background || solidBackdrop(root);
+
+  // Detach hidden heavy subtrees (inactive routes/views, closed modals) so
+  // html2canvas only has to clone & parse what is actually on screen. This is the
+  // single biggest speed win — a capture drops from ~4.5s to ~1s.
+  const restorePruned = pruneHiddenHeavy(root);
+
+  try {
+    const canvas = await html2canvas(root, {
+      backgroundColor: background,
+      scale,
+      width,
+      height,
+      windowWidth: document.documentElement.clientWidth,
+      windowHeight: document.documentElement.clientHeight,
+      scrollX: 0,
+      scrollY: 0,
+      useCORS: true,
+      logging: false,
+      ignoreElements: (el) => el instanceof Element && el.matches(SCREENSHOT_SKIP),
+      onclone: (doc) => { normalizeDocColors(doc); sanitizeSvgsInDoc(doc); },
+    });
+    return { dataUrl: canvas.toDataURL('image/png'), width, height };
+  } catch (primaryError) {
+    try {
+      const dataUrl = await toPng(root, {
+        cacheBust: true,
+        pixelRatio: scale,
+        width,
+        height,
+        backgroundColor: background || undefined,
+        filter: (el) => !(el instanceof Element) || !el.matches(SCREENSHOT_SKIP),
+      });
+      return { dataUrl, width, height };
+    } catch (fallbackError) {
+      console.warn('[screenshot-export] raster failed ' + JSON.stringify({
+        primary: errorDetails(primaryError),
+        fallback: errorDetails(fallbackError),
+      }));
+      return null;
+    }
+  } finally {
+    restorePruned();
+  }
+}
+
+// Chart hit-targets stash tooltip text in data-* attributes delimited by ASCII
+// control chars (\u001E/\u001F). Those bytes are illegal in XML 1.0, so any attempt
+// to serialize the SVG (which is exactly how html2canvas rasterizes inline SVG —
+// it serializes to an <img>) yields unparseable markup; the image then fails to
+// load and the chart renders blank/blobby. Drop interaction/data attributes that
+// aren't needed for a static picture.
+const XML_BAD_CHARS = /[\u0000-\u0008\u000B\u000C\u000E-\u001F]/;
+function stripNonRenderAttrs(svgRoot) {
+  const all = [svgRoot].concat(Array.from(svgRoot.querySelectorAll('*')));
+  for (let i = 0; i < all.length; i += 1) {
+    const el = all[i];
+    const names = el.getAttributeNames ? el.getAttributeNames() : [];
+    for (let j = 0; j < names.length; j += 1) {
+      const name = names[j];
+      if (name.indexOf('data-') === 0 || XML_BAD_CHARS.test(el.getAttribute(name) || '')) {
+        el.removeAttribute(name);
+      }
+    }
+  }
+}
+
+// Run inside html2canvas's onclone: html2canvas renders inline SVG by serializing
+// it, and our charts carry control-char tooltip data-attrs that make that markup
+// invalid XML -> the SVG image fails to load -> blank/blobby charts. Strip them in
+// the *clone* so the live DOM (and its working tooltips) is never touched.
+function sanitizeSvgsInDoc(doc) {
+  if (!doc) return;
+  const svgs = doc.querySelectorAll('svg');
+  for (let i = 0; i < svgs.length; i += 1) stripNonRenderAttrs(svgs[i]);
+}
+
+// Heavy, optional containers that are only sometimes on screen. We detach any of
+// these (plus inactive editor views) that are currently hidden, capture, then put
+// them back exactly where they were.
+const PRUNE_CANDIDATES = [
+  '#route-home', '#route-studio', '#route-datalake', '#route-space', '#route-context',
+  '#gsearch-overlay', '#spaces-overlay', '#deploy-overlay', '#hist-overlay', '#pkg-ctxmenu',
+];
+
+function pruneHiddenHeavy(captureRoot) {
+  const stash = [];
+  const detach = (el) => {
+    if (!el || !el.parentNode || el === captureRoot || el.contains(captureRoot)) return;
+    stash.push([el, el.parentNode, el.nextSibling]);
+    el.parentNode.removeChild(el);
+  };
+  const isHidden = (el) => {
+    const cs = getComputedStyle(el);
+    return cs.display === 'none' || cs.visibility === 'hidden' || Number(cs.opacity) === 0;
+  };
+  PRUNE_CANDIDATES.forEach((sel) => {
+    const el = document.querySelector(sel);
+    if (el && isHidden(el)) detach(el);
+  });
+  const content = document.getElementById('content');
+  if (content && captureRoot.contains(content)) {
+    Array.from(content.children).forEach((el) => {
+      if (el.classList && el.classList.contains('view') && !el.classList.contains('active')) detach(el);
+    });
+  }
+  return () => {
+    for (let i = stash.length - 1; i >= 0; i -= 1) {
+      const [el, parent, next] = stash[i];
+      if (next && next.parentNode === parent) parent.insertBefore(el, next);
+      else parent.appendChild(el);
+    }
+  };
+}
+
+// Prototype-only chrome that must never appear in a product screenshot.
+const SCREENSHOT_SKIP = [
+  '.proto', '#proto', '.fab', '#fab',
+  '#preset-export', '#preset-export-menu',
+  '.ctxmenu', '.glass-tip', '.ia-tip', '.tooltip',
+  '.fb-overlay', '.fb-popup', '.fb-panel', '.fb-marker', '.fb-fab',
+  '.theme-creator', '.tc-overlay', '.tc-backdrop',
+].join(',');
+
+const COLOR_PROPS = [
+  'color', 'backgroundColor', 'backgroundImage',
+  'borderTopColor', 'borderRightColor', 'borderBottomColor', 'borderLeftColor',
+  'outlineColor', 'boxShadow', 'textShadow', 'textDecorationColor',
+  'columnRuleColor', 'fill', 'stroke',
+];
+const NON_RGB_COLOR = /(oklch|oklab|\blab|\blch|color-mix|color)\(/i;
+
+const _colorProbe = (() => {
+  try {
+    const c = document.createElement('canvas');
+    c.width = 1;
+    c.height = 1;
+    return c.getContext('2d', { willReadFrequently: true });
+  } catch (e) {
+    return null;
+  }
+})();
+const _colorCache = new Map();
+
+// Resolve any CSS colour (including color()/oklch()/lab()/color-mix()) to a
+// concrete sRGB rgba string by painting 1px and reading the bytes back — this is
+// the only reliable conversion, since fillStyle's getter preserves color(srgb …).
+function toRenderableColor(value) {
+  if (!_colorProbe) return null;
+  if (_colorCache.has(value)) return _colorCache.get(value);
+  let result = null;
+  try {
+    _colorProbe.clearRect(0, 0, 1, 1);
+    _colorProbe.fillStyle = '#000';
+    _colorProbe.fillStyle = value;
+    _colorProbe.fillRect(0, 0, 1, 1);
+    const d = _colorProbe.getImageData(0, 0, 1, 1).data;
+    const a = Math.round((d[3] / 255) * 1000) / 1000;
+    result = `rgba(${d[0]}, ${d[1]}, ${d[2]}, ${a})`;
+  } catch (e) {
+    result = null;
+  }
+  _colorCache.set(value, result);
+  return result;
+}
+
+// Replace every non-sRGB colour function in a (possibly multi-colour) value such
+// as a gradient or shadow. Uses a manual balanced-paren scan — never a regex — to
+// avoid catastrophic backtracking on large box-shadow / background-image strings.
+function normalizeColorString(value) {
+  const str = String(value);
+  if (!NON_RGB_COLOR.test(str)) return value;
+  const fnNames = ['oklch', 'oklab', 'lab', 'lch', 'color-mix', 'color'];
+  let out = '';
+  let i = 0;
+  while (i < str.length) {
+    let matched = false;
+    for (let f = 0; f < fnNames.length; f += 1) {
+      const name = fnNames[f];
+      if (str.substr(i, name.length).toLowerCase() !== name) continue;
+      const parenStart = i + name.length;
+      if (str[parenStart] !== '(') continue;
+      const before = i > 0 ? str[i - 1] : '';
+      if (/[a-z0-9-]/i.test(before)) continue; // part of a longer identifier
+      let depth = 0;
+      let j = parenStart;
+      for (; j < str.length; j += 1) {
+        if (str[j] === '(') depth += 1;
+        else if (str[j] === ')') { depth -= 1; if (depth === 0) { j += 1; break; } }
+      }
+      const token = str.slice(i, j);
+      const rgb = toRenderableColor(token);
+      out += rgb || token;
+      i = j;
+      matched = true;
+      break;
+    }
+    if (!matched) { out += str[i]; i += 1; }
+  }
+  return out;
+}
+
+// Rewrite any non-sRGB colour functions to rgb/rgba inside html2canvas's cloned
+// document (its CSS parser cannot read oklch/color-mix and would drop them).
+function normalizeDocColors(doc) {
+  if (!doc) return;
+  const view = doc.defaultView || window;
+  const nodes = doc.querySelectorAll('*');
+  for (let i = 0; i < nodes.length; i += 1) {
+    const el = nodes[i];
+    let cs;
+    try { cs = view.getComputedStyle(el); } catch (e) { continue; }
+    if (!cs) continue;
+    for (let p = 0; p < COLOR_PROPS.length; p += 1) {
+      const prop = COLOR_PROPS[p];
+      const raw = cs[prop];
+      if (!raw || !NON_RGB_COLOR.test(raw)) continue;
+      const fixed = normalizeColorString(raw);
+      if (fixed && fixed !== raw) {
+        try { el.style[prop] = fixed; } catch (e) { /* noop */ }
+      }
+    }
+  }
+}
+
+function solidBackdrop(node) {
+  const own = getComputedStyle(node).backgroundColor;
+  if (own && !isTransparent(own)) return own;
+  const app = document.getElementById('app');
+  const fromApp = app ? getComputedStyle(app).backgroundColor : '';
+  if (fromApp && !isTransparent(fromApp)) return fromApp;
+  const fromBody = getComputedStyle(document.body).backgroundColor;
+  return (fromBody && !isTransparent(fromBody)) ? fromBody : '#ffffff';
+}
+
+function screenshotsFilename(name, iso) {
+  const stamp = iso.replace(/[:.]/g, '-');
+  return `advanced-mock-styles-${slug(name || 'custom')}-screenshots-${stamp}.zip`;
+}
+
 function normalizePreset(preset, state) {
   const liveState = state || (window.IA && typeof window.IA.captureState === 'function' ? safeCall(window.IA.captureState) : null);
   if (preset && typeof preset === 'object') {

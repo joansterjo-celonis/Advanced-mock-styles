@@ -1802,50 +1802,60 @@ import { getThemes, syncThemes, getAuthor, ensureAuthor, isCloudEnabled } from '
           }
         }
 
-        let exportingFigma=false;
-        async function exportFigmaNow(){
-          if(exportingFigma) return;
-          const btn=$('preset-export-figma');
+        // ---- Export dropdown (Figma package · screenshots), sharing one busy state ----
+        let exporting=false;
+        function exportPreset(){
           const p=current();
-          const liveState=captureState();
-          const preset={
+          return {
             id: p ? p.id : 'custom',
             name: p ? p.name : 'Custom',
             // Export what is currently visible. If the selected preset is modified,
-            // the Figma package should match the live screen, not the stale saved copy.
-            state: liveState
+            // the package should match the live screen, not the stale saved copy.
+            state: captureState()
           };
-          exportingFigma=true;
-          const oldText=btn ? btn.textContent : '';
-          const setText=(txt)=>{ if(btn) btn.textContent=txt; };
-          if(btn){ btn.disabled=true; btn.classList.add('is-exporting'); }
-          setText('Preparing...');
+        }
+        function setExportLabel(txt){ const t=$('preset-export-btn'); const l=t && t.querySelector('.pe-label'); if(l) l.textContent=txt; }
+        function setExportBusy(on){
+          const t=$('preset-export-btn');
+          if(!t) return;
+          t.disabled=on; t.classList.toggle('is-exporting', on);
+          if(on) t.setAttribute('aria-expanded','false');
+        }
+        function closeExportMenu(){
+          const m=$('preset-export-menu'); if(m) m.hidden=true;
+          const t=$('preset-export-btn'); if(t) t.setAttribute('aria-expanded','false');
+        }
+        function toggleExportMenu(){
+          const m=$('preset-export-menu'), t=$('preset-export-btn');
+          if(!m||!t) return;
+          if(m.hidden){ m.hidden=false; t.setAttribute('aria-expanded','true'); }
+          else closeExportMenu();
+        }
+        async function runExport(invoke){
+          if(exporting) return;
+          closeExportMenu();
+          exporting=true;
+          setExportBusy(true);
+          setExportLabel('Preparing...');
           try{
             const mod=await import('./figma-export.js');
-            await mod.exportPresetToFigma(preset,{
-              includeSubtabs:true,
-              onProgress:(e)=>{
-                if(!e || !btn) return;
-                if(e.type==='screen-captured') setText('Exporting '+e.index+'/'+e.total);
-                else if(e.type==='packaged') setText('Downloaded');
-                else if(e.type==='failed') setText('Export failed');
-              }
+            await invoke(mod, (e)=>{
+              if(!e) return;
+              if(e.type==='screen-captured') setExportLabel('Exporting '+e.index+'/'+e.total);
+              else if(e.type==='packaged') setExportLabel('Downloaded');
+              else if(e.type==='failed') setExportLabel('Export failed');
             });
-            setText('Downloaded');
+            setExportLabel('Downloaded');
           }catch(e){
-            console.error('[figma-export] failed', e);
-            setText('Export failed');
+            console.error('[export] failed', e);
+            setExportLabel('Export failed');
           }finally{
-            exportingFigma=false;
-            setTimeout(()=>{
-              const b=$('preset-export-figma');
-              if(!b || exportingFigma) return;
-              b.disabled=false;
-              b.classList.remove('is-exporting');
-              b.textContent=oldText||'Export Figma';
-            }, 1600);
+            exporting=false;
+            setTimeout(()=>{ if(!exporting){ setExportBusy(false); setExportLabel('Export'); } }, 1600);
           }
         }
+        function exportFigmaNow(){ return runExport((mod,onProgress)=> mod.exportPresetToFigma(exportPreset(), { includeSubtabs:true, onProgress })); }
+        function exportScreenshotsNow(){ return runExport((mod,onProgress)=> mod.exportAllScreenshots(exportPreset(), { scale:1, onProgress })); }
 
         /* One-time upload of presets that were created before cloud sync existed.
            Runs after the shared pull so we never clobber the server. */
@@ -2025,7 +2035,12 @@ import { getThemes, syncThemes, getAuthor, ensureAuthor, isCloudEnabled } from '
         $('preset-new').onclick=()=>{ openEdit('new','My preset'); };
         $('preset-dup').onclick=()=>{ const p=current(); if(!p){ openEdit('new','My preset'); return; } const c={id:uid(),name:p.name+' copy',state:JSON.parse(JSON.stringify(p.state))}; delete c.owner; store.presets.push(c); store.selected=c.id; persist(); render(); snap(); refresh(); pushMine(); };
         $('preset-rename').onclick=()=>{ const p=current(); if(!p) return; openEdit('rename',p.name); };
-        { const figmaBtn=$('preset-export-figma'); if(figmaBtn) figmaBtn.onclick=exportFigmaNow; }
+        { const exBtn=$('preset-export-btn'); if(exBtn) exBtn.onclick=(e)=>{ e.stopPropagation(); if(exporting) return; toggleExportMenu(); }; }
+        { const exMenu=$('preset-export-menu'); if(exMenu) exMenu.addEventListener('click', e=>e.stopPropagation()); }
+        { const figmaBtn=$('preset-export-figma'); if(figmaBtn) figmaBtn.onclick=(e)=>{ e.stopPropagation(); closeExportMenu(); exportFigmaNow(); }; }
+        { const shotsBtn=$('preset-export-shots'); if(shotsBtn) shotsBtn.onclick=(e)=>{ e.stopPropagation(); closeExportMenu(); exportScreenshotsNow(); }; }
+        document.addEventListener('click', closeExportMenu);
+        document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeExportMenu(); });
         $('preset-del').onclick=()=>{ const p=current(); if(!p) return; openConfirm('Delete \u201C'+p.name+'\u201D?'); };
         { const syncBtn=$('preset-sync'); if(syncBtn) syncBtn.onclick=syncNow; }
         // ---- inline editor / confirm wiring ----

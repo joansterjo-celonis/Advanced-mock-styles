@@ -3953,7 +3953,13 @@
         <button id="preset-new" title="Save current settings as a new preset">New</button>
         <button id="preset-dup" title="Duplicate the selected preset">Duplicate</button>
         <button id="preset-rename" title="Rename the selected preset">Rename</button>
-        <button id="preset-export-figma" title="Export all screens for this theme to a local Figma import package">Export Figma</button>
+        <div class="preset-export" id="preset-export">
+          <button id="preset-export-btn" class="preset-export-trigger" type="button" aria-haspopup="true" aria-expanded="false" title="Export this theme"><span class="pe-label">Export</span><svg class="ia-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></button>
+          <div class="preset-export-menu" id="preset-export-menu" role="menu" hidden>
+            <button class="pe-item" id="preset-export-figma" type="button" role="menuitem" title="Export all screens for this theme to a local Figma import package">Figma package</button>
+            <button class="pe-item" id="preset-export-shots" type="button" role="menuitem" title="Capture every screen as PNG images in one ZIP">Screenshots (all screens)</button>
+          </div>
+        </div>
         <button id="preset-del" title="Delete the selected preset">Delete</button>
         <button id="preset-sync" title="Upload your themes and retrieve everyone's from the shared library">Sync</button>
       </div>
