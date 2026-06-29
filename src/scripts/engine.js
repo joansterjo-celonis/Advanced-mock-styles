@@ -1,4 +1,4 @@
-import { PALETTE, rng, series, N, RQ_BARS, RQ_PIE, RQ_CASES, RQ_ACTIVITIES } from '../data/data.js';
+import { VIVID_COMBOS, VIVID_COMBO_MAP, DEFAULT_VIVID_COMBO, rng, series, N, RQ_BARS, RQ_PIE, RQ_CASES, RQ_ACTIVITIES } from '../data/data.js';
 import { E, svgText, chartMode, cssVar, toRGB, shadeC, rgbaC, resolveColor, ensureSoftShadow, sheenGrad, sphere, bar3dV, bar3dH, nextGid } from './effects.js';
 import { icons, hydrateIcons } from './icons.js';
 import { buildAssetHeader } from './components/asset-header.js';
@@ -44,7 +44,10 @@ import { getThemes, syncThemes, getAuthor, ensureAuthor, isCloudEnabled } from '
         dense:    { gap:4,  pad:8,  radius:9,  radiusInner:7, rowMetric:226 }
       };
 
-      function vividTint(key){ return document.documentElement.getAttribute('data-theme')==='vivid' ? (PALETTE[key]||'#6366f1') : null; }
+      // Active VIVID per-chart palette = the selected combo (data-vivid-palette on <html>),
+      // falling back to the default "Prism" combo for presets saved before combos existed.
+      function activeVividChart(){ const c=VIVID_COMBO_MAP[document.documentElement.getAttribute('data-vivid-palette')]||VIVID_COMBO_MAP[DEFAULT_VIVID_COMBO]; return c.chart; }
+      function vividTint(key){ return document.documentElement.getAttribute('data-theme')==='vivid' ? (activeVividChart()[key]||'#6366f1') : null; }
       function shade(hex,p){ const n=parseInt(hex.slice(1),16); let r=(n>>16)&255,g=(n>>8)&255,b=n&255; const t=p<0?0:255,a=Math.abs(p); r=Math.round((t-r)*a)+r; g=Math.round((t-g)*a)+g; b=Math.round((t-b)*a)+b; return '#'+(0x1000000+(r<<16)+(g<<8)+b).toString(16).slice(1); }
 
       /* ===== chart tooltips: tag data slots so chart-tips.js can show value-on-hover =====
@@ -61,6 +64,27 @@ import { getThemes, syncThemes, getAuthor, ensureAuthor, isCloudEnabled } from '
         try{ el.style.cursor='default'; }catch(e){} return el; }
       function hitRect(svg,x,y,w,h,title,rows){ const r=E('rect',{x:(+x).toFixed(1),y:(+y).toFixed(1),width:Math.max(0.5,w).toFixed(1),height:Math.max(0.5,h).toFixed(1),fill:'transparent','pointer-events':'all'}); setTip(r,title,rows); svg.appendChild(r); return r; }
       function hitPath(svg,d,title,rows){ const p=E('path',{d:d,fill:'transparent','pointer-events':'all'}); setTip(p,title,rows); svg.appendChild(p); return p; }
+      function svgDefs(svg){ let defs=svg.querySelector('defs'); if(!defs){ defs=E('defs',{}); svg.insertBefore(defs,svg.firstChild); } return defs; }
+      // Smooth top-lit body gradient for a glass slice/ring: lighter at the top,
+      // base in the middle, gently darker at the bottom — a single clean gradient
+      // (no stacked highlight strokes) so it reads as one rounded glossy surface.
+      function glassTopGrad(svg,color){
+        const gid='glassTop'+nextGid(), lg=E('linearGradient',{id:gid,x1:0,y1:0,x2:0,y2:1});
+        lg.appendChild(E('stop',{offset:'0%','stop-color':rgbaC(shadeC(color,0.30),0.97)}));
+        lg.appendChild(E('stop',{offset:'50%','stop-color':rgbaC(color,0.95)}));
+        lg.appendChild(E('stop',{offset:'100%','stop-color':rgbaC(shadeC(color,-0.26),0.92)}));
+        svgDefs(svg).appendChild(lg); return gid;
+      }
+      // Single soft specular sheen: a vertical white→transparent gradient. Applied
+      // as a full-ring stroke or a slice fill it gives ONE clean top highlight that
+      // fades out by the middle, with no dashed-arc streaks.
+      function glassSheenGrad(svg, top){
+        const gid='glassSheen'+nextGid(), lg=E('linearGradient',{id:gid,x1:0,y1:0,x2:0,y2:1});
+        lg.appendChild(E('stop',{offset:'0%','stop-color':`rgba(255,255,255,${top!=null?top:0.5})`}));
+        lg.appendChild(E('stop',{offset:'34%','stop-color':'rgba(255,255,255,0.12)'}));
+        lg.appendChild(E('stop',{offset:'66%','stop-color':'rgba(255,255,255,0)'}));
+        svgDefs(svg).appendChild(lg); return gid;
+      }
 
       /* ---- COMBO chart (bars + line, dual axis) — size-aware ---- */
       function combo(wrap){
@@ -110,17 +134,25 @@ import { getThemes, syncThemes, getAuthor, ensureAuthor, isCloudEnabled } from '
         const cx=W/2, cy=H/2, minD=Math.min(W,H), r=minD*0.35, sw=minD*0.183, k=minD/120, C=2*Math.PI*r;
         const m3=chartMode(wrap);
         const svg=E('svg',{viewBox:`0 0 ${W} ${H}`});
-        function ring(target, cyy, shadeAmt, op){ let off=0; segs.forEach(s=>{ const len=C*s.p/100;
+        function ring(target, cyy, shadeAmt, op, strokeFn){ let off=0; segs.forEach((s,i)=>{ const len=C*s.p/100, base=resolveColor(s.c, wrap);
           const cir=E('circle',{cx:cx,cy:cyy,r:r,fill:'none','stroke-width':sw,'stroke-dasharray':`${len.toFixed(2)} ${(C-len).toFixed(2)}`,'stroke-dashoffset':(-off).toFixed(2),transform:`rotate(-90 ${cx} ${cyy})`});
-          cir.style.stroke = shadeAmt!=null ? shadeC(resolveColor(s.c, wrap),shadeAmt) : s.c; if(op!=null) cir.style.strokeOpacity=op; target.appendChild(cir); off+=len; }); }
+          cir.style.stroke = strokeFn ? strokeFn(s,i,base) : (shadeAmt!=null ? shadeC(base,shadeAmt) : s.c); if(op!=null) cir.style.strokeOpacity=op; target.appendChild(cir); off+=len; }); }
         if(m3){
-          const tilt = m3==='iso'?0.58:0.86, depth = Math.max(1, Math.round((m3==='iso'?9:3)*k));
+          const tilt = m3==='iso'?0.58:0.86, depth = Math.max(1, Math.round((m3==='iso'?9:5)*k));
           const fid=ensureSoftShadow(svg, (m3==='iso'?5:3)*k, (m3==='iso'?5:4)*k, 0.30);
           const g=E('g',{transform:`translate(${cx} ${cy}) scale(1 ${tilt}) translate(${-cx} ${-cy})`,filter:`url(#${fid})`});
-          for(let d=depth;d>=1;d--) ring(g, cy+d, -0.30);     // extruded side wall (darker, behind)
-          ring(g, cy, m3==='glass'?-0.02:0.04, m3==='glass'?0.9:1);  // top face
-          // glassy top sheen
-          const sheen=E('circle',{cx:cx,cy:cy,r:r,fill:'none','stroke-width':sw*0.46,'stroke-dasharray':`${(C*0.5).toFixed(1)} ${C}`,transform:`rotate(-150 ${cx} ${cy})`,stroke:'rgba(255,255,255,0.22)'}); g.appendChild(sheen);
+          for(let d=depth;d>=1;d--) ring(g, cy+d, m3==='glass' ? (-0.22-(d/depth)*0.16) : -0.30, m3==='glass'?0.96:null);     // extruded side wall (darker, behind)
+          if(m3==='glass'){
+            ring(g, cy, null, 1, (s,i,base)=>`url(#${glassTopGrad(svg,base)})`);  // glossy top-lit ring (one smooth gradient per segment)
+            // one soft specular highlight: a full ring stroke painted with a vertical
+            // white→transparent gradient → bright along the top, fading out by the middle.
+            const sh=glassSheenGrad(svg, 0.5);
+            g.appendChild(E('circle',{cx:cx,cy:cy,r:r,fill:'none','stroke-width':(sw*0.86).toFixed(2),stroke:`url(#${sh})`,'pointer-events':'none'}));
+          } else {
+            ring(g, cy, 0.04, 1);  // isometric top face
+            // glassy top sheen
+            const sheen=E('circle',{cx:cx,cy:cy,r:r,fill:'none','stroke-width':sw*0.46,'stroke-dasharray':`${(C*0.5).toFixed(1)} ${C}`,transform:`rotate(-150 ${cx} ${cy})`,stroke:'rgba(255,255,255,0.22)'}); g.appendChild(sheen);
+          }
           svg.appendChild(g);
         } else {
           ring(svg, cy, null);
@@ -327,31 +359,49 @@ import { getThemes, syncThemes, getAuthor, ensureAuthor, isCloudEnabled } from '
       function pieGen(wrap){
         let segs=[]; try{ segs=JSON.parse(wrap.dataset.segs||'[]'); }catch(e){ segs=[]; }
         const W=Math.max(Math.round(wrap.clientWidth),140), H=Math.max(Math.round(wrap.clientHeight),120);
-        const cx=W*0.40, cy=H/2, r=Math.min(W*0.34,H*0.42);
+        // a sibling legend (donut/ocpm style) replaces the in-SVG leader labels and
+        // lets the disc sit centred and a touch larger.
+        const legBox=wrap.parentElement?wrap.parentElement.querySelector('.ocpm2-legend, .donut-legend'):null;
+        const cx=W*(legBox?0.5:0.40), cy=H/2, r=Math.min(W*(legBox?0.44:0.34),H*0.42);
         const svg=E('svg',{viewBox:`0 0 ${W} ${H}`});
         const pal=['--cstop-1b','--legend-3','--cstop-1a','--legend-2','--legend-1','--cstop-3a'];
         const m3=chartMode(wrap);                                  // honor the Charts-look (iso / glass) knob
         const yS = m3==='iso'?0.6 : m3==='glass'?0.92 : 1;          // vertical squash → tilted cylinder
-        const depth = m3==='iso'?Math.max(7,r*0.2) : m3==='glass'?4 : 0;   // extrusion thickness
+        const depth = m3==='iso'?Math.max(7,r*0.2) : m3==='glass'?Math.max(6,r*0.08) : 0;   // extrusion thickness
         const cvarOf=i=>segs[i][2]||pal[i%pal.length];
         const arcs=[]; let ang=-Math.PI/2; segs.forEach(sg=>{ const a1=ang+Math.max(0,sg[1])/100*2*Math.PI; arcs.push([ang,a1]); ang=a1; });
         function slicePath(a0,a1,yy){ const large=(a1-a0)>Math.PI?1:0; const x0=cx+r*Math.cos(a0), y0=yy+r*Math.sin(a0)*yS, x1=cx+r*Math.cos(a1), y1=yy+r*Math.sin(a1)*yS;
           return `M${cx.toFixed(1)},${yy.toFixed(1)} L${x0.toFixed(1)},${y0.toFixed(1)} A${r.toFixed(1)},${(r*yS).toFixed(1)} 0 ${large} 1 ${x1.toFixed(1)},${y1.toFixed(1)} Z`; }
         const body = m3 ? E('g',{filter:`url(#${ensureSoftShadow(svg, m3==='iso'?7:4, m3==='iso'?6:5, 0.3)})`}) : svg;
         // 1) extruded side wall (darker copies stacked behind the top faces)
-        if(m3){ for(let k=Math.round(depth);k>=1;k--){ segs.forEach((sg,i)=>{ const p=E('path',{d:slicePath(arcs[i][0],arcs[i][1],cy+k)}); p.style.fill=shadeC(cssVar(cvarOf(i),wrap),-0.34); body.appendChild(p); }); } }
+        if(m3){ for(let k=Math.round(depth);k>=1;k--){ segs.forEach((sg,i)=>{ const p=E('path',{d:slicePath(arcs[i][0],arcs[i][1],cy+k)}); p.style.fill=shadeC(cssVar(cvarOf(i),wrap),m3==='glass'?(-0.22-(k/depth)*0.20):-0.34); if(m3==='glass')p.style.opacity='0.94'; body.appendChild(p); }); } }
         // 2) top faces (+ tooltips)
-        segs.forEach((sg,i)=>{ const p=E('path',{d:slicePath(arcs[i][0],arcs[i][1],cy)}); p.style.fill='var('+cvarOf(i)+')'; if(m3==='glass')p.style.fillOpacity='0.94'; p.style.stroke='var(--bg-1)'; p.style.strokeWidth='1'; body.appendChild(p);
+        segs.forEach((sg,i)=>{ const p=E('path',{d:slicePath(arcs[i][0],arcs[i][1],cy)}), col=cssVar(cvarOf(i),wrap);
+          if(m3==='glass'){ p.style.fill=`url(#${glassTopGrad(svg,col)})`; p.style.fillOpacity='0.98'; p.style.stroke=rgbaC(shadeC(col,0.48),0.55); p.style.strokeWidth='1.25'; }
+          else { p.style.fill='var('+cvarOf(i)+')'; p.style.stroke='var(--bg-1)'; p.style.strokeWidth='1'; }
+          body.appendChild(p);
           setTip(p,String(sg[0]),[['Share',sg[1].toFixed(2)+'%']]); });
         // 3) glassy sheen across the top face
-        if(m3){ let pd=svg.querySelector('defs'); if(!pd){ pd=E('defs',{}); svg.insertBefore(pd,svg.firstChild);} const sid='pgSheen'+nextGid();
-          const rg=E('radialGradient',{id:sid,cx:'50%',cy:'30%',r:'68%'}); rg.appendChild(E('stop',{offset:'0%','stop-color':'rgba(255,255,255,0.28)'})); rg.appendChild(E('stop',{offset:'55%','stop-color':'rgba(255,255,255,0.06)'})); rg.appendChild(E('stop',{offset:'100%','stop-color':'rgba(255,255,255,0)'})); pd.appendChild(rg);
+        if(m3){ let pd=svgDefs(svg); const sid='pgSheen'+nextGid(), glass=m3==='glass';
+          const rg=E('radialGradient',{id:sid,cx:glass?'46%':'50%',cy:glass?'24%':'30%',r:glass?'74%':'68%'});
+          rg.appendChild(E('stop',{offset:'0%','stop-color':glass?'rgba(255,255,255,0.48)':'rgba(255,255,255,0.28)'}));
+          rg.appendChild(E('stop',{offset:'52%','stop-color':glass?'rgba(255,255,255,0.13)':'rgba(255,255,255,0.06)'}));
+          rg.appendChild(E('stop',{offset:'100%','stop-color':'rgba(255,255,255,0)'})); pd.appendChild(rg);
           body.appendChild(E('ellipse',{cx:cx,cy:cy,rx:(r*0.99).toFixed(1),ry:(r*yS*0.99).toFixed(1),fill:`url(#${sid})`,'pointer-events':'none'})); }
         if(m3) svg.appendChild(body);
-        // 4) leader labels (offset below the extrusion in 3D)
-        segs.forEach((sg,i)=>{ const am=(arcs[i][0]+arcs[i][1])/2, lx=cx+(r+10)*Math.cos(am), ly=cy+(r+10)*Math.sin(am)*yS+(m3?depth*0.5:0);
-          const nm=String(sg[0]); const lab=sg[1].toFixed(2)+'% '+(nm.length>9?nm.slice(0,8)+'\u2026':nm);
-          const t=svgText(E,lx,ly+3,lab,Math.cos(am)<0?'end':'start'); t.setAttribute('font-size','8'); svg.appendChild(t); });
+        // 4) labels — a sibling legend (donut/ocpm style) when present, else in-SVG leader labels
+        if(legBox){
+          const isDonut=legBox.classList.contains('donut-legend');
+          legBox.innerHTML = segs.map((sg,i)=>{ const c='var('+cvarOf(i)+')', txt=sg[1].toFixed(2)+'% '+sg[0];
+            return isDonut
+              ? '<div class="li"><span class="sw" style="background:'+c+'"></span>'+txt+'</div>'
+              : '<span class="ocpm2-legitem"><span class="ocpm2-swatch" style="background:'+c+'"></span>'+txt+'</span>'; }).join('');
+        } else {
+          // leader labels (offset below the extrusion in 3D)
+          segs.forEach((sg,i)=>{ const am=(arcs[i][0]+arcs[i][1])/2, lx=cx+(r+10)*Math.cos(am), ly=cy+(r+10)*Math.sin(am)*yS+(m3?depth*0.5:0);
+            const nm=String(sg[0]); const lab=sg[1].toFixed(2)+'% '+(nm.length>9?nm.slice(0,8)+'\u2026':nm);
+            const t=svgText(E,lx,ly+3,lab,Math.cos(am)<0?'end':'start'); t.setAttribute('font-size','8'); svg.appendChild(t); });
+        }
         wrap.appendChild(svg);
       }
       /* ---- Generic stacked bars over a category axis (seeded; data-series='[{"c":"--var","w":weight},…]')
@@ -710,9 +760,32 @@ import { getThemes, syncThemes, getAuthor, ensureAuthor, isCloudEnabled } from '
       let customHue=null;
       const bColor=document.getElementById('theme-color'),bMono=document.getElementById('theme-mono'),bVivid=document.getElementById('theme-vivid');
       function setTheme(m){ if(m==='mono')root.removeAttribute('data-theme'); else root.setAttribute('data-theme',m);
+        // The combo attribute only matters under Vivid — reflect the remembered selection there, clear it otherwise.
+        if(m==='vivid') root.setAttribute('data-vivid-palette', vividCombo); else root.removeAttribute('data-vivid-palette');
         bMono.classList.toggle('on',m==='mono'); bColor.classList.toggle('on',m==='color'); bVivid.classList.toggle('on',m==='vivid');
         applyHue(); applyBrand(); }
       bColor.onclick=()=>setTheme('color'); bMono.onclick=()=>setTheme('mono'); bVivid.onclick=()=>setTheme('vivid');
+      /* Vivid colour combo: remembered across Mono/Color switches, applied to <html> as
+         data-vivid-palette while Vivid is active. Drives both the CSS legend/cstop tokens
+         (tokens.css) and the per-chart vividTint() lookup. The swatch buttons are built
+         from VIVID_COMBOS so adding a combo only needs data.js. */
+      let vividCombo = DEFAULT_VIVID_COMBO;
+      const vividComboRow = document.getElementById('vivid-combo-row');
+      function comboGradient(cols){ const n=cols.length; return 'linear-gradient(135deg,'+cols.map((c,i)=>`${c} ${(i/n*100).toFixed(2)}%, ${c} ${((i+1)/n*100).toFixed(2)}%`).join(',')+')'; }
+      function syncVividComboButtons(){ if(!vividComboRow) return; vividComboRow.querySelectorAll('[data-vivid-combo]').forEach(b=>b.classList.toggle('on', b.dataset.vividCombo===vividCombo)); }
+      function setVividCombo(id){
+        if(!VIVID_COMBO_MAP[id]) id=DEFAULT_VIVID_COMBO;
+        vividCombo=id;
+        if(root.getAttribute('data-theme')==='vivid') root.setAttribute('data-vivid-palette', id);
+        syncVividComboButtons();
+        renderChartsIn(document.querySelector('.view.active'));
+      }
+      if(vividComboRow){
+        vividComboRow.innerHTML = VIVID_COMBOS.map(c=>
+          `<button type="button" class="vc-swatch${c.id===DEFAULT_VIVID_COMBO?' on':''}" data-vivid-combo="${c.id}" title="${c.label}" aria-label="${c.label}"><span class="vc-chip" style="background:${comboGradient(c.swatch)}"></span><span class="vc-label">${c.label}</span></button>`
+        ).join('');
+        vividComboRow.querySelectorAll('[data-vivid-combo]').forEach(b=>b.addEventListener('click',()=>setVividCombo(b.dataset.vividCombo)));
+      }
       const hueInput=document.getElementById('theme-hue-input'), hueReset=document.getElementById('theme-hue-reset');
       function rgbToHue(hex){ const n=parseInt(hex.slice(1),16); let r=(n>>16&255)/255,g=(n>>8&255)/255,b=(n&255)/255; const mx=Math.max(r,g,b),mn=Math.min(r,g,b),d=mx-mn; let h=0; if(d){ if(mx===r)h=((g-b)/d)%6; else if(mx===g)h=(b-r)/d+2; else h=(r-g)/d+4; h*=60; if(h<0)h+=360; } return h; }
       // Chart palette for a given surface mode — shared by the hue knob AND per-card Invert.
@@ -1065,15 +1138,21 @@ import { getThemes, syncThemes, getAuthor, ensureAuthor, isCloudEnabled } from '
         wrap.appendChild(svg);
       }
 
-      /* ---- Chart components: pie with leader-line labels ---- */
+      /* ---- Chart components: pie. With a sibling .donut-legend (the "Chart
+         components" card) it renders a side legend like the donut charts; without
+         one it falls back to in-SVG leader-line labels. ---- */
       function pie(wrap){
         // fixed viewBox — never read clientHeight (avoids measure→write→measure growth loop)
-        const W=440, H=460, cx=W/2, cy=H*0.5, r=Math.min(W,H)*0.30;
+        const W=440, H=460, cx=W/2, cy=H*0.5;
+        const row=wrap.closest && wrap.closest('.donut-row');
+        const legendEl=row?row.querySelector('.donut-legend'):null;
+        // a side legend frees the full square for the disc; leader-line mode keeps the slimmer disc + room for labels
+        const r=Math.min(W,H)*(legendEl?0.42:0.30);
         // distinct categorical colours per slice from the theme chart ramp (differs across Mono/Color/Vivid + hue)
         const sliceColors=['var(--cstop-1a)','var(--cstop-2a)','var(--cstop-3a)','var(--cstop-4a)'];
         const m3=chartMode(wrap);
         const yS = m3==='iso'?0.62 : m3==='glass'?0.92 : 1;    // vertical squash for the tilt
-        const depth = m3==='iso'?22 : m3==='glass'?5 : 0;       // extrusion thickness
+        const depth = m3==='iso'?22 : m3==='glass'?8 : 0;       // extrusion thickness
         const svg=E('svg',{viewBox:`0 0 ${W} ${H}`,preserveAspectRatio:'xMidYMid meet'});
         svg.style.width='100%'; svg.style.height='100%';
         const colOf=(s,i)=> s.other ? 'rgba(140,142,150,0.85)' : resolveColor(sliceColors[i]||'var(--cstop-1a)', wrap);
@@ -1083,33 +1162,42 @@ import { getThemes, syncThemes, getAuthor, ensureAuthor, isCloudEnabled } from '
         const arcs=[]; let ang=-Math.PI/2; RQ_PIE.forEach(s=>{ const a0=ang,a1=ang+(s.p/100)*Math.PI*2; ang=a1; arcs.push([a0,a1]); });
         const body = m3 ? E('g',{filter:`url(#${ensureSoftShadow(svg, m3==='iso'?8:4, m3==='iso'?7:5, 0.32)})`}) : svg;
         // 1) extruded side wall (darker copies stacked behind the top face)
-        if(m3){ for(let k=depth;k>=1;k--){ RQ_PIE.forEach((s,i)=>{ const p=E('path',{d:slicePath(arcs[i][0],arcs[i][1],cy+k)}); p.style.fill=shadeC(colOf(s,i),-0.34); body.appendChild(p); }); } }
+        if(m3){ for(let k=depth;k>=1;k--){ RQ_PIE.forEach((s,i)=>{ const p=E('path',{d:slicePath(arcs[i][0],arcs[i][1],cy+k)}); p.style.fill=shadeC(colOf(s,i),m3==='glass'?(-0.22-(k/depth)*0.20):-0.34); if(m3==='glass')p.style.opacity='0.94'; body.appendChild(p); }); } }
         // 2) top faces
-        RQ_PIE.forEach((s,i)=>{ const p=E('path',{d:slicePath(arcs[i][0],arcs[i][1],cy)});
-          p.style.fill=colOf(s,i); if(m3==='glass') p.style.fillOpacity='0.94';
-          p.style.stroke='var(--bg-1)'; p.style.strokeWidth='1.2'; body.appendChild(p); });
+        RQ_PIE.forEach((s,i)=>{ const p=E('path',{d:slicePath(arcs[i][0],arcs[i][1],cy)}), col=colOf(s,i);
+          if(m3==='glass'){ p.style.fill=`url(#${glassTopGrad(svg,col)})`; p.style.fillOpacity='0.98'; p.style.stroke=rgbaC(shadeC(col,0.48),0.55); p.style.strokeWidth='1.4'; }
+          else { p.style.fill=col; p.style.stroke='var(--bg-1)'; p.style.strokeWidth='1.2'; }
+          body.appendChild(p); });
         // glassy sheen across the top face — soft radial gloss (top-lit), fades to transparent
         if(m3){
-          let pdefs=svg.querySelector('defs'); if(!pdefs){ pdefs=E('defs',{}); svg.insertBefore(pdefs,svg.firstChild);}
-          const sid='pieSheen'+(nextGid()); const rg=E('radialGradient',{id:sid,cx:'50%',cy:'30%',r:'68%'});
-          rg.appendChild(E('stop',{offset:'0%','stop-color':'rgba(255,255,255,0.30)'}));
-          rg.appendChild(E('stop',{offset:'55%','stop-color':'rgba(255,255,255,0.07)'}));
+          let pdefs=svgDefs(svg), glass=m3==='glass';
+          const sid='pieSheen'+(nextGid()); const rg=E('radialGradient',{id:sid,cx:glass?'46%':'50%',cy:glass?'24%':'30%',r:glass?'74%':'68%'});
+          rg.appendChild(E('stop',{offset:'0%','stop-color':glass?'rgba(255,255,255,0.50)':'rgba(255,255,255,0.30)'}));
+          rg.appendChild(E('stop',{offset:'55%','stop-color':glass?'rgba(255,255,255,0.14)':'rgba(255,255,255,0.07)'}));
           rg.appendChild(E('stop',{offset:'100%','stop-color':'rgba(255,255,255,0)'}));
           pdefs.appendChild(rg);
           const sg=E('ellipse',{cx:cx,cy:cy,rx:r*0.99,ry:r*yS*0.99,fill:`url(#${sid})`,'pointer-events':'none'}); body.appendChild(sg);
         }
         if(m3) svg.appendChild(body);
-        // 3) leader lines + labels — small slices fan out on the right so they never overlap
-        const smallN=RQ_PIE.filter(s=>!s.other).length; let si=0;
-        RQ_PIE.forEach((s,i)=>{ const mid=(arcs[i][0]+arcs[i][1])/2;
-          const lx=cx+r*Math.cos(mid), ly=cy+r*Math.sin(mid)*yS;
-          let ox,oy,right;
-          if(!s.other){ right=true; ox=cx+r+30; oy=cy - (smallN-1)*9 + si*18; si++; }
-          else { ox=cx+(r+16)*Math.cos(mid); oy=cy+(r+16)*Math.sin(mid)*yS + (m3?depth:0); right=ox>=cx; }
-          const ex=right?ox+8:ox-8;
-          const lead=E('polyline',{points:`${lx.toFixed(1)},${ly.toFixed(1)} ${ox.toFixed(1)},${oy.toFixed(1)} ${ex.toFixed(1)},${oy.toFixed(1)}`}); lead.setAttribute('class','rq-pie-lead'); svg.appendChild(lead);
-          const lab=svgText(E,right?ex+3:ex-3,oy+3,(s.p.toFixed(2))+'% '+s.l,right?'start':'end'); lab.setAttribute('class','rq-pie-label'); svg.appendChild(lab);
-        });
+        // 3) labels — a side legend (donut style) when the card provides one, else in-SVG leader lines
+        if(legendEl){
+          legendEl.innerHTML = RQ_PIE.map((s,i)=>{
+            const c = s.other ? 'rgba(140,142,150,0.85)' : (sliceColors[i]||'var(--cstop-1a)');
+            return '<div class="li"><span class="sw" style="background:'+c+'"></span>'+s.p.toFixed(2)+'% '+s.l+'</div>';
+          }).join('');
+        } else {
+          // leader lines + labels — small slices fan out on the right so they never overlap
+          const smallN=RQ_PIE.filter(s=>!s.other).length; let si=0;
+          RQ_PIE.forEach((s,i)=>{ const mid=(arcs[i][0]+arcs[i][1])/2;
+            const lx=cx+r*Math.cos(mid), ly=cy+r*Math.sin(mid)*yS;
+            let ox,oy,right;
+            if(!s.other){ right=true; ox=cx+r+30; oy=cy - (smallN-1)*9 + si*18; si++; }
+            else { ox=cx+(r+16)*Math.cos(mid); oy=cy+(r+16)*Math.sin(mid)*yS + (m3?depth:0); right=ox>=cx; }
+            const ex=right?ox+8:ox-8;
+            const lead=E('polyline',{points:`${lx.toFixed(1)},${ly.toFixed(1)} ${ox.toFixed(1)},${oy.toFixed(1)} ${ex.toFixed(1)},${oy.toFixed(1)}`}); lead.setAttribute('class','rq-pie-lead'); svg.appendChild(lead);
+            const lab=svgText(E,right?ex+3:ex-3,oy+3,(s.p.toFixed(2))+'% '+s.l,right?'start':'end'); lab.setAttribute('class','rq-pie-label'); svg.appendChild(lab);
+          });
+        }
         RQ_PIE.forEach((s,i)=>{ hitPath(svg,slicePath(arcs[i][0],arcs[i][1],cy),s.l,[['Share',s.p.toFixed(2)+'%']]); });
         wrap.appendChild(svg);
       }
@@ -1120,7 +1208,9 @@ import { getThemes, syncThemes, getAuthor, ensureAuthor, isCloudEnabled } from '
         try {
           const t=w.dataset.chart;
           if(t==='hbars'){ w.innerHTML=''; hbars(w); return; }
-          if(t==='pie'){ w.innerHTML=''; pie(w); return; }
+          // self-describing pies (data-segs) use the generic data-driven renderer;
+          // the leader-line "Chart components" pie (no segs) uses pie().
+          if(t==='pie'){ w.innerHTML=''; (w.dataset.segs ? pieGen : pie)(w); return; }
           _buildChart(w);
         } catch(err){
           // Isolate failures: one broken chart must never abort a whole view render.
@@ -1265,6 +1355,7 @@ import { getThemes, syncThemes, getAuthor, ensureAuthor, isCloudEnabled } from '
             sliders:{ 'r-surface':$('r-surface').value, 'r-interactive':$('r-interactive').value, 'kpi-weight':$('kpi-weight').value, 'r-glass':($('r-glass')||{}).value },
             hue: hueInput.value, hueActive: customHue!=null, tab: tabColorInput.value,
             brand: brandInput? brandInput.value : '#000000', brandActive: brandColor!=null,
+            vividPalette: vividCombo,
             glassAdv: ggAdv ? ggAdv.getAttribute('aria-pressed')==='true' : false,
             glassOp: gOp ? gOp.value : null, glassBl: gBl ? gBl.value : null,
             numFeats: [...numFeats]
@@ -1276,6 +1367,10 @@ import { getThemes, syncThemes, getAuthor, ensureAuthor, isCloudEnabled } from '
         function applyState(st){
           if(!st) return;
           const btns=st.buttons||[];
+          // Restore the remembered Vivid combo before the buttons run, so setTheme('vivid')
+          // reflects the right palette. Older presets without the field fall back to the default.
+          vividCombo = (st.vividPalette && VIVID_COMBO_MAP[st.vividPalette]) ? st.vividPalette : DEFAULT_VIVID_COMBO;
+          syncVividComboButtons();
           if(!btns.some(id=>id==='pkg-l1'||id==='pkg-status')) BTN_ACTIONS['pkg-l1']();
           if(!btns.some(id=>id==='l0-hover'||id==='l0-click')) BTN_ACTIONS['l0-hover']();
           btns.forEach(id=>{ const fn=BTN_ACTIONS[id]; if(fn) fn(); });
@@ -1301,8 +1396,12 @@ import { getThemes, syncThemes, getAuthor, ensureAuthor, isCloudEnabled } from '
         }
         // canonical signature for drift detection (order-independent; fixed slider key set)
         function sig(st){ st=st||{}; const sl=st.sliders||{}; const keys=['r-surface','r-interactive','kpi-weight','r-glass'];
+          // Vivid combo only affects rendering under Vivid; collapse the default so older
+          // presets (no vividPalette) don't read as "Modified" once the live state defaults to it.
+          const isVivid=(st.buttons||[]).includes('theme-vivid');
+          const vivid = isVivid ? ((st.vividPalette && st.vividPalette!==DEFAULT_VIVID_COMBO) ? st.vividPalette : null) : null;
           return JSON.stringify({ b:[...(st.buttons||[])].sort(), s:keys.map(k=>String(sl[k]==null?'':sl[k])),
-            hue:st.hueActive?st.hue:null, tab:st.tab||null, brand:st.brandActive?st.brand:null,
+            hue:st.hueActive?st.hue:null, tab:st.tab||null, brand:st.brandActive?st.brand:null, vivid,
             ga:!!st.glassAdv, go:st.glassAdv?String(st.glassOp):null, gb:st.glassAdv?String(st.glassBl):null,
             nf:[...(st.numFeats||[])].sort() }); }
         function snap(){ lastSnap=sig(captureState()); }   // record the baseline right after apply/save
@@ -1384,6 +1483,51 @@ import { getThemes, syncThemes, getAuthor, ensureAuthor, isCloudEnabled } from '
           }
         }
 
+        let exportingFigma=false;
+        async function exportFigmaNow(){
+          if(exportingFigma) return;
+          const btn=$('preset-export-figma');
+          const p=current();
+          const liveState=captureState();
+          const preset={
+            id: p ? p.id : 'custom',
+            name: p ? p.name : 'Custom',
+            // Export what is currently visible. If the selected preset is modified,
+            // the Figma package should match the live screen, not the stale saved copy.
+            state: liveState
+          };
+          exportingFigma=true;
+          const oldText=btn ? btn.textContent : '';
+          const setText=(txt)=>{ if(btn) btn.textContent=txt; };
+          if(btn){ btn.disabled=true; btn.classList.add('is-exporting'); }
+          setText('Preparing...');
+          try{
+            const mod=await import('./figma-export.js');
+            await mod.exportPresetToFigma(preset,{
+              includeSubtabs:true,
+              onProgress:(e)=>{
+                if(!e || !btn) return;
+                if(e.type==='screen-captured') setText('Exporting '+e.index+'/'+e.total);
+                else if(e.type==='packaged') setText('Downloaded');
+                else if(e.type==='failed') setText('Export failed');
+              }
+            });
+            setText('Downloaded');
+          }catch(e){
+            console.error('[figma-export] failed', e);
+            setText('Export failed');
+          }finally{
+            exportingFigma=false;
+            setTimeout(()=>{
+              const b=$('preset-export-figma');
+              if(!b || exportingFigma) return;
+              b.disabled=false;
+              b.classList.remove('is-exporting');
+              b.textContent=oldText||'Export Figma';
+            }, 1600);
+          }
+        }
+
         /* One-time upload of presets that were created before cloud sync existed.
            Runs after the shared pull so we never clobber the server. */
         const MIGRATED_KEY='sb-presets-synced-v1';
@@ -1411,7 +1555,6 @@ import { getThemes, syncThemes, getAuthor, ensureAuthor, isCloudEnabled } from '
         const hasBtn=(st,id)=>!!(st&&st.buttons&&st.buttons.includes(id));
         const pickBtn=(st,ids,fb)=>{ for(const id of ids) if(hasBtn(st,id)) return id; return fb; };
         const clampn=(v,a,b)=>Math.max(a,Math.min(b,v));
-        const VIVID=['#6366f1','#10b981','#f59e0b','#ec4899'];
 
         function previewSpec(st){
           st=st||{};
@@ -1424,11 +1567,14 @@ import { getThemes, syncThemes, getAuthor, ensureAuthor, isCloudEnabled } from '
           const sl=st.sliders||{};
           const rSurf=clampn(+sl['r-surface']||0,0,28), rInt=clampn(+sl['r-interactive']||0,0,20);
           const glass=clampn(+sl['r-glass']||0,0,100);
+          // resolve the saved Vivid combo (default = Prism) for both the swatch colours and the meta label
+          const vividId=(st.vividPalette && VIVID_COMBO_MAP[st.vividPalette]) ? st.vividPalette : DEFAULT_VIVID_COMBO;
+          const vividSwatch=VIVID_COMBO_MAP[vividId].swatch;
           let accent;
           if(palette==='theme-mono') accent=dark?'#cbd0d9':'#3b3e45';
           else if(palette==='theme-color') accent=(st.brandActive&&st.brand)?st.brand:((st.hueActive&&st.hue)?st.hue:'#6366f1');
-          else accent=VIVID[0];
-          return { dark, palette, comp, density, tabs, accent,
+          else accent=vividSwatch[0];
+          return { dark, palette, comp, density, tabs, accent, vividId, vividSwatch,
             tileR:Math.round(rSurf*0.32), tabR:Math.round(rInt*0.35), glass,
             gap: density==='density-dense'?2:density==='density-compact'?3:5,
             pad: density==='density-dense'?5:density==='density-compact'?7:9,
@@ -1452,9 +1598,9 @@ import { getThemes, syncThemes, getAuthor, ensureAuthor, isCloudEnabled } from '
           const grid=elc('div','tp-pv-grid tp-'+s.comp,`gap:${s.gap}px`);
           const tShadow=`box-shadow:0 ${1+Math.round(s.shadow*4)}px ${2+Math.round(s.shadow*8)}px -2px rgba(0,0,0,${((s.dark?0.5:0.18)+s.shadow*0.2).toFixed(2)})`;
           const mkTile=(extra,accentFill,ci)=>{
-            const fill=accentFill?(s.palette==='theme-vivid'?VIVID[ci%VIVID.length]:s.accent):tile;
+            const fill=accentFill?(s.palette==='theme-vivid'?s.vividSwatch[ci%s.vividSwatch.length]:s.accent):tile;
             const t=elc('span','tp-pv-tile'+(extra?' '+extra:''),`background:${fill};border-radius:${s.tileR}px;${tShadow}`);
-            if(!accentFill){ const dc=s.palette==='theme-vivid'?VIVID[(ci+1)%VIVID.length]:s.accent; t.appendChild(elc('i','tp-pv-dot',`background:${dc}`)); }
+            if(!accentFill){ const dc=s.palette==='theme-vivid'?s.vividSwatch[(ci+1)%s.vividSwatch.length]:s.accent; t.appendChild(elc('i','tp-pv-dot',`background:${dc}`)); }
             return t;
           };
           if(s.comp==='comp-hero'){ grid.appendChild(mkTile('big',true,0)); grid.appendChild(mkTile('',false,1)); grid.appendChild(mkTile('',false,2)); }
@@ -1466,7 +1612,9 @@ import { getThemes, syncThemes, getAuthor, ensureAuthor, isCloudEnabled } from '
         }
         function metaLine(st){
           const s=previewSpec(st);
-          const pal={'theme-mono':'Mono','theme-color':'Color','theme-vivid':'Vivid'}[s.palette];
+          let pal={'theme-mono':'Mono','theme-color':'Color','theme-vivid':'Vivid'}[s.palette];
+          // surface the chosen Vivid combo (skip the default so existing presets read unchanged)
+          if(s.palette==='theme-vivid' && s.vividId!==DEFAULT_VIVID_COMBO) pal+=' '+VIVID_COMBO_MAP[s.vividId].label;
           const comp={'comp-bento':'Bento','comp-uniform':'Uniform','comp-hero':'Hero'}[s.comp];
           const dens={'density-spacious':'Spacious','density-compact':'Compact','density-dense':'Dense'}[s.density];
           return [s.dark?'Dark':'Light',pal,comp,dens].join(' \u00B7 ');
@@ -1558,6 +1706,7 @@ import { getThemes, syncThemes, getAuthor, ensureAuthor, isCloudEnabled } from '
         $('preset-new').onclick=()=>{ openEdit('new','My preset'); };
         $('preset-dup').onclick=()=>{ const p=current(); if(!p){ openEdit('new','My preset'); return; } const c={id:uid(),name:p.name+' copy',state:JSON.parse(JSON.stringify(p.state))}; delete c.owner; store.presets.push(c); store.selected=c.id; persist(); render(); snap(); refresh(); pushMine(); };
         $('preset-rename').onclick=()=>{ const p=current(); if(!p) return; openEdit('rename',p.name); };
+        { const figmaBtn=$('preset-export-figma'); if(figmaBtn) figmaBtn.onclick=exportFigmaNow; }
         $('preset-del').onclick=()=>{ const p=current(); if(!p) return; openConfirm('Delete \u201C'+p.name+'\u201D?'); };
         { const syncBtn=$('preset-sync'); if(syncBtn) syncBtn.onclick=syncNow; }
         // ---- inline editor / confirm wiring ----

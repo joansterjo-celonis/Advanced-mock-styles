@@ -122,6 +122,7 @@ const dashboard = '<div class="bento ocpm2-content" data-acpanel="ab" data-fixed
     '<span class="gloss"></span><span class="rim"></span>' +
     '<div class="card-title" style="font-size:12px;">EMS Service distribution</div>' +
     '<div class="chart-wrap" data-chart="pie" data-segs=\'[["Studio",40.43],["pql_query",31.68],["Apps",22.55],["Data Integration",4.65],["Others (5)",0.69]]\'></div>' +
+    '<div class="ocpm2-legend"></div>' +
   '</section>' +
   '<section class="card span-2 metric" data-card style="min-height:206px;">' +
     '<span class="gloss"></span><span class="rim"></span>' +

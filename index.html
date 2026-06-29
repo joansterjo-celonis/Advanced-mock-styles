@@ -545,7 +545,10 @@
               <section class="card span-4" data-card style="min-height:580px; display:flex; flex-direction:column;">
                 <span class="gloss"></span><span class="sheen"></span><span class="rim"></span>
                 <div class="card-title">Chart components</div>
-                <div class="chart-wrap" style="margin-top:8px" data-chart="pie"></div>
+                <div class="donut-row" style="margin-top:8px">
+                  <div class="chart-wrap" style="flex:0 0 52%; max-width:300px; aspect-ratio:1; min-width:0;" data-chart="pie"></div>
+                  <div class="donut-legend"></div>
+                </div>
               </section>
 
               <!-- World Map -->
@@ -3803,6 +3806,7 @@
         <button id="preset-new" title="Save current settings as a new preset">New</button>
         <button id="preset-dup" title="Duplicate the selected preset">Duplicate</button>
         <button id="preset-rename" title="Rename the selected preset">Rename</button>
+        <button id="preset-export-figma" title="Export all screens for this theme to a local Figma import package">Export Figma</button>
         <button id="preset-del" title="Delete the selected preset">Delete</button>
         <button id="preset-sync" title="Upload your themes and retrieve everyone's from the shared library">Sync</button>
       </div>
@@ -3822,7 +3826,7 @@
 
     <div class="proto-sec">Mode &amp; color</div>
     <div class="grp"><div class="label">Appearance</div><div class="toggle toggle-icon"><button id="mode-dark" title="Dark" aria-label="Dark mode"><span data-icon="moon" class="icon"></span></button><button id="mode-light" class="on" title="Light" aria-label="Light mode"><span data-icon="sun" class="icon"></span></button></div></div>
-    <div class="grp"><div class="label">Palette <span class="hint-i">chart hues</span></div><div class="toggle"><button id="theme-mono" class="on"><span class="sw lime"></span>Mono</button><button id="theme-color"><span class="sw"></span>Color</button><button id="theme-vivid"><span class="sw vivid"></span>Vivid</button></div><div class="huecolor-row"><input type="color" id="theme-hue-input" value="#6366f1"><span class="tcl">Single hue</span><button id="theme-hue-reset" class="hue-reset">Reset</button></div></div>
+    <div class="grp"><div class="label">Palette <span class="hint-i">chart hues</span></div><div class="toggle"><button id="theme-mono" class="on"><span class="sw lime"></span>Mono</button><button id="theme-color"><span class="sw"></span>Color</button><button id="theme-vivid"><span class="sw vivid"></span>Vivid</button></div><div class="huecolor-row"><input type="color" id="theme-hue-input" value="#6366f1"><span class="tcl">Single hue</span><button id="theme-hue-reset" class="hue-reset">Reset</button></div><div class="vivid-combo-wrap" id="vivid-combo-wrap"><div class="vc-title">Color combo</div><div class="vivid-combo-row" id="vivid-combo-row" role="group" aria-label="Vivid color combo"></div></div></div>
     <div class="grp" id="grp-brand"><div class="label">Brand color <span class="hint-i">accent</span></div><div class="huecolor-row"><input type="color" id="brand-color-input" value="#000000"><span class="tcl">Accent / brand</span><button id="brand-color-reset" class="hue-reset">Reset</button></div></div>
     <div class="grp gg-grp" id="gg-grp">
       <div class="label">Global glass <span class="val" id="gg-val">0%</span><button type="button" id="gg-adv" class="gg-adv" aria-pressed="false" title="Split into separate translucency &amp; glassiness sliders">Advanced</button></div>

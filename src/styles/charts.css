@@ -213,6 +213,11 @@
   .preset-actions button#preset-save:not(:disabled) { border-color:rgba(255,255,255,0.5); color:#fff; }
   /* light mode: white-on-white would vanish — use ink + dark border for the same primary lift */
   [data-mode="light"] .preset-actions button#preset-save:not(:disabled) { border-color:rgba(0,0,0,0.45); color:#15161a; }
+  .preset-actions button#preset-export-figma:not(:disabled) { border-color:rgba(139,92,246,0.55); color:#c4b5fd; }
+  [data-mode="light"] .preset-actions button#preset-export-figma:not(:disabled) { border-color:rgba(91,33,182,0.42); color:#4c1d95; }
+  .preset-actions button#preset-export-figma:not(:disabled):hover { color:#fff; border-color:#8b5cf6; background:rgba(139,92,246,0.18); }
+  [data-mode="light"] .preset-actions button#preset-export-figma:not(:disabled):hover { color:#fff; border-color:#6d28d9; background:#6d28d9; }
+  .preset-actions button#preset-export-figma.is-exporting { opacity:.72; cursor:progress; animation:preset-sync-pulse 1s ease-in-out infinite; }
   .preset-actions button#preset-del:not(:disabled):hover { color:#e5484d; border-color:#e5484d; background:transparent; }
   .preset-actions button:disabled { opacity:.34; cursor:default; }
   .preset-actions button:disabled:hover { background:transparent; border-color:var(--chrome-border); color:var(--chrome-text); }

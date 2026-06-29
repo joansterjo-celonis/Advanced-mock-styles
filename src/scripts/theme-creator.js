@@ -1,8 +1,10 @@
 import { icon } from './icons.js';
+import { VIVID_COMBOS, VIVID_COMBO_MAP, DEFAULT_VIVID_COMBO } from '../data/data.js';
 
 const DEFAULT_DRAFT = {
   appearance: 'light',
   palette: 'mono',
+  vividPalette: DEFAULT_VIVID_COMBO,
   accent: '#6366f1',
   energy: 'strategic',
   layout: 'default',
@@ -63,6 +65,7 @@ const STEPS = [
           { value: 'vivid', title: 'Vivid', desc: 'Multi-hue storytelling for high-energy dashboards and chart suites.', art: 'palette-vivid' },
         ],
       },
+      { key: 'vividPalette', label: 'Color combo', type: 'vivid-combo' },
       { key: 'accent', label: 'Accent hue', type: 'accent' },
     ],
   },
@@ -320,6 +323,7 @@ function renderGroup(group) {
   if (!isGroupVisible(group)) return '';
   if (group.type === 'range') return renderRange(group);
   if (group.type === 'accent') return renderAccent(group);
+  if (group.type === 'vivid-combo') return renderVividCombo(group);
   if (group.type === 'feats') return renderFeats(group);
   const options = group.options.filter(option => isOptionVisible(group, option));
   // Underline / Color tabs paint their active state with --tab-color, so offer a color
@@ -338,6 +342,7 @@ function renderGroup(group) {
 }
 
 function isGroupVisible(group) {
+  if (group.key === 'vividPalette') return draft.palette === 'vivid';
   if (group.key === 'accent') return draft.palette !== 'mono';
   if (group.key === 'shell') return draft.layout === 'default';
   if (group.key === 'chartScope') return draft.charts !== 'flat';
@@ -418,6 +423,28 @@ function renderAccent(group) {
     <div class="tc-accent-row" role="radiogroup" aria-label="${escapeHtml(group.label)}">
       ${ACCENTS.map(color => `<button type="button" class="tc-accent ${draft.accent === color ? 'active' : ''}" data-accent="${color}" style="--tc-swatch:${color}" aria-label="${color}" aria-pressed="${draft.accent === color ? 'true' : 'false'}"></button>`).join('')}
       <label class="tc-color-field"><input type="color" value="${draft.accent}" data-accent-input><span>Custom</span></label>
+    </div>
+  </section>`;
+}
+
+// Vivid-only sub-picker: the multi-hue chart combo. Buttons carry data-key/data-value so
+// they ride the shared wireStage() handler (draft.vividPalette -> applyDraft -> render).
+function vividComboGradient(cols) {
+  const n = cols.length;
+  return 'linear-gradient(135deg,' + cols.map((c, i) => `${c} ${(i / n * 100).toFixed(2)}%, ${c} ${((i + 1) / n * 100).toFixed(2)}%`).join(',') + ')';
+}
+function renderVividCombo(group) {
+  const current = draft.vividPalette && VIVID_COMBO_MAP[draft.vividPalette] ? draft.vividPalette : DEFAULT_VIVID_COMBO;
+  return `<section class="tc-group">
+    <div class="tc-group-title">${escapeHtml(group.label)} <span class="tc-group-note">Vivid chart hues</span></div>
+    <div class="tc-combo-row" role="radiogroup" aria-label="${escapeHtml(group.label)}">
+      ${VIVID_COMBOS.map(combo => {
+        const active = current === combo.id;
+        return `<button type="button" class="tc-combo ${active ? 'active' : ''}" data-key="vividPalette" data-value="${combo.id}" aria-pressed="${active ? 'true' : 'false'}" title="${escapeAttr(combo.label)}">
+          <span class="tc-combo-chip" style="background:${vividComboGradient(combo.swatch)}"></span>
+          <span class="tc-combo-name">${escapeHtml(combo.label)}</span>
+        </button>`;
+      }).join('')}
     </div>
   </section>`;
 }
@@ -787,6 +814,7 @@ function draftFromState(state) {
   next.appearance = has('mode-dark') ? 'dark' : 'light';
   const palette = pick(['theme-vivid', 'theme-color', 'theme-mono'], 'theme-mono');
   next.palette = palette.replace('theme-', '');
+  next.vividPalette = state.vividPalette && VIVID_COMBO_MAP[state.vividPalette] ? state.vividPalette : DEFAULT_VIVID_COMBO;
   next.energy = pick(['color-expressive', 'color-calm', 'color-strategic'], 'color-strategic').replace('color-', '');
   next.layout = pick(['layout-flap', 'layout-flowy', 'layout-default'], 'layout-default').replace('layout-', '');
   const shell = pick(['shell-contrast', 'shell-seamless', 'shell-tinted'], 'shell-tinted');
@@ -856,6 +884,7 @@ function buildState(src) {
     tab: src.tabs === 'filled' ? '#6366f1' : (src.tabColor || src.accent),
     brand: src.accent,
     brandActive: src.palette !== 'mono',
+    vividPalette: (src.vividPalette && VIVID_COMBO_MAP[src.vividPalette]) ? src.vividPalette : DEFAULT_VIVID_COMBO,
     glassAdv: glassAdvanced,
     glassOp: String(glassOp),
     glassBl: String(glassBl),
@@ -903,9 +932,15 @@ function applyChoiceSideEffects(key, value) {
 }
 
 function summaryItems() {
+  // For Vivid, fold the chosen combo into the Palette chip (e.g. "Vivid · Ocean").
+  let paletteLabel = labelFor('palette', draft.palette);
+  if (draft.palette === 'vivid') {
+    const combo = VIVID_COMBO_MAP[draft.vividPalette] || VIVID_COMBO_MAP[DEFAULT_VIVID_COMBO];
+    paletteLabel = `${paletteLabel} \u00B7 ${combo.label}`;
+  }
   return [
     ['Appearance', labelFor('appearance', draft.appearance)],
-    ['Palette', labelFor('palette', draft.palette)],
+    ['Palette', paletteLabel],
     ['Energy', labelFor('energy', draft.energy)],
     ['Layout', labelFor('layout', draft.layout)],
     ['Shape', `${draft.surfaceRadius}px / ${draft.controlRadius}px`],
@@ -958,6 +993,14 @@ function renderArt(art, value, amount = 0) {
   if (LAYOUT_ICONS[art]) {
     return `<span class="tc-art tc-art-icon" data-art="${escapeAttr(art)}" style="--tc-accent:${draft.accent}">
       ${icon(LAYOUT_ICONS[art], 'icon tc-art-glyph')}
+    </span>`;
+  }
+  // The Vivid palette card mirrors the live combo so the choice reads at a glance.
+  if (art === 'palette-vivid') {
+    const combo = VIVID_COMBO_MAP[draft.vividPalette] || VIVID_COMBO_MAP[DEFAULT_VIVID_COMBO];
+    const [c1, c2, c3, c4] = combo.swatch;
+    return `<span class="tc-art" data-art="palette-vivid" style="--tc-level:${level};--tc-accent:${draft.accent};--vc1:${c1};--vc2:${c2};--vc3:${c3};--vc4:${c4}">
+      <i class="a"></i><i class="b"></i><i class="c"></i><i class="d"></i><i class="e"></i>
     </span>`;
   }
   return `<span class="tc-art" data-art="${escapeAttr(art)}" style="--tc-level:${level};--tc-accent:${draft.accent}">

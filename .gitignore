@@ -6,6 +6,9 @@ test-results/
 playwright-report/
 .playwright/
 
+# Local chart visual-eval screenshots (tools/chart-eval.mjs)
+tools/.chart-eval/
+
 # Local env (never commit secrets; use GitHub Actions secrets in CI)
 .env
 .env.*

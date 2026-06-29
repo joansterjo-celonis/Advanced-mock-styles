@@ -462,9 +462,9 @@
 .tc-art[data-art="palette-color"] .a,
 .tc-art[data-art="palette-color"] .b,
 .tc-art[data-art="palette-color"] .c { background:var(--tc-accent); opacity:calc(.45 + var(--tc-level, 0) / 200); }
-.tc-art[data-art="palette-vivid"] .a { background:#6366f1; }
-.tc-art[data-art="palette-vivid"] .b { background:#10b981; }
-.tc-art[data-art="palette-vivid"] .c { background:#ec4899; }
+.tc-art[data-art="palette-vivid"] .a { background:var(--vc1, #6366f1); }
+.tc-art[data-art="palette-vivid"] .b { background:var(--vc2, #10b981); }
+.tc-art[data-art="palette-vivid"] .c { background:var(--vc3, #ec4899); }
 
 .tc-art[data-art*="energy"] .c { width:54px; height:42px; left:52px; top:26px; }
 .tc-art[data-art="energy-calm"] .c { box-shadow:none; background:rgba(148,163,184,.38); }
@@ -616,6 +616,45 @@
   border-radius:12px;
   color:var(--ia-muted);
   font-size:12px;
+}
+
+/* Vivid colour-combo sub-picker (mirrors the accent row styling). */
+.tc-combo-row {
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:9px;
+  padding:12px;
+  border:1px solid var(--ia-line);
+  border-radius:16px;
+  background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.012));
+}
+.tc-combo {
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding:5px 11px 5px 5px;
+  border:1px solid var(--ia-line);
+  border-radius:12px;
+  background:var(--ia-panel);
+  color:var(--ia-muted);
+  font:inherit;
+  font-size:12px;
+  font-weight:600;
+  cursor:pointer;
+  transition:color .16s, border-color .16s, box-shadow .16s, background .16s;
+}
+.tc-combo:hover { color:var(--ia-ink); border-color:var(--ia-muted-2); }
+.tc-combo.active {
+  color:var(--ia-ink);
+  border-color:transparent;
+  box-shadow:0 0 0 2px var(--ia-panel), 0 0 0 4px var(--accent);
+}
+.tc-combo-chip {
+  width:30px;
+  height:18px;
+  border-radius:6px;
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.18);
 }
 .tc-color-field input {
   width:28px;
@@ -949,11 +988,11 @@
 .tc-art[data-art="palette-color"] .c { opacity:.72; }
 .tc-art[data-art="palette-color"] .d { opacity:1; }
 .tc-art[data-art="palette-color"] .e { background:linear-gradient(90deg, transparent, var(--tc-accent), transparent); }
-.tc-art[data-art="palette-vivid"] .a { background:#6366f1; }
-.tc-art[data-art="palette-vivid"] .b { background:#10b981; }
-.tc-art[data-art="palette-vivid"] .c { background:#f59e0b; }
-.tc-art[data-art="palette-vivid"] .d { background:#ec4899; }
-.tc-art[data-art="palette-vivid"] .e { background:linear-gradient(90deg,#6366f1,#10b981,#f59e0b,#ec4899); }
+.tc-art[data-art="palette-vivid"] .a { background:var(--vc1, #6366f1); }
+.tc-art[data-art="palette-vivid"] .b { background:var(--vc2, #10b981); }
+.tc-art[data-art="palette-vivid"] .c { background:var(--vc3, #f59e0b); }
+.tc-art[data-art="palette-vivid"] .d { background:var(--vc4, #ec4899); }
+.tc-art[data-art="palette-vivid"] .e { background:linear-gradient(90deg, var(--vc1, #6366f1), var(--vc2, #10b981), var(--vc3, #f59e0b), var(--vc4, #ec4899)); }
 
 /* Energy and glass: matte versus lifted versus cinematic, with a real glass pane. */
 .tc-art[data-art^="energy-"] .a,
@@ -1561,7 +1600,8 @@
 .tc-option,
 .tc-range-card,
 .tc-review-card,
-.tc-accent-row {
+.tc-accent-row,
+.tc-combo-row {
   background:rgba(255,255,255,.38);
   border-color:rgba(15,23,42,.10);
 }
@@ -1597,7 +1637,8 @@
 .tc-overlay.tc-dark .tc-option,
 .tc-overlay.tc-dark .tc-range-card,
 .tc-overlay.tc-dark .tc-review-card,
-.tc-overlay.tc-dark .tc-accent-row {
+.tc-overlay.tc-dark .tc-accent-row,
+.tc-overlay.tc-dark .tc-combo-row {
   background:rgba(255,255,255,.065);
   border-color:rgba(255,255,255,.13);
 }
@@ -2078,10 +2119,10 @@
 .tc-overlay .tc-art[data-art="palette-color"] .c { background:var(--tc-accent); opacity:.78; }
 .tc-overlay .tc-art[data-art="palette-color"] .d { background:var(--tc-accent); opacity:1; }
 
-.tc-overlay .tc-art[data-art="palette-vivid"] .a { background:#6366f1; }
-.tc-overlay .tc-art[data-art="palette-vivid"] .b { background:#10b981; }
-.tc-overlay .tc-art[data-art="palette-vivid"] .c { background:#f59e0b; }
-.tc-overlay .tc-art[data-art="palette-vivid"] .d { background:#ec4899; }
+.tc-overlay .tc-art[data-art="palette-vivid"] .a { background:var(--vc1, #6366f1); }
+.tc-overlay .tc-art[data-art="palette-vivid"] .b { background:var(--vc2, #10b981); }
+.tc-overlay .tc-art[data-art="palette-vivid"] .c { background:var(--vc3, #f59e0b); }
+.tc-overlay .tc-art[data-art="palette-vivid"] .d { background:var(--vc4, #ec4899); }
 
 /* ---- 4. Energy -> single centered neutral card (depth only) ---- */
 .tc-overlay .tc-art[data-art^="energy-"] .a,
