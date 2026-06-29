@@ -517,13 +517,332 @@ import { getThemes, syncThemes, getAuthor, ensureAuthor, isCloudEnabled } from '
           hitRect(svg,x0,padT,x1-x0,innerH,(xl[i]||('#'+i)),rows); }
         wrap.appendChild(svg);
       }
+      /* ============================================================
+         GENERIC GALLERY CHARTS — reusable, data-driven renderers.
+         Each is size-aware (reads clientWidth/Height), theme-token aware
+         (cssVar('--cstop-*'/'--legend-*')) and tooltip-enabled (hitRect/setTip).
+         Drive them from any view via a <div class="chart-wrap" data-chart="TYPE"
+         data-…='…'> — exactly like hbarcat / linechart / pie.
+         ============================================================ */
+      /* ---- Vertical / column bar chart (data-bars='[["Label",v],…]')
+         data-ymax data-yticks="0,25,50" data-unit data-color. Honors the 3D knob. ---- */
+      function barcat(wrap){
+        let bars=[]; try{ bars=JSON.parse(wrap.dataset.bars||'[]'); }catch(e){ bars=[]; }
+        const ymax=parseFloat(wrap.dataset.ymax)|| (bars.length?Math.max(...bars.map(b=>b[1]))*1.12:1);
+        const ticks=(wrap.dataset.yticks||'').split(',').map(s=>parseFloat(s)).filter(v=>!isNaN(v));
+        const unit=wrap.dataset.unit||'', cvar=wrap.dataset.color||'--cstop-1a';
+        const W=Math.max(Math.round(wrap.clientWidth),200), H=Math.max(Math.round(wrap.clientHeight),140);
+        const padL=40,padR=10,padT=10,padB=26, innerW=W-padL-padR, innerH=H-padT-padB;
+        const svg=E('svg',{viewBox:`0 0 ${W} ${H}`,preserveAspectRatio:'none'});
+        (ticks.length?ticks:[0,ymax/2,ymax]).forEach(t=>{ const y=padT+innerH*(1-t/ymax); svg.appendChild(E('line',{x1:padL,x2:padL+innerW,y1:y,y2:y,stroke:'rgba(128,128,128,0.16)','stroke-dasharray':'2 4'})); svg.appendChild(svgText(E,padL-4,y+3,fmt(t)+unit,'end')); });
+        const n=Math.max(1,bars.length), step=innerW/n, bw=Math.min(46,step*0.62);
+        const m3=chartMode(wrap), col=cssVar(cvar, wrap);
+        bars.forEach((b,i)=>{ const h=Math.max(1,(Math.min(b[1],ymax)/ymax)*innerH), x=padL+step*i+(step-bw)/2, y=padT+innerH-h;
+          if(m3){ bar3dV(svg,x,y,bw,h,col,m3); }
+          else { const r=E('rect',{x:x.toFixed(1),y:y.toFixed(1),width:bw.toFixed(1),height:h.toFixed(1),rx:2}); r.style.fill='var('+cvar+')'; svg.appendChild(r); }
+          const lt=svgText(E,padL+step*i+step/2,padT+innerH+12,String(b[0]),'middle'); lt.setAttribute('font-size','8.5'); svg.appendChild(lt);
+          hitRect(svg,padL+step*i,padT,step,innerH,String(b[0]),[['Value',fmt(b[1])+(unit?' '+unit:'')]]); });
+        wrap.appendChild(svg);
+      }
+      /* ---- Grouped / clustered bars (data-cats='["A","B"]',
+         data-series='[{"c":"--legend-1","name":"X","vals":[…]},…]') data-ymax data-unit. Honors 3D. ---- */
+      function groupbars(wrap){
+        let cats=[],series=[]; try{cats=JSON.parse(wrap.dataset.cats||'[]');}catch(e){} try{series=JSON.parse(wrap.dataset.series||'[]');}catch(e){}
+        if(!series.length) series=[{c:'--cstop-1a',name:'series',vals:cats.map(()=>0)}];
+        const allv=series.reduce((a,s)=>a.concat(s.vals||[]),[]);
+        const ymax=parseFloat(wrap.dataset.ymax)|| (allv.length?Math.max(...allv)*1.12:1);
+        const unit=wrap.dataset.unit||'';
+        const W=Math.max(Math.round(wrap.clientWidth),220), H=Math.max(Math.round(wrap.clientHeight),150);
+        const padL=42,padR=10,padT=12,padB=26, innerW=W-padL-padR, innerH=H-padT-padB;
+        const svg=E('svg',{viewBox:`0 0 ${W} ${H}`,preserveAspectRatio:'none'});
+        [0,0.25,0.5,0.75,1].forEach(f=>{ const y=padT+innerH*(1-f); svg.appendChild(E('line',{x1:padL,x2:padL+innerW,y1:y,y2:y,stroke:'rgba(128,128,128,0.16)','stroke-dasharray':'2 4'})); svg.appendChild(svgText(E,padL-4,y+3,fmt(ymax*f),'end')); });
+        const m3=chartMode(wrap), m=Math.max(1,cats.length), step=innerW/m, g=Math.max(1,series.length), gap=step*0.2, slot=(step-gap)/g, bw=slot*0.84;
+        cats.forEach((cat,i)=>{ const x0=padL+step*i+gap/2;
+          series.forEach((s,si)=>{ const v=(s.vals&&s.vals[i])||0, h=Math.max(1,(Math.min(v,ymax)/ymax)*innerH), x=x0+si*slot+(slot-bw)/2, y=padT+innerH-h, col=cssVar(s.c||'--cstop-1a',wrap);
+            if(m3){ bar3dV(svg,x,y,bw,h,col,m3); }
+            else { const r=E('rect',{x:x.toFixed(1),y:y.toFixed(1),width:bw.toFixed(1),height:h.toFixed(1),rx:1.5}); r.style.fill='var('+(s.c||'--cstop-1a')+')'; svg.appendChild(r); } });
+          const lt=svgText(E,padL+step*i+step/2,padT+innerH+12,String(cat),'middle'); lt.setAttribute('font-size','8.5'); svg.appendChild(lt);
+          hitRect(svg,padL+step*i,padT,step,innerH,String(cat),series.map(s=>[s.name||'series',fmt((s.vals&&s.vals[i])||0)+(unit?' '+unit:'')])); });
+        wrap.appendChild(svg);
+      }
+      /* ---- Dot plot (data-dots='[["Label",v],…]') data-xmin data-xmax data-xticks data-labelw data-unit data-color.
+         Categorical rows; value encoded by point position (no zero baseline implied). ---- */
+      function dotplot(wrap){
+        let dots=[]; try{ dots=JSON.parse(wrap.dataset.dots||'[]'); }catch(e){ dots=[]; }
+        const vals=dots.map(d=>d[1]);
+        const xmin=wrap.dataset.xmin!=null?parseFloat(wrap.dataset.xmin):Math.min(0,...(vals.length?vals:[0]));
+        const xmax=parseFloat(wrap.dataset.xmax)|| (vals.length?Math.max(...vals)*1.08:1);
+        const ticks=(wrap.dataset.xticks||'').split(',').map(s=>parseFloat(s)).filter(v=>!isNaN(v));
+        const unit=wrap.dataset.unit||'', labelW=parseFloat(wrap.dataset.labelw)||96, cvar=wrap.dataset.color||'--cstop-1a';
+        const W=Math.max(Math.round(wrap.clientWidth),200), H=Math.max(Math.round(wrap.clientHeight),120);
+        const padL=labelW,padR=14,padT=8,padB=22, innerW=W-padL-padR, innerH=H-padT-padB, sxden=(xmax-xmin)||1;
+        const sx=v=>padL+((v-xmin)/sxden)*innerW;
+        const svg=E('svg',{viewBox:`0 0 ${W} ${H}`,preserveAspectRatio:'none'});
+        (ticks.length?ticks:[xmin,(xmin+xmax)/2,xmax]).forEach(t=>{ const x=sx(t); svg.appendChild(E('line',{x1:x.toFixed(1),x2:x.toFixed(1),y1:padT,y2:padT+innerH,stroke:'rgba(128,128,128,0.16)','stroke-dasharray':'2 4'})); svg.appendChild(svgText(E,x,padT+innerH+12,fmt(t)+unit,'middle')); });
+        const n=Math.max(1,dots.length), rh=innerH/n, m3=chartMode(wrap), col=cssVar(cvar, wrap);
+        dots.forEach((d,i)=>{ const cy=padT+rh*i+rh/2, cx=sx(d[1]);
+          svg.appendChild(E('line',{x1:padL,x2:cx.toFixed(1),y1:cy.toFixed(1),y2:cy.toFixed(1),stroke:'rgba(128,128,128,0.22)','stroke-width':1}));
+          if(m3){ sphere(svg,+cx.toFixed(1),+cy.toFixed(1),4.6,col); }
+          else { const c=E('circle',{cx:cx.toFixed(1),cy:cy.toFixed(1),r:4.6}); c.style.fill='var('+cvar+')'; svg.appendChild(c); }
+          const lt=svgText(E,padL-8,cy+3,String(d[0]),'end'); lt.setAttribute('font-size','9'); svg.appendChild(lt);
+          hitRect(svg,0,padT+rh*i,W,rh,String(d[0]),[['Value',fmt(d[1])+(unit?' '+unit:'')]]); });
+        wrap.appendChild(svg);
+      }
+      /* ---- Scatter plot (data-points='[[x,y],…]') data-xmax data-ymax data-color
+         optional data-trend="1" least-squares fit line. ---- */
+      function scatter(wrap){
+        let pts=[]; try{ pts=JSON.parse(wrap.dataset.points||'[]'); }catch(e){ pts=[]; }
+        const xs=pts.map(p=>p[0]), ys=pts.map(p=>p[1]);
+        const xmax=parseFloat(wrap.dataset.xmax)|| (xs.length?Math.max(...xs)*1.1:1);
+        const ymax=parseFloat(wrap.dataset.ymax)|| (ys.length?Math.max(...ys)*1.1:1);
+        const cvar=wrap.dataset.color||'--cstop-1a';
+        const W=Math.max(Math.round(wrap.clientWidth),200), H=Math.max(Math.round(wrap.clientHeight),140);
+        const padL=38,padR=12,padT=10,padB=24, innerW=W-padL-padR, innerH=H-padT-padB;
+        const sx=v=>padL+(v/xmax)*innerW, sy=v=>padT+innerH-(v/ymax)*innerH;
+        const svg=E('svg',{viewBox:`0 0 ${W} ${H}`,preserveAspectRatio:'none'});
+        [0,0.25,0.5,0.75,1].forEach(f=>{ const y=padT+innerH*(1-f); svg.appendChild(E('line',{x1:padL,x2:padL+innerW,y1:y,y2:y,stroke:'rgba(128,128,128,0.16)','stroke-dasharray':'2 4'})); svg.appendChild(svgText(E,padL-4,y+3,fmt(ymax*f),'end')); });
+        [0,0.5,1].forEach(f=>{ svg.appendChild(svgText(E,padL+innerW*f,padT+innerH+12,fmt(xmax*f),f===0?'start':(f===1?'end':'middle'))); });
+        const m3=chartMode(wrap), col=cssVar(cvar, wrap);
+        if(wrap.dataset.trend==='1' && pts.length>1){ const n=pts.length, sX=xs.reduce((a,b)=>a+b,0), sY=ys.reduce((a,b)=>a+b,0), sXY=pts.reduce((a,p)=>a+p[0]*p[1],0), sXX=xs.reduce((a,b)=>a+b*b,0);
+          const m=(n*sXY-sX*sY)/((n*sXX-sX*sX)||1), b=(sY-m*sX)/n;
+          svg.appendChild(E('line',{x1:sx(0).toFixed(1),x2:sx(xmax).toFixed(1),y1:sy(Math.max(0,Math.min(ymax,b))).toFixed(1),y2:sy(Math.max(0,Math.min(ymax,m*xmax+b))).toFixed(1),stroke:rgbaC(col,0.55),'stroke-width':2,'stroke-dasharray':'5 4'})); }
+        pts.forEach(p=>{ const cx=sx(Math.min(p[0],xmax)), cy=sy(Math.min(p[1],ymax));
+          if(m3){ sphere(svg,+cx.toFixed(1),+cy.toFixed(1),3.6,col); }
+          else { const c=E('circle',{cx:cx.toFixed(1),cy:cy.toFixed(1),r:3.4}); c.style.fill=rgbaC(col,0.8); svg.appendChild(c); }
+          const h=E('circle',{cx:cx.toFixed(1),cy:cy.toFixed(1),r:8,fill:'transparent','pointer-events':'all'}); setTip(h,'Point',[['x',fmt(p[0])],['y',fmt(p[1])]]); svg.appendChild(h); });
+        wrap.appendChild(svg);
+      }
+      /* ---- Bubble chart (data-points='[[x,y,size,"label"?],…]') data-xmax data-ymax data-smax data-rmax data-rmin data-color. ---- */
+      function bubble(wrap){
+        let pts=[]; try{ pts=JSON.parse(wrap.dataset.points||'[]'); }catch(e){ pts=[]; }
+        const xs=pts.map(p=>p[0]), ys=pts.map(p=>p[1]), ss=pts.map(p=>p[2]||0);
+        const xmax=parseFloat(wrap.dataset.xmax)|| (xs.length?Math.max(...xs)*1.1:1);
+        const ymax=parseFloat(wrap.dataset.ymax)|| (ys.length?Math.max(...ys)*1.1:1);
+        const smax=parseFloat(wrap.dataset.smax)|| (ss.length?Math.max(...ss):1);
+        const rmax=parseFloat(wrap.dataset.rmax)||22, rmin=parseFloat(wrap.dataset.rmin)||5, cvar=wrap.dataset.color||'--cstop-1a';
+        const W=Math.max(Math.round(wrap.clientWidth),200), H=Math.max(Math.round(wrap.clientHeight),150);
+        const padL=38,padR=14,padT=12,padB=24, innerW=W-padL-padR, innerH=H-padT-padB;
+        const sx=v=>padL+(v/xmax)*innerW, sy=v=>padT+innerH-(v/ymax)*innerH, sr=v=>rmin+Math.sqrt((v/smax)||0)*(rmax-rmin);
+        const svg=E('svg',{viewBox:`0 0 ${W} ${H}`,preserveAspectRatio:'none'});
+        [0,0.25,0.5,0.75,1].forEach(f=>{ const y=padT+innerH*(1-f); svg.appendChild(E('line',{x1:padL,x2:padL+innerW,y1:y,y2:y,stroke:'rgba(128,128,128,0.16)','stroke-dasharray':'2 4'})); svg.appendChild(svgText(E,padL-4,y+3,fmt(ymax*f),'end')); });
+        [0,0.5,1].forEach(f=>{ svg.appendChild(svgText(E,padL+innerW*f,padT+innerH+12,fmt(xmax*f),f===0?'start':(f===1?'end':'middle'))); });
+        const m3=chartMode(wrap), col=cssVar(cvar, wrap);
+        pts.forEach(p=>{ const cx=sx(Math.min(p[0],xmax)), cy=sy(Math.min(p[1],ymax)), r=sr(p[2]||0);
+          if(m3){ sphere(svg,+cx.toFixed(1),+cy.toFixed(1),r,col); }
+          else { const c=E('circle',{cx:cx.toFixed(1),cy:cy.toFixed(1),r:r.toFixed(1)}); c.style.fill=rgbaC(col,0.45); c.style.stroke=rgbaC(col,0.9); c.style.strokeWidth='1'; svg.appendChild(c); }
+          const h=E('circle',{cx:cx.toFixed(1),cy:cy.toFixed(1),r:Math.max(r,8).toFixed(1),fill:'transparent','pointer-events':'all'}); setTip(h,p[3]||'Bubble',[['x',fmt(p[0])],['y',fmt(p[1])],['size',fmt(p[2]||0)]]); svg.appendChild(h); });
+        wrap.appendChild(svg);
+      }
+      /* ---- Box plot (data-boxes='[["Group",min,q1,med,q3,max],…]') data-ymin data-ymax data-unit data-color. ---- */
+      function boxplot(wrap){
+        let boxes=[]; try{ boxes=JSON.parse(wrap.dataset.boxes||'[]'); }catch(e){ boxes=[]; }
+        const allv=boxes.reduce((a,b)=>a.concat(b.slice(1)),[]);
+        const ymax=parseFloat(wrap.dataset.ymax)|| (allv.length?Math.max(...allv)*1.1:1);
+        const ymin=wrap.dataset.ymin!=null?parseFloat(wrap.dataset.ymin):0, unit=wrap.dataset.unit||'', cvar=wrap.dataset.color||'--cstop-1a';
+        const W=Math.max(Math.round(wrap.clientWidth),200), H=Math.max(Math.round(wrap.clientHeight),150);
+        const padL=40,padR=12,padT=10,padB=24, innerW=W-padL-padR, innerH=H-padT-padB, yspan=(ymax-ymin)||1;
+        const sy=v=>padT+innerH-((v-ymin)/yspan)*innerH;
+        const svg=E('svg',{viewBox:`0 0 ${W} ${H}`,preserveAspectRatio:'none'});
+        [0,0.25,0.5,0.75,1].forEach(f=>{ const v=ymin+yspan*f, y=sy(v); svg.appendChild(E('line',{x1:padL,x2:padL+innerW,y1:y,y2:y,stroke:'rgba(128,128,128,0.16)','stroke-dasharray':'2 4'})); svg.appendChild(svgText(E,padL-4,y+3,fmt(v)+unit,'end')); });
+        const n=Math.max(1,boxes.length), step=innerW/n, bw=Math.min(54,step*0.5), m3=chartMode(wrap), col=cssVar(cvar, wrap), wcol=rgbaC(col,0.85);
+        boxes.forEach((b,i)=>{ const cx=padL+step*i+step/2, x=cx-bw/2, mn=b[1],q1=b[2],med=b[3],q3=b[4],mx=b[5];
+          svg.appendChild(E('line',{x1:cx,x2:cx,y1:sy(mx).toFixed(1),y2:sy(q3).toFixed(1),stroke:wcol,'stroke-width':1.4}));
+          svg.appendChild(E('line',{x1:cx,x2:cx,y1:sy(q1).toFixed(1),y2:sy(mn).toFixed(1),stroke:wcol,'stroke-width':1.4}));
+          svg.appendChild(E('line',{x1:(cx-bw*0.3).toFixed(1),x2:(cx+bw*0.3).toFixed(1),y1:sy(mx).toFixed(1),y2:sy(mx).toFixed(1),stroke:wcol,'stroke-width':1.4}));
+          svg.appendChild(E('line',{x1:(cx-bw*0.3).toFixed(1),x2:(cx+bw*0.3).toFixed(1),y1:sy(mn).toFixed(1),y2:sy(mn).toFixed(1),stroke:wcol,'stroke-width':1.4}));
+          const by=sy(q3), bhh=Math.max(1,sy(q1)-sy(q3));
+          if(m3){ bar3dV(svg,x,by,bw,bhh,col,m3); }   // IQR box extrudes (iso) / glosses (glass) via the shared toolkit
+          else { const r=E('rect',{x:x.toFixed(1),y:by.toFixed(1),width:bw.toFixed(1),height:bhh.toFixed(1),rx:2}); r.style.fill=rgbaC(col,0.32); r.style.stroke=col; r.style.strokeWidth='1.4'; svg.appendChild(r); }
+          svg.appendChild(E('line',{x1:x.toFixed(1),x2:(x+bw).toFixed(1),y1:sy(med).toFixed(1),y2:sy(med).toFixed(1),stroke:m3?'rgba(255,255,255,0.92)':col,'stroke-width':2}));
+          const lt=svgText(E,cx,padT+innerH+12,String(b[0]),'middle'); lt.setAttribute('font-size','8.5'); svg.appendChild(lt);
+          hitRect(svg,padL+step*i,padT,step,innerH,String(b[0]),[['Max',fmt(mx)],['Q3',fmt(q3)],['Median',fmt(med)],['Q1',fmt(q1)],['Min',fmt(mn)]]); });
+        wrap.appendChild(svg);
+      }
+      /* ---- Violin plot (data-violins='[{"name":"X","values":[…],"c":"--var"?},…]') data-ymin data-ymax data-bw. ---- */
+      function violin(wrap){
+        let groups=[]; try{ groups=JSON.parse(wrap.dataset.violins||'[]'); }catch(e){ groups=[]; }
+        const allv=groups.reduce((a,g)=>a.concat(g.values||[]),[]);
+        if(!allv.length){ wrap.appendChild(E('svg',{})); return; }
+        const ymin=wrap.dataset.ymin!=null?parseFloat(wrap.dataset.ymin):Math.min(...allv);
+        const ymax=wrap.dataset.ymax!=null?parseFloat(wrap.dataset.ymax):Math.max(...allv);
+        const span=(ymax-ymin)||1, bw=parseFloat(wrap.dataset.bw)||span/10, cvar=wrap.dataset.color||'--cstop-1a';
+        const W=Math.max(Math.round(wrap.clientWidth),200), H=Math.max(Math.round(wrap.clientHeight),150);
+        const padL=40,padR=12,padT=10,padB=24, innerW=W-padL-padR, innerH=H-padT-padB;
+        const sy=v=>padT+innerH-((v-ymin)/span)*innerH;
+        const svg=E('svg',{viewBox:`0 0 ${W} ${H}`,preserveAspectRatio:'none'});
+        [0,0.25,0.5,0.75,1].forEach(f=>{ const v=ymin+span*f, y=sy(v); svg.appendChild(E('line',{x1:padL,x2:padL+innerW,y1:y,y2:y,stroke:'rgba(128,128,128,0.16)','stroke-dasharray':'2 4'})); svg.appendChild(svgText(E,padL-4,y+3,fmt(v),'end')); });
+        const n=Math.max(1,groups.length), step=innerW/n, halfW=Math.min(step*0.4,40), M=40, m3=chartMode(wrap);
+        groups.forEach((g,gi)=>{ const cx=padL+step*gi+step/2, vals=g.values||[], col=cssVar(g.c||cvar, wrap);
+          const dens=[]; let dmax=0; for(let i=0;i<=M;i++){ const y=ymin+span*i/M; let s=0; vals.forEach(v=>{ const u=(y-v)/bw; s+=Math.exp(-0.5*u*u); }); dens.push([y,s]); if(s>dmax)dmax=s; }
+          let dPath=''; dens.forEach((p,i)=>{ const w=(p[1]/(dmax||1))*halfW; dPath+=(i?'L':'M')+(cx+w).toFixed(1)+','+sy(p[0]).toFixed(1); });
+          for(let i=dens.length-1;i>=0;i--){ const w=(dens[i][1]/(dmax||1))*halfW; dPath+='L'+(cx-w).toFixed(1)+','+sy(dens[i][0]).toFixed(1); }
+          dPath+='Z';
+          if(m3==='iso'){
+            // rounded-volume shading across the width (dark edges -> lit centre spine) — no offset
+            // duplicate, which used to ghost the thin KDE tails into broken double spikes.
+            const gid='vi'+nextGid(), lg=E('linearGradient',{id:gid,x1:0,y1:0,x2:1,y2:0});
+            lg.appendChild(E('stop',{offset:'0%','stop-color':shadeC(col,-0.26)})); lg.appendChild(E('stop',{offset:'50%','stop-color':shadeC(col,0.18)})); lg.appendChild(E('stop',{offset:'100%','stop-color':shadeC(col,-0.26)}));
+            svgDefs(svg).appendChild(lg);
+            const front=E('path',{d:dPath,fill:`url(#${gid})`}); front.style.stroke=shadeC(col,-0.12); front.style.strokeWidth='1'; svg.appendChild(front);
+          } else if(m3==='glass'){
+            const front=E('path',{d:dPath,fill:`url(#${glassTopGrad(svg,col)})`}); front.style.fillOpacity='0.96'; front.style.stroke=rgbaC(shadeC(col,0.45),0.6); front.style.strokeWidth='1.1'; svg.appendChild(front);
+            svg.appendChild(E('path',{d:dPath,fill:`url(#${glassSheenGrad(svg,0.5)})`,'pointer-events':'none'}));   // single soft specular sheen
+          } else {
+            const body=E('path',{d:dPath}); body.style.fill=rgbaC(col,0.3); body.style.stroke=col; body.style.strokeWidth='1.4'; svg.appendChild(body);
+          }
+          const sorted=vals.slice().sort((a,b)=>a-b), q=p=>sorted.length?sorted[Math.min(sorted.length-1,Math.round(p*(sorted.length-1)))]:0;
+          const med=q(0.5),q1=q(0.25),q3=q(0.75);
+          const r=E('rect',{x:(cx-3).toFixed(1),y:sy(q3).toFixed(1),width:6,height:Math.max(1,sy(q1)-sy(q3)).toFixed(1)}); r.style.fill=rgbaC(shadeC(col,-0.25),0.96); svg.appendChild(r);
+          svg.appendChild(E('circle',{cx:cx.toFixed(1),cy:sy(med).toFixed(1),r:2.4,fill:'#fff'}));
+          const lt=svgText(E,cx,padT+innerH+12,String(g.name||''),'middle'); lt.setAttribute('font-size','8.5'); svg.appendChild(lt);
+          hitRect(svg,padL+step*gi,padT,step,innerH,String(g.name||''),[['Median',fmt(med)],['Q3',fmt(q3)],['Q1',fmt(q1)],['n',String(vals.length)]]); });
+        wrap.appendChild(svg);
+      }
+      /* ---- Density curve / KDE (data-values='[…]') data-xmin data-xmax data-bw data-color. ---- */
+      function density(wrap){
+        let vals=[]; try{ vals=JSON.parse(wrap.dataset.values||'[]'); }catch(e){ vals=[]; }
+        if(!vals.length){ wrap.appendChild(E('svg',{})); return; }
+        const xmin=wrap.dataset.xmin!=null?parseFloat(wrap.dataset.xmin):Math.min(...vals);
+        const xmax=wrap.dataset.xmax!=null?parseFloat(wrap.dataset.xmax):Math.max(...vals);
+        const span=(xmax-xmin)||1, bw=parseFloat(wrap.dataset.bw)||span/12, cvar=wrap.dataset.color||'--cstop-1a';
+        const W=Math.max(Math.round(wrap.clientWidth),200), H=Math.max(Math.round(wrap.clientHeight),140);
+        const padL=34,padR=12,padT=10,padB=24, innerW=W-padL-padR, innerH=H-padT-padB, M=64;
+        const dens=[]; let dmax=0;
+        for(let i=0;i<=M;i++){ const x=xmin+span*i/M; let s=0; vals.forEach(v=>{ const u=(x-v)/bw; s+=Math.exp(-0.5*u*u); }); s/=(vals.length*bw*Math.sqrt(2*Math.PI)); dens.push([x,s]); if(s>dmax)dmax=s; }
+        const sx=x=>padL+((x-xmin)/span)*innerW, sy=d=>padT+innerH-(d/(dmax||1))*innerH;
+        const svg=E('svg',{viewBox:`0 0 ${W} ${H}`,preserveAspectRatio:'none'});
+        [0,0.5,1].forEach(f=>{ const y=padT+innerH*(1-f); svg.appendChild(E('line',{x1:padL,x2:padL+innerW,y1:y,y2:y,stroke:'rgba(128,128,128,0.14)','stroke-dasharray':'2 4'})); });
+        [0,0.5,1].forEach(f=>{ svg.appendChild(svgText(E,padL+innerW*f,padT+innerH+12,fmt(xmin+span*f),f===0?'start':(f===1?'end':'middle'))); });
+        const m3=chartMode(wrap), col=cssVar(cvar, wrap);
+        let d=''; dens.forEach((p,i)=>{ d+=(i?'L':'M')+sx(p[0]).toFixed(1)+','+sy(p[1]).toFixed(1); });
+        const gid='dn'+nextGid(), lg=E('linearGradient',{id:gid,x1:0,y1:0,x2:0,y2:1});
+        lg.appendChild(E('stop',{offset:'0%','stop-color':rgbaC(col,m3?0.55:0.42)})); lg.appendChild(E('stop',{offset:'100%','stop-color':rgbaC(col,m3?0.05:0.04)})); svgDefs(svg).appendChild(lg);
+        svg.appendChild(E('path',{d:d+`L${sx(xmax).toFixed(1)},${(padT+innerH).toFixed(1)}L${sx(xmin).toFixed(1)},${(padT+innerH).toFixed(1)}Z`,fill:`url(#${gid})`}));
+        if(m3==='iso'){ const lip=E('path',{d:d,fill:'none','stroke-width':6,'stroke-linecap':'round','stroke-linejoin':'round',transform:'translate(0 4)'}); lip.style.stroke=shadeC(col,-0.3); lip.style.opacity='0.85'; svg.appendChild(lip); }   // depth lip
+        const lp=E('path',{d:d,fill:'none','stroke-width':m3?2.6:2.2,'stroke-linecap':'round','stroke-linejoin':'round'}); lp.style.stroke=col; svg.appendChild(lp);
+        if(m3){ const gloss=E('path',{d:d,fill:'none','stroke-width':1,'stroke-linecap':'round',transform:'translate(0 -1.4)'}); gloss.style.stroke='rgba(255,255,255,0.55)'; svg.appendChild(gloss);
+          dens.forEach((p,i)=>{ if(i%8)return; sphere(svg,+sx(p[0]).toFixed(1),+sy(p[1]).toFixed(1),3,col); }); }
+        dens.forEach((p,i)=>{ if(i%6)return; const x0=Math.max(padL,sx(p[0])-innerW/M*3),x1=Math.min(padL+innerW,sx(p[0])+innerW/M*3); hitRect(svg,x0,padT,x1-x0,innerH,'x \u2248 '+fmt(p[0]),[['density',p[1].toFixed(4)]]); });
+        wrap.appendChild(svg);
+      }
+      /* ---- Histogram (data-values='[…]') data-bins data-xmin data-xmax data-unit data-color. Honors 3D. ---- */
+      function histogram(wrap){
+        let vals=[]; try{ vals=JSON.parse(wrap.dataset.values||'[]'); }catch(e){ vals=[]; }
+        if(!vals.length){ wrap.appendChild(E('svg',{})); return; }
+        const bins=parseInt(wrap.dataset.bins,10)||12;
+        const xmin=wrap.dataset.xmin!=null?parseFloat(wrap.dataset.xmin):Math.min(...vals);
+        const xmax=wrap.dataset.xmax!=null?parseFloat(wrap.dataset.xmax):Math.max(...vals);
+        const span=(xmax-xmin)||1, bwv=span/bins, cvar=wrap.dataset.color||'--cstop-1a', unit=wrap.dataset.unit||'';
+        const counts=new Array(bins).fill(0); vals.forEach(v=>{ let k=Math.floor((v-xmin)/bwv); if(k>=bins)k=bins-1; if(k<0)k=0; counts[k]++; });
+        const cmax=Math.max(...counts)*1.1||1;
+        const W=Math.max(Math.round(wrap.clientWidth),200), H=Math.max(Math.round(wrap.clientHeight),140);
+        const padL=36,padR=10,padT=10,padB=24, innerW=W-padL-padR, innerH=H-padT-padB;
+        const svg=E('svg',{viewBox:`0 0 ${W} ${H}`,preserveAspectRatio:'none'});
+        [0,0.5,1].forEach(f=>{ const y=padT+innerH*(1-f); svg.appendChild(E('line',{x1:padL,x2:padL+innerW,y1:y,y2:y,stroke:'rgba(128,128,128,0.16)','stroke-dasharray':'2 4'})); svg.appendChild(svgText(E,padL-4,y+3,fmt(cmax*f),'end')); });
+        const step=innerW/bins, bw=step*0.92, m3=chartMode(wrap), col=cssVar(cvar, wrap);
+        counts.forEach((c,i)=>{ const h=Math.max(0.5,(c/cmax)*innerH), x=padL+step*i+(step-bw)/2, y=padT+innerH-h;
+          if(m3){ bar3dV(svg,x,y,bw,h,col,m3); }
+          else { const r=E('rect',{x:x.toFixed(1),y:y.toFixed(1),width:bw.toFixed(1),height:h.toFixed(1)}); r.style.fill='var('+cvar+')'; svg.appendChild(r); }
+          hitRect(svg,padL+step*i,padT,step,innerH,fmt(xmin+i*bwv)+'\u2013'+fmt(xmin+(i+1)*bwv)+(unit?' '+unit:''),[['Count',String(c)]]); });
+        [0,0.5,1].forEach(f=>{ svg.appendChild(svgText(E,padL+innerW*f,padT+innerH+12,fmt(xmin+span*f),f===0?'start':(f===1?'end':'middle'))); });
+        wrap.appendChild(svg);
+      }
+      /* ---- Heatmap (data-rows='[…]', data-cols='[…]', data-matrix='[[…],…]') data-vmin data-vmax data-unit data-labelw. ---- */
+      function heatmap(wrap){
+        let rows=[],cols=[],mat=[]; try{rows=JSON.parse(wrap.dataset.rows||'[]');}catch(e){} try{cols=JSON.parse(wrap.dataset.cols||'[]');}catch(e){} try{mat=JSON.parse(wrap.dataset.matrix||'[]');}catch(e){}
+        const flat=mat.reduce((a,r)=>a.concat(r),[]);
+        const vmax=parseFloat(wrap.dataset.vmax)|| (flat.length?Math.max(...flat):1);
+        const vmin=wrap.dataset.vmin!=null?parseFloat(wrap.dataset.vmin):0, unit=wrap.dataset.unit||'';
+        const W=Math.max(Math.round(wrap.clientWidth),200), H=Math.max(Math.round(wrap.clientHeight),140);
+        const padL=parseFloat(wrap.dataset.labelw)||64, padR=8, padT=8, padB=22, innerW=W-padL-padR, innerH=H-padT-padB;
+        const nr=Math.max(1,rows.length), nc=Math.max(1,cols.length), cw=innerW/nc, ch=innerH/nr, vspan=(vmax-vmin)||1;
+        const ramp=['--cstop-1b','--cstop-1a','--cstop-2a','--cstop-3a','--cstop-4a'].map(v=>cssVar(v,wrap)).filter(Boolean);
+        const stops=ramp.length?ramp:[cssVar('--cstop-1a',wrap)||'#6366f1'];
+        const rampColor=t=>{ if(stops.length===1)return rgbaC(stops[0],0.2+0.72*t); const p=t*(stops.length-1), i=Math.min(stops.length-2,Math.floor(p)), f=p-i, a=toRGB(stops[i]), b=toRGB(stops[i+1]); return `rgb(${Math.round(a.r+(b.r-a.r)*f)},${Math.round(a.g+(b.g-a.g)*f)},${Math.round(a.b+(b.b-a.b)*f)})`; };
+        const m3=chartMode(wrap), svg=E('svg',{viewBox:`0 0 ${W} ${H}`,preserveAspectRatio:'none'});
+        rows.forEach((rl,ri)=>{ cols.forEach((cl,ci)=>{ const v=(mat[ri]&&mat[ri][ci])||0, t=Math.max(0,Math.min(1,(v-vmin)/vspan)), x=padL+cw*ci, y=padT+ch*ri, cellCol=rampColor(t), w=Math.max(0.5,cw-2), hh=Math.max(0.5,ch-2);
+            let cell;
+            if(m3==='iso'){
+              // extruded tile fully contained in the cw x ch slot (front face + right/bottom side
+              // faces) so the depth never bleeds into neighbouring cells like the old offset bevel did
+              const g2=2.5, dep=Math.max(2,Math.min(cw,ch)*0.12), fw=Math.max(0.5,cw-g2-dep), fh=Math.max(0.5,ch-g2-dep);
+              svg.appendChild(E('path',{d:`M${(x+fw).toFixed(1)},${y.toFixed(1)} L${(x+fw+dep).toFixed(1)},${(y+dep).toFixed(1)} L${(x+fw+dep).toFixed(1)},${(y+fh+dep).toFixed(1)} L${(x+fw).toFixed(1)},${(y+fh).toFixed(1)} Z`,fill:shadeC(cellCol,-0.30)}));
+              svg.appendChild(E('path',{d:`M${x.toFixed(1)},${(y+fh).toFixed(1)} L${(x+fw).toFixed(1)},${(y+fh).toFixed(1)} L${(x+fw+dep).toFixed(1)},${(y+fh+dep).toFixed(1)} L${(x+dep).toFixed(1)},${(y+fh+dep).toFixed(1)} Z`,fill:shadeC(cellCol,-0.18)}));
+              cell=E('rect',{x:x.toFixed(1),y:y.toFixed(1),width:fw.toFixed(1),height:fh.toFixed(1),rx:1}); cell.style.fill=cellCol; svg.appendChild(cell);
+            } else if(m3==='glass'){
+              cell=E('rect',{x:x.toFixed(1),y:y.toFixed(1),width:w.toFixed(1),height:hh.toFixed(1),rx:3}); cell.style.fill=cellCol; cell.style.stroke='rgba(255,255,255,0.28)'; cell.style.strokeWidth='0.7'; svg.appendChild(cell);
+              svg.appendChild(E('rect',{x:x.toFixed(1),y:y.toFixed(1),width:w.toFixed(1),height:(hh*0.5).toFixed(1),rx:3,fill:`url(#${sheenGrad(svg,false)})`,'pointer-events':'none'}));
+            } else {
+              cell=E('rect',{x:x.toFixed(1),y:y.toFixed(1),width:w.toFixed(1),height:hh.toFixed(1),rx:2}); cell.style.fill=cellCol; svg.appendChild(cell);
+            }
+            setTip(cell,rl+' \u00b7 '+cl,[['Value',fmt(v)+(unit?' '+unit:'')]]); });
+          const lt=svgText(E,padL-6,padT+ch*ri+ch/2+3,String(rl),'end'); lt.setAttribute('font-size','8.5'); svg.appendChild(lt); });
+        cols.forEach((cl,ci)=>{ const lt=svgText(E,padL+cw*ci+cw/2,padT+innerH+12,String(cl),'middle'); lt.setAttribute('font-size','8'); svg.appendChild(lt); });
+        wrap.appendChild(svg);
+      }
+      /* ---- Funnel chart (data-stages='[["Stage",value],…]') data-unit. ---- */
+      function funnel(wrap){
+        let stages=[]; try{ stages=JSON.parse(wrap.dataset.stages||'[]'); }catch(e){ stages=[]; }
+        if(!stages.length){ wrap.appendChild(E('svg',{})); return; }
+        const vmax=Math.max(...stages.map(s=>s[1]))||1, unit=wrap.dataset.unit||'';
+        const W=Math.max(Math.round(wrap.clientWidth),200), H=Math.max(Math.round(wrap.clientHeight),150);
+        const padL=10,padR=10,padT=8,padB=8, innerW=W-padL-padR, innerH=H-padT-padB;
+        const cx=padL+innerW/2, n=stages.length, rh=innerH/n, wAt=v=>(v/vmax)*innerW;
+        const pal=['--cstop-1a','--cstop-2a','--cstop-3a','--cstop-4a','--legend-2','--legend-1'];
+        const m3=chartMode(wrap), svg=E('svg',{viewBox:`0 0 ${W} ${H}`,preserveAspectRatio:'none'});
+        stages.forEach((s,i)=>{ const wTop=wAt(s[1]), wBot=wAt(i<n-1?stages[i+1][1]:s[1]*0.78), y=padT+rh*i, gap=Math.min(6,rh*0.16);
+          const x0=cx-wTop/2,x1=cx+wTop/2,x2=cx+wBot/2,x3=cx-wBot/2, yT=y+gap/2, yB=y+rh-gap/2, cvar=pal[i%pal.length], col=cssVar(cvar,wrap);
+          const dTrap=`M${x0.toFixed(1)},${yT.toFixed(1)} L${x1.toFixed(1)},${yT.toFixed(1)} L${x2.toFixed(1)},${yB.toFixed(1)} L${x3.toFixed(1)},${yB.toFixed(1)} Z`;
+          if(m3==='iso'){
+            // solid bottom "thickness" band sitting in the inter-slice gap (no offset duplicate, which
+            // used to poke jagged ghosts above each slice) + a top-lit front face for the 3D ribbon look
+            const dep=Math.min(5, gap*0.8);
+            if(dep>0.5) svg.appendChild(E('path',{d:`M${x3.toFixed(1)},${yB.toFixed(1)} L${x2.toFixed(1)},${yB.toFixed(1)} L${x2.toFixed(1)},${(yB+dep).toFixed(1)} L${x3.toFixed(1)},${(yB+dep).toFixed(1)} Z`,fill:shadeC(col,-0.32)}));
+            const gid='fn'+nextGid(), lg=E('linearGradient',{id:gid,x1:0,y1:0,x2:0,y2:1}); lg.appendChild(E('stop',{offset:'0%','stop-color':shadeC(col,0.18)})); lg.appendChild(E('stop',{offset:'100%','stop-color':shadeC(col,-0.12)})); svgDefs(svg).appendChild(lg);
+            svg.appendChild(E('path',{d:dTrap,fill:`url(#${gid})`}));
+          } else if(m3==='glass'){
+            const fp=E('path',{d:dTrap,fill:`url(#${glassTopGrad(svg,col)})`}); fp.style.fillOpacity='0.96'; fp.style.stroke=rgbaC(shadeC(col,0.45),0.5); fp.style.strokeWidth='1'; svg.appendChild(fp);
+            svg.appendChild(E('path',{d:dTrap,fill:`url(#${glassSheenGrad(svg,0.5)})`,'pointer-events':'none'}));
+          } else {
+            const p=E('path',{d:dTrap}); p.style.fill='var('+cvar+')'; p.style.opacity='0.9'; svg.appendChild(p);
+          }
+          const pct=(s[1]/stages[0][1]*100);
+          const t1=svgText(E,cx,y+rh/2-2,String(s[0]),'middle'); t1.setAttribute('font-size','10'); t1.setAttribute('fill','rgba(255,255,255,0.96)'); t1.setAttribute('font-weight','600'); svg.appendChild(t1);
+          const t2=svgText(E,cx,y+rh/2+12,fmt(s[1])+(unit?' '+unit:'')+'  ('+pct.toFixed(0)+'%)','middle'); t2.setAttribute('font-size','9'); t2.setAttribute('fill','rgba(255,255,255,0.82)'); svg.appendChild(t2);
+          hitRect(svg,padL,y,innerW,rh,String(s[0]),[['Value',fmt(s[1])+(unit?' '+unit:'')],['Of top',pct.toFixed(1)+'%']]); });
+        wrap.appendChild(svg);
+      }
+      /* ---- Bullet chart (data-value data-target data-max data-bands='[v1,v2]' data-label data-unit data-color). ---- */
+      function bullet(wrap){
+        const value=parseFloat(wrap.dataset.value)||0, target=parseFloat(wrap.dataset.target), max=parseFloat(wrap.dataset.max)||(Math.max(value,target||0)*1.1)||1;
+        let bands=[]; try{ bands=JSON.parse(wrap.dataset.bands||'[]'); }catch(e){ bands=[]; }
+        const label=wrap.dataset.label||'', unit=wrap.dataset.unit||'', cvar=wrap.dataset.color||'--cstop-1a';
+        const W=Math.max(Math.round(wrap.clientWidth),200), H=Math.max(Math.round(wrap.clientHeight),54);
+        const padL=8,padR=10,padT=label?18:8,padB=18, innerW=W-padL-padR, innerH=H-padT-padB;
+        const sx=v=>padL+(Math.min(v,max)/max)*innerW;
+        const svg=E('svg',{viewBox:`0 0 ${W} ${H}`,preserveAspectRatio:'none'});
+        const m3=chartMode(wrap), col=cssVar(cvar, wrap);
+        if(label){ const lt=svgText(E,padL,12,label,'start'); lt.setAttribute('font-size','10.5'); lt.setAttribute('fill','var(--text-dim)'); svg.appendChild(lt); }
+        const edges=[0,...bands,max]; for(let i=0;i<edges.length-1;i++){ const x=sx(edges[i]), w=sx(edges[i+1])-sx(edges[i]), op=0.08+0.06*(edges.length-2-i); const r=E('rect',{x:x.toFixed(1),y:padT.toFixed(1),width:Math.max(0.5,w).toFixed(1),height:innerH.toFixed(1),rx:3}); r.style.fill='rgba(128,128,128,'+op.toFixed(2)+')'; svg.appendChild(r); }
+        const bh=innerH*0.42, by=padT+(innerH-bh)/2, bwid=Math.max(1,sx(value)-padL);
+        if(m3){ bar3dH(svg,padL,by,bwid,bh,col,m3); }   // measure bar extrudes (iso) / glosses (glass)
+        else { const mb=E('rect',{x:padL.toFixed(1),y:by.toFixed(1),width:bwid.toFixed(1),height:bh.toFixed(1),rx:2}); mb.style.fill='var('+cvar+')'; svg.appendChild(mb); }
+        if(!isNaN(target)){ const tx=sx(target); svg.appendChild(E('line',{x1:tx.toFixed(1),x2:tx.toFixed(1),y1:padT.toFixed(1),y2:(padT+innerH).toFixed(1),stroke:'var(--text)','stroke-width':2.4})); }
+        [0,0.5,1].forEach(f=>{ svg.appendChild(svgText(E,padL+innerW*f,padT+innerH+13,fmt(max*f),f===0?'start':(f===1?'end':'middle'))); });
+        hitRect(svg,padL,padT,innerW,innerH,label||'Bullet',[['Value',fmt(value)+(unit?' '+unit:'')],['Target',isNaN(target)?'-':fmt(target)+(unit?' '+unit:'')]]);
+        wrap.appendChild(svg);
+      }
       let _rzt; window.addEventListener('resize',()=>{ clearTimeout(_rzt); _rzt=setTimeout(()=>renderChartsIn(document.querySelector('.view.active')),160); });
       function buildChart(w){ const t=w.dataset.chart; w.innerHTML='';
         if(t==='combo')combo(w); else if(t==='donut')donut(w); else if(t==='area')area(w); else if(t==='dots')dots(w);
         else if(t==='pbars')pbars(w); else if(t==='otd-class')otdClass(w); else if(t==='otd-hist')otdHist(w); else if(t==='otd-dev')otdDev(w);
         else if(t==='freqhist')freqhist(w); else if(t==='durline')durline(w); else if(t==='hbarcat')hbarcat(w);
         else if(t==='pie')pieGen(w); else if(t==='linechart')linechart(w);
-        else if(t==='stackbars')stackbars(w); else if(t==='hstackbars')hstackbars(w); }
+        else if(t==='stackbars')stackbars(w); else if(t==='hstackbars')hstackbars(w);
+        else if(t==='barcat')barcat(w); else if(t==='groupbars')groupbars(w); else if(t==='dotplot')dotplot(w);
+        else if(t==='scatter')scatter(w); else if(t==='bubble')bubble(w); else if(t==='boxplot')boxplot(w);
+        else if(t==='violin')violin(w); else if(t==='density')density(w); else if(t==='histogram')histogram(w);
+        else if(t==='heatmap')heatmap(w); else if(t==='funnel')funnel(w); else if(t==='bullet')bullet(w); }
       function renderChartsIn(view){ if(!view)return; view.querySelectorAll('[data-chart]').forEach(buildChart); }
 
       /* ---- ID table ---- */
@@ -1243,9 +1562,9 @@ import { getThemes, syncThemes, getAuthor, ensureAuthor, isCloudEnabled } from '
       document.querySelectorAll('.subtab[data-rqsub]').forEach(s=>s.addEventListener('click',()=>{
         const view=s.closest('.view'); if(!view)return;
         view.querySelectorAll('.subtab[data-rqsub]').forEach(x=>x.classList.remove('on')); s.classList.add('on');
-        const sub=s.dataset.rqsub==='charts'?'charts':'more';
-        view.querySelectorAll('.rq-content').forEach(c=>{ c.style.display = (c.dataset.rqcontent===sub)?(sub==='charts'?'grid':'block'):'none'; });
-        if(sub==='charts') renderChartsIn(view);
+        const sub=s.dataset.rqsub;   // each sub-tab maps to its own .rq-content panel
+        view.querySelectorAll('.rq-content').forEach(c=>{ c.style.display = (c.dataset.rqcontent===sub)?'grid':'none'; });
+        renderChartsIn(view);        // the now-visible panel has real size, so charts measure correctly
       }));
 
       /* ---- World map zoom (+/−), centred on the highlighted Atlantic region ---- */

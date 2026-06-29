@@ -25,7 +25,11 @@ export function chartMode(wrap){ // returns 'iso'|'glass'|null
   if(ov==='iso' || ov==='glass') return ov;
   // otherwise follow the global Charts-look + 3D-scope knobs
   const look = document.documentElement.getAttribute('data-charts3d'); if(!look) return null;
-  const scope = document.documentElement.getAttribute('data-3dscope') || 'full';
+  let scope = document.documentElement.getAttribute('data-3dscope') || 'full';
+  // The Rework & Quality galleries are an explicit style showcase: every chart there exists to
+  // demonstrate the chosen look, so it should follow the iso/glass knob regardless of the
+  // accent/full "extent" knob (which only exists to keep real dashboards from over-decorating).
+  if(scope==='accent' && wrap && wrap.closest && wrap.closest('.rq-gallery')) scope='full';
   if(scope==='off') return null;
   if(scope==='accent') return (wrap && wrap.closest && wrap.closest('[data-hero]')) ? look : null;
   return look; // 'full'

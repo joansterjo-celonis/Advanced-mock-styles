@@ -93,6 +93,13 @@
 
   .rq-placeholder { display:flex; align-items:center; justify-content:center; min-height:420px; color:var(--text-faint); font-size:14px; border:1px dashed var(--border); border-radius:var(--r-surface); }
 
+  /* Gallery sub-tabs (More charts / Even more charts / … / Playground): pin each chart SVG
+     out of flow so a preserveAspectRatio:none viewBox can never drive the card's grid-row
+     height (same measure-loop guard as the .metric hbarcat rule in shell.css). The wrap keeps
+     its flex/explicit height, the SVG just stretches to fill it. */
+  .rq-gallery .chart-wrap { position:relative; }
+  .rq-gallery .chart-wrap > svg { position:absolute; inset:0; }
+
   /* ===== Slide-fade tab transition ===== */
   .content.fx-scene { overflow:hidden !important; }
   /* both views overlap and slide; faces are positioned to the content padding box by JS */

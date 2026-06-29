@@ -3706,9 +3706,156 @@
               </section>
             </div>
 
-            <!-- placeholder for the other sub-tabs -->
-            <div class="rq-content" data-rqcontent="more" style="display:none">
-              <div class="rq-placeholder">No charts configured for this tab yet.</div>
+            <!-- ===== MORE CHARTS — the foundational four + raw numbers ===== -->
+            <div class="bento rq-content rq-gallery" data-rqcontent="more" style="display:none">
+              <section class="card span-4 metric" data-card style="min-height:320px;">
+                <span class="gloss"></span><span class="rim"></span>
+                <div class="card-title">Purchases by user type</div>
+                <div class="metric-sub">Bar chart &middot; value by length of each bar</div>
+                <div class="chart-wrap" data-chart="barcat" data-ymax="400" data-yticks="0,100,200,300,400" data-unit="" data-bars='[["New",120],["Returning",340],["Guest",90],["VIP",210]]'></div>
+              </section>
+              <section class="card span-4 metric" data-card style="min-height:320px;">
+                <span class="gloss"></span><span class="rim"></span>
+                <div class="card-title">Top channels by volume</div>
+                <div class="metric-sub">Horizontal bar chart &middot; good for many / long labels</div>
+                <div class="chart-wrap" data-chart="hbarcat" data-xmax="9000" data-xticks="0,3000,6000,9000" data-labelw="104" data-unit="orders" data-bars='[["Organic search",8200],["Email",6400],["Paid social",5100],["Referral",3800],["Direct",3100],["Affiliate",1500]]'></div>
+                <div class="dash-xlabel"># Orders &rarr;</div>
+              </section>
+              <section class="card span-4 metric" data-card style="min-height:320px;">
+                <span class="gloss"></span><span class="rim"></span>
+                <div class="card-title">Exchange rate over time</div>
+                <div class="metric-sub">Line chart &middot; change across continuous time</div>
+                <div class="chart-wrap" data-chart="linechart" data-ymax="120" data-xlabels="Jan|Mar|Jun|Sep|Dec" data-series='[{"c":"--cstop-1a","name":"USD/EUR index","pts":[100,101,99,103,105,104,108,107,110,109,112,111]}]'></div>
+              </section>
+              <section class="card span-4 metric" data-card style="min-height:320px;">
+                <span class="gloss"></span><span class="rim"></span>
+                <div class="card-title">Sessions vs. spend</div>
+                <div class="metric-sub">Scatter plot &middot; relationship between two variables</div>
+                <div class="chart-wrap" data-chart="scatter" data-xmax="100" data-ymax="100" data-trend="1" data-points='[[12,18],[20,26],[28,30],[35,41],[40,44],[48,52],[55,58],[60,63],[68,70],[75,79],[82,86],[90,93]]'></div>
+              </section>
+              <section class="card span-4 metric" data-card style="min-height:320px;">
+                <span class="gloss"></span><span class="rim"></span>
+                <div class="card-title">Order value by segment</div>
+                <div class="metric-sub">Box plot &middot; distribution across groups</div>
+                <div class="chart-wrap" data-chart="boxplot" data-ymax="160" data-unit="k" data-boxes='[["SMB",10,28,42,60,88],["Mid",20,40,58,76,104],["Enterprise",35,62,84,110,150]]'></div>
+              </section>
+              <section class="card span-4 metric" data-card style="min-height:320px;">
+                <span class="gloss"></span><span class="rim"></span>
+                <div class="card-title">Key figures</div>
+                <div class="metric-sub">Single values &amp; table &middot; just show the numbers</div>
+                <div class="metric-val">&euro;4.2M</div>
+                <div class="ptable-scroll" style="margin-top:12px; max-height:170px; overflow:auto;">
+                  <table class="ptable"><thead><tr><th>Metric</th><th>Value</th><th>&Delta; YoY</th></tr></thead>
+                  <tbody>
+                    <tr><td>Net revenue</td><td>&euro;4.2M</td><td>+12.4%</td></tr>
+                    <tr><td>Avg order value</td><td>&euro;312</td><td>+3.1%</td></tr>
+                    <tr><td>Active accounts</td><td>1,284</td><td>+8.7%</td></tr>
+                    <tr><td>Churn rate</td><td>2.3%</td><td>-0.4%</td></tr>
+                  </tbody></table>
+                </div>
+              </section>
+            </div>
+
+            <!-- ===== EVEN MORE CHARTS — common variations (I) ===== -->
+            <div class="bento rq-content rq-gallery" data-rqcontent="even" style="display:none">
+              <section class="card span-6 metric" data-card style="min-height:320px;">
+                <span class="gloss"></span><span class="rim"></span>
+                <div class="card-title">Ticketing response times</div>
+                <div class="metric-sub">Histogram &middot; distribution over continuous ranges</div>
+                <div class="chart-wrap" data-chart="histogram" data-bins="12" data-xmin="0" data-xmax="48" data-unit="h" data-values='[1,2,2,3,3,3,4,4,5,5,6,6,7,8,8,9,10,11,12,13,14,15,16,18,20,22,24,2,3,4,5,1,2,6,7,3,4,9,11,5]'></div>
+                <div class="dash-xlabel">Response time (hours) &rarr;</div>
+              </section>
+              <section class="card span-6 metric" data-card style="min-height:320px;">
+                <span class="gloss"></span><span class="rim"></span>
+                <div class="card-title">Revenue by location, by department</div>
+                <div class="metric-sub">Stacked bar chart &middot; part-to-whole per group</div>
+                <div class="chart-wrap" data-chart="stackbars" data-n="6" data-ymax="200000" data-shape="rand" data-xlabels="Berlin|Munich|London|Paris|Madrid|Rome" data-series='[{"c":"--cstop-1a","w":1},{"c":"--legend-3","w":1},{"c":"--cstop-3a","w":1}]'></div>
+              </section>
+              <section class="card span-6 metric" data-card style="min-height:320px;">
+                <span class="gloss"></span><span class="rim"></span>
+                <div class="card-title">Quarterly revenue by representative</div>
+                <div class="metric-sub">Grouped bar chart &middot; compare sub-groups side by side</div>
+                <div class="chart-wrap" data-chart="groupbars" data-ymax="80" data-unit="k" data-cats='["Q1","Q2","Q3","Q4"]' data-series='[{"c":"--cstop-1a","name":"Avery","vals":[42,55,61,70]},{"c":"--legend-3","name":"Jordan","vals":[38,40,52,64]},{"c":"--cstop-3a","name":"Casey","vals":[30,48,45,58]}]'></div>
+              </section>
+              <section class="card span-6 metric" data-card style="min-height:320px;">
+                <span class="gloss"></span><span class="rim"></span>
+                <div class="card-title">Performance by condition</div>
+                <div class="metric-sub">Dot plot &middot; value by point position, no zero baseline</div>
+                <div class="chart-wrap" data-chart="dotplot" data-xmax="100" data-xticks="0,25,50,75,100" data-labelw="92" data-unit="%" data-dots='[["Control",62],["Variant A",71],["Variant B",58],["Variant C",80],["Variant D",66]]'></div>
+              </section>
+              <section class="card span-12 metric" data-card style="min-height:300px;">
+                <span class="gloss"></span><span class="rim"></span>
+                <div class="card-title">Daily trips</div>
+                <div class="metric-sub">Area chart &middot; line + shaded baseline over time</div>
+                <div class="chart-wrap" data-chart="area" data-key="rej"></div>
+              </section>
+            </div>
+
+            <!-- ===== EVEN MORE CHARTS COPY — common variations (II) ===== -->
+            <div class="bento rq-content rq-gallery" data-rqcontent="evencopy" style="display:none">
+              <section class="card span-6 metric" data-card style="min-height:320px;">
+                <span class="gloss"></span><span class="rim"></span>
+                <div class="card-title">Trips &amp; touchless rate</div>
+                <div class="metric-sub">Dual-axis chart &middot; two scales on a shared x-axis</div>
+                <div class="chart-wrap" data-chart="combo" data-key="touch" data-rightmax="5" data-leftlabel="4K" data-rightline="green"></div>
+              </section>
+              <section class="card span-6 metric" data-card style="min-height:320px;">
+                <span class="gloss"></span><span class="rim"></span>
+                <div class="card-title">Reach vs. engagement</div>
+                <div class="metric-sub">Bubble chart &middot; third variable encoded by point size</div>
+                <div class="chart-wrap" data-chart="bubble" data-xmax="100" data-ymax="100" data-smax="200" data-rmax="26" data-rmin="6" data-points='[[15,22,40,"North"],[30,38,120,"South"],[48,30,80,"East"],[62,55,200,"West"],[75,48,60,"Central"],[88,70,160,"Coast"]]'></div>
+              </section>
+              <section class="card span-6 metric" data-card style="min-height:320px;">
+                <span class="gloss"></span><span class="rim"></span>
+                <div class="card-title">Response-time density</div>
+                <div class="metric-sub">Density curve &middot; smoothed distribution (KDE)</div>
+                <div class="chart-wrap" data-chart="density" data-xmin="10" data-xmax="60" data-values='[20,22,25,26,28,30,31,32,33,34,35,36,38,40,42,30,31,32,33,34,28,36,29,35,37,31,33,34,30,32]'></div>
+              </section>
+              <section class="card span-6 metric" data-card style="min-height:320px;">
+                <span class="gloss"></span><span class="rim"></span>
+                <div class="card-title">Score distribution by group</div>
+                <div class="metric-sub">Violin plot &middot; density shape per group + median/quartiles</div>
+                <div class="chart-wrap" data-chart="violin" data-ymin="0" data-ymax="60" data-violins='[{"name":"Group A","values":[20,22,25,28,30,31,33,35,38,40,29,31,33]},{"name":"Group B","values":[35,38,40,42,45,47,48,50,52,44,46,43,41]},{"name":"Group C","values":[10,14,18,20,22,24,26,28,30,16,19,21,23]}]'></div>
+              </section>
+              <section class="card span-12 metric" data-card style="min-height:300px;">
+                <span class="gloss"></span><span class="rim"></span>
+                <div class="card-title">Revenue by quarter &amp; representative</div>
+                <div class="metric-sub">Heatmap &middot; grid coloured by value (darker = higher)</div>
+                <div class="chart-wrap" data-chart="heatmap" data-vmax="80" data-unit="k" data-labelw="72" data-rows='["Avery","Jordan","Casey","Riley"]' data-cols='["Q1","Q2","Q3","Q4"]' data-matrix='[[42,55,61,70],[38,40,52,64],[30,48,45,58],[51,49,66,72]]'></div>
+              </section>
+            </div>
+
+            <!-- ===== PLAYGROUND — specialist charts ===== -->
+            <div class="bento rq-content rq-gallery" data-rqcontent="play" style="display:none">
+              <section class="card span-4 metric" data-card style="min-height:340px;">
+                <span class="gloss"></span><span class="rim"></span>
+                <div class="card-title">Vote share</div>
+                <div class="metric-sub">Pie chart &middot; part-to-whole as circular slices</div>
+                <div class="donut-row">
+                  <div class="chart-wrap" style="flex:0 0 48%; max-width:220px; aspect-ratio:1; min-width:0;" data-chart="pie" data-segs='[["Candidate A",38.2,"--legend-1"],["Candidate B",31.5,"--legend-3"],["Candidate C",18.4,"--cstop-3a"],["Others",11.9,"--legend-2"]]'></div>
+                  <div class="donut-legend"></div>
+                </div>
+              </section>
+              <section class="card span-4 metric" data-card style="min-height:340px;">
+                <span class="gloss"></span><span class="rim"></span>
+                <div class="card-title">Conversion funnel</div>
+                <div class="metric-sub">Funnel chart &middot; users remaining at each stage</div>
+                <div class="chart-wrap" data-chart="funnel" data-stages='[["Impressions",100000],["Clicks",42000],["Visits",28000],["Sign-ups",12000],["Purchases",5200]]'></div>
+              </section>
+              <section class="card span-4 metric" data-card style="min-height:340px;">
+                <span class="gloss"></span><span class="rim"></span>
+                <div class="card-title">Goals vs. benchmarks</div>
+                <div class="metric-sub">Bullet charts &middot; measure, target tick &amp; bands</div>
+                <div class="chart-wrap" data-chart="bullet" style="flex:0 0 auto; height:56px;" data-label="Pageviews [K]" data-value="275" data-target="250" data-max="300" data-unit="K" data-bands='[150,220]'></div>
+                <div class="chart-wrap" data-chart="bullet" style="flex:0 0 auto; height:56px;" data-label="Downloads [K]" data-value="180" data-target="210" data-max="300" data-unit="K" data-bands='[120,200]'></div>
+                <div class="chart-wrap" data-chart="bullet" style="flex:0 0 auto; height:56px;" data-label="Sign-ups [K]" data-value="92" data-target="100" data-max="150" data-unit="K" data-bands='[60,110]'></div>
+              </section>
+              <section class="card span-12 metric" data-card style="min-height:280px;">
+                <span class="gloss"></span><span class="rim"></span>
+                <div class="card-title">Population by region</div>
+                <div class="metric-sub">Map-based plot &middot; tile-grid choropleth (darker = more people)</div>
+                <div class="chart-wrap" data-chart="heatmap" data-vmax="60" data-unit="M" data-labelw="84" data-rows='["West","Central","East"]' data-cols='["North","Mid","South"]' data-matrix='[[39,12,21],[6,11,29],[20,13,42]]'></div>
+              </section>
             </div>
           </section>
 
