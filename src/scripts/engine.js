@@ -97,20 +97,27 @@ import { getThemes, syncThemes, getAuthor, ensureAuthor, isCloudEnabled } from '
         wrap.appendChild(svg);
       }
 
-      /* ---- DONUT (flat / iso-tilted cylinder / glass) ---- */
+      /* ---- DONUT (flat / iso-tilted cylinder / glass) — the single donut component.
+         Data-driven via data-segs='[["Label",pct,"--colorVar"],…]'; falls back to a
+         sample mix when omitted. Responsive: scales every effect to the rendered size
+         so it looks identical at any dimension. ---- */
       function donut(wrap){
-        const segs=[{p:48.39,c:'var(--legend-4)',l:'UK test'},{p:41.94,c:'var(--legend-3)',l:'Others (13)'},{p:3.23,c:'var(--legend-2)',l:'BE test'},{p:3.23,c:'var(--legend-2)',l:'AU test'},{p:3.23,c:'var(--legend-1)',l:'AE test'}];
-        const W=120,H=120,r=42,cx=60,cy=60,sw=22, C=2*Math.PI*r;
+        let segs;
+        try{ const raw=JSON.parse(wrap.dataset.segs||'null');
+          if(Array.isArray(raw)&&raw.length) segs=raw.map(s=>({p:+s[1]||0,c:'var('+(s[2]||'--cstop-1a')+')',l:String(s[0])})); }catch(e){}
+        if(!segs) segs=[{p:48.39,c:'var(--legend-4)',l:'UK test'},{p:41.94,c:'var(--legend-3)',l:'Others (13)'},{p:3.23,c:'var(--legend-2)',l:'BE test'},{p:3.23,c:'var(--legend-2)',l:'AU test'},{p:3.23,c:'var(--legend-1)',l:'AE test'}];
+        const W=Math.max(Math.round(wrap.clientWidth),120), H=Math.max(Math.round(wrap.clientHeight),120);
+        const cx=W/2, cy=H/2, minD=Math.min(W,H), r=minD*0.35, sw=minD*0.183, k=minD/120, C=2*Math.PI*r;
         const m3=chartMode(wrap);
         const svg=E('svg',{viewBox:`0 0 ${W} ${H}`});
         function ring(target, cyy, shadeAmt, op){ let off=0; segs.forEach(s=>{ const len=C*s.p/100;
           const cir=E('circle',{cx:cx,cy:cyy,r:r,fill:'none','stroke-width':sw,'stroke-dasharray':`${len.toFixed(2)} ${(C-len).toFixed(2)}`,'stroke-dashoffset':(-off).toFixed(2),transform:`rotate(-90 ${cx} ${cyy})`});
           cir.style.stroke = shadeAmt!=null ? shadeC(resolveColor(s.c, wrap),shadeAmt) : s.c; if(op!=null) cir.style.strokeOpacity=op; target.appendChild(cir); off+=len; }); }
         if(m3){
-          const tilt = m3==='iso'?0.58:0.86, depth = m3==='iso'?9:3;
-          const fid=ensureSoftShadow(svg, m3==='iso'?5:3, m3==='iso'?5:4, 0.30);
+          const tilt = m3==='iso'?0.58:0.86, depth = Math.max(1, Math.round((m3==='iso'?9:3)*k));
+          const fid=ensureSoftShadow(svg, (m3==='iso'?5:3)*k, (m3==='iso'?5:4)*k, 0.30);
           const g=E('g',{transform:`translate(${cx} ${cy}) scale(1 ${tilt}) translate(${-cx} ${-cy})`,filter:`url(#${fid})`});
-          for(let k=depth;k>=1;k--) ring(g, cy+k, -0.30);     // extruded side wall (darker, behind)
+          for(let d=depth;d>=1;d--) ring(g, cy+d, -0.30);     // extruded side wall (darker, behind)
           ring(g, cy, m3==='glass'?-0.02:0.04, m3==='glass'?0.9:1);  // top face
           // glassy top sheen
           const sheen=E('circle',{cx:cx,cy:cy,r:r,fill:'none','stroke-width':sw*0.46,'stroke-dasharray':`${(C*0.5).toFixed(1)} ${C}`,transform:`rotate(-150 ${cx} ${cy})`,stroke:'rgba(255,255,255,0.22)'}); g.appendChild(sheen);
@@ -298,10 +305,12 @@ import { getThemes, syncThemes, getAuthor, ensureAuthor, isCloudEnabled } from '
         const xmax=parseFloat(wrap.dataset.xmax)|| (bars.length?Math.max(...bars.map(b=>b[1]))*1.1:1);
         const ticks=(wrap.dataset.xticks||'').split(',').map(s=>parseFloat(s)).filter(v=>!isNaN(v));
         const unit=wrap.dataset.unit||'', labelW=parseFloat(wrap.dataset.labelw)||62;
+        // optional axis-tick formatting: data-xdec=decimals (skips fmt's K/M abbreviation), data-xsuffix appended (e.g. "%")
+        const xsuffix=wrap.dataset.xsuffix||'', xdec=wrap.dataset.xdec, fmtX=v=>(xdec!=null?Number(v).toFixed(parseInt(xdec,10)):fmt(v))+xsuffix;
         const W=Math.max(Math.round(wrap.clientWidth),180), H=Math.max(Math.round(wrap.clientHeight),80);
         const padL=labelW, padR=10, padT=4, padB=15, innerW=W-padL-padR, innerH=H-padT-padB;
         const svg=E('svg',{viewBox:`0 0 ${W} ${H}`,preserveAspectRatio:'none'});
-        (ticks.length?ticks:[0,xmax]).forEach(t=>{ const x=padL+(t/xmax)*innerW; svg.appendChild(E('line',{x1:x.toFixed(1),x2:x.toFixed(1),y1:padT,y2:padT+innerH,stroke:'rgba(128,128,128,0.16)','stroke-dasharray':'2 4'})); svg.appendChild(svgText(E,x,padT+innerH+11,fmt(t),'middle')); });
+        (ticks.length?ticks:[0,xmax]).forEach(t=>{ const x=padL+(t/xmax)*innerW; svg.appendChild(E('line',{x1:x.toFixed(1),x2:x.toFixed(1),y1:padT,y2:padT+innerH,stroke:'rgba(128,128,128,0.16)','stroke-dasharray':'2 4'})); svg.appendChild(svgText(E,Math.min(padL+innerW-1,x),padT+innerH+11,fmtX(t),'middle')); });
         const n=Math.max(1,bars.length), rh=innerH/n, bh=Math.min(13,rh*0.6);
         const m3=chartMode(wrap), col=cssVar('--cstop-1a', wrap);
         const cap=Math.max(4,Math.floor(labelW/5.2));
@@ -433,12 +442,38 @@ import { getThemes, syncThemes, getAuthor, ensureAuthor, isCloudEnabled } from '
           hitRect(svg,padL,padT+rh*i,innerW,rh,String(cat),[['Total',Math.round(total)+'%']]); });
         wrap.appendChild(svg);
       }
+      /* ---- Generic multi-line time series (data-series='[{"c":"--var","name":"…","pts":[…]},…]')
+         data-ymax, data-pct='1' (y labels as %), data-xlabels='a|b|c'. Honors the 3D knob (sphere markers). ---- */
+      function linechart(wrap){
+        let series=[]; try{ series=JSON.parse(wrap.dataset.series||'[]'); }catch(e){ series=[]; }
+        if(!series.length) return;
+        const ymax=parseFloat(wrap.dataset.ymax)||100, pct=wrap.dataset.pct==='1';
+        const xl=(wrap.dataset.xlabels||'').split('|').filter(Boolean);
+        const W=Math.max(Math.round(wrap.clientWidth),260), H=Math.max(Math.round(wrap.clientHeight),150);
+        const padL=pct?44:40,padR=14,padT=10,padB=26, innerW=W-padL-padR, innerH=H-padT-padB;
+        const svg=E('svg',{viewBox:`0 0 ${W} ${H}`,preserveAspectRatio:'none'});
+        [0,0.2,0.4,0.6,0.8,1].forEach(f=>{ const y=padT+innerH*(1-f); svg.appendChild(E('line',{x1:padL,x2:padL+innerW,y1:y,y2:y,stroke:'rgba(128,128,128,0.16)','stroke-dasharray':'2 4'})); svg.appendChild(svgText(E,padL-4,y+3,pct?(ymax*f).toFixed(1)+'%':fmt(ymax*f),'end')); });
+        const n=Math.max(1,...series.map(s=>(s.pts||[]).length)), step=n>1?innerW/(n-1):innerW;
+        const m3=chartMode(wrap);
+        series.forEach(s=>{ const pts=s.pts||[], col=cssVar(s.c||'--cstop-1a', wrap);
+          let d=''; pts.forEach((v,i)=>{ const x=padL+step*i, y=padT+innerH-(Math.min(v,ymax)/ymax)*innerH; d+=(i?'L':'M')+x.toFixed(1)+','+y.toFixed(1); });
+          const lp=E('path',{d:d,fill:'none','stroke-width':2.2,'stroke-linecap':'round','stroke-linejoin':'round','vector-effect':'non-scaling-stroke'}); lp.style.stroke=col; svg.appendChild(lp);
+          pts.forEach((v,i)=>{ const x=padL+step*i, y=padT+innerH-(Math.min(v,ymax)/ymax)*innerH;
+            if(m3){ sphere(svg,+x.toFixed(1),+y.toFixed(1),3.2,col); }
+            else { const c=E('circle',{cx:x.toFixed(1),cy:y.toFixed(1),r:2.6}); c.style.fill=col; svg.appendChild(c); } }); });
+        if(xl.length){ xl.forEach((lab,i)=>{ const x=padL+(xl.length===1?innerW/2:innerW*i/(xl.length-1)); const t=svgText(E,Math.max(padL,Math.min(padL+innerW,x)),padT+innerH+13,lab,'middle'); t.setAttribute('font-size','8.5'); svg.appendChild(t); }); }
+        for(let i=0;i<n;i++){ const cxp=padL+step*i, x0=Math.max(padL,cxp-step/2), x1=Math.min(padL+innerW,cxp+step/2);
+          const rows=series.map((s,si)=>[s.name||('series '+(si+1)), (s.pts&&s.pts[i]!=null)?s.pts[i].toFixed(1)+(pct?'%':''):'-']);
+          hitRect(svg,x0,padT,x1-x0,innerH,(xl[i]||('#'+i)),rows); }
+        wrap.appendChild(svg);
+      }
       let _rzt; window.addEventListener('resize',()=>{ clearTimeout(_rzt); _rzt=setTimeout(()=>renderChartsIn(document.querySelector('.view.active')),160); });
       function buildChart(w){ const t=w.dataset.chart; w.innerHTML='';
         if(t==='combo')combo(w); else if(t==='donut')donut(w); else if(t==='area')area(w); else if(t==='dots')dots(w);
         else if(t==='pbars')pbars(w); else if(t==='otd-class')otdClass(w); else if(t==='otd-hist')otdHist(w); else if(t==='otd-dev')otdDev(w);
         else if(t==='freqhist')freqhist(w); else if(t==='durline')durline(w); else if(t==='hbarcat')hbarcat(w);
-        else if(t==='pie')pieGen(w); else if(t==='stackbars')stackbars(w); else if(t==='hstackbars')hstackbars(w); }
+        else if(t==='pie')pieGen(w); else if(t==='linechart')linechart(w);
+        else if(t==='stackbars')stackbars(w); else if(t==='hstackbars')hstackbars(w); }
       function renderChartsIn(view){ if(!view)return; view.querySelectorAll('[data-chart]').forEach(buildChart); }
 
       /* ---- ID table ---- */
@@ -587,19 +622,24 @@ import { getThemes, syncThemes, getAuthor, ensureAuthor, isCloudEnabled } from '
           const content=document.getElementById('content'); if(content) content.appendChild(viewEl);
           try{ viewEl.appendChild(buildEditPanel()); }catch(e){}
         }
-        // top tab in the context route (.tabs > .ia-tab), inserted before the "+" add button
-        const tabs=document.querySelector('.tabbar .tabs');
-        if(def.addTab!==false && tabs && !tabs.querySelector('.ia-tab[data-view="'+id+'"]')){
-          const tab=document.createElement('div');
-          tab.className='ia-tab'; tab.setAttribute('data-view',id);
-          tab.innerHTML=(def.icon||'')+'<span class="ia-tab-lbl">'+(def.label||id)+'</span>'+'<span class="ia-x" title="Close" aria-label="Close tab"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4">'+icons.close+'</svg></span>';
-          const addBtn=tabs.querySelector('.ia-tab-add');
-          tabs.insertBefore(tab, addBtn||null);
-          tab.addEventListener('click',(e)=>{
-            if(e.target.closest('.ia-x')) return;   // close is handled by the delegated handler in shell.js
-            selectView(id);
-            tabs.querySelectorAll('.ia-tab[data-view]').forEach(x=>x.classList.toggle('active', x===tab));
-          });
+        // Registered views are NOT opened as boot tabs — only the static tabs in
+        // index.html open by default. A registered view is reached from its sidebar leaf
+        // below (or any overview card); the click builds the tab on demand via makeTab()
+        // in shell.js. The legacy per-tab click listener is unneeded: tab clicks are owned
+        // by the delegated handler on .tabbar .tabs in shell.js.
+        //
+        // sidebar "Views" tree leaf — mirror the built-in .l1-leaf list so a registered
+        // view is reachable from the left nav. Pass addLeaf:false for drawer-only views
+        // (e.g. incident-details) that should not appear in the nav at all.
+        if(def.addLeaf!==false){
+          const anchorLeaf=document.querySelector('.l1-children .l1-leaf[data-view]');
+          const list=anchorLeaf?anchorLeaf.parentElement:null;
+          if(list && !list.querySelector('.l1-leaf[data-view="'+id+'"]')){
+            const leaf=document.createElement('button');
+            leaf.className='l1-leaf l1-leaf-ic'; leaf.setAttribute('data-view',id);
+            leaf.innerHTML=(def.icon||'').trim()+(def.label||id);
+            list.appendChild(leaf);
+          }
         }
         // specular cursor on any new cards (mirrors the built-in card wiring)
         viewEl.querySelectorAll('[data-card]').forEach(card=>{
@@ -760,6 +800,9 @@ import { getThemes, syncThemes, getAuthor, ensureAuthor, isCloudEnabled } from '
         } else if(sg){ sg.style.display=''; }
         renderChartsIn(document.querySelector('.view.active')); }
       bLayDef.onclick=()=>setLayout('default'); bLayFlow.onclick=()=>setLayout('flowy'); if(bLayFlap) bLayFlap.onclick=()=>setLayout('flap');
+      const layoutAdv=document.getElementById('layout-adv'), layoutAdvGrp=document.getElementById('layout-adv-grp');
+      function setLayoutAdvanced(adv){ adv=!!adv; if(layoutAdvGrp) layoutAdvGrp.hidden=!adv; if(layoutAdv){ layoutAdv.setAttribute('aria-pressed',adv?'true':'false'); layoutAdv.textContent=adv?'Less':'Advanced'; } }
+      if(layoutAdv) layoutAdv.addEventListener('click',()=>setLayoutAdvanced(layoutAdv.getAttribute('aria-pressed')!=='true'));
 
       /* tab transition: default vs slide-fade */
       const bFxFlat=document.getElementById('tabfx-flat'), bFxSlide=document.getElementById('tabfx-slide');
@@ -800,14 +843,37 @@ import { getThemes, syncThemes, getAuthor, ensureAuthor, isCloudEnabled } from '
       }
       wireKnob('data-coloruse',   [{id:'color-calm',val:'calm'},{id:'color-strategic',val:'strategic'},{id:'color-expressive',val:'expressive'}], false);
       wireKnob('data-shell',      [{id:'shell-seamless',val:'seamless'},{id:'shell-tinted',val:null},{id:'shell-contrast',val:'contrast'}], false);
+      wireKnob('data-pkgpos',     [{id:'pkg-l1',val:null},{id:'pkg-status',val:'status'}], false);
+      wireKnob('data-l0reveal',   [{id:'l0-hover',val:null},{id:'l0-click',val:'click'}], false);
       wireKnob('data-3dscope',    [{id:'d3-accent',val:'accent'},{id:'d3-full',val:'full'}], true);
       wireKnob('data-composition',[{id:'comp-uniform',val:'uniform'},{id:'comp-bento',val:null},{id:'comp-hero',val:'hero'}], true);
       /* KPI numerals: weight slider + font-family toggle */
       const kpiW=document.getElementById('kpi-weight'), kwVal=document.getElementById('kw-val');
       if(kpiW) kpiW.addEventListener('input',()=>{ root.style.setProperty('--kpi-weight',kpiW.value); kwVal.textContent=kpiW.value; });
       const KF={ sans:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif", mono:"ui-monospace,'SF Mono',Menlo,Consolas,monospace", serif:"'Iowan Old Style','Palatino Linotype',Georgia,'Times New Roman',serif" };
-      function setKpiFont(f){ root.style.setProperty('--kpi-font',KF[f]); ['sans','mono','serif'].forEach(x=>{ const b=document.getElementById('kf-'+x); if(b) b.classList.toggle('on',x===f); }); }
+      function setKpiFont(f){ root.style.setProperty('--kpi-font',KF[f]); ['sans','mono','serif'].forEach(x=>{ const b=document.getElementById('kf-'+x); if(b) b.classList.toggle('on',x===f); });
+        // Inter OpenType features only render on the Sans (Inter) numerals — disable + explain otherwise.
+        const tg=document.getElementById('typo-adv-grp'); if(tg) tg.classList.toggle('feats-na', f!=='sans'); }
       ['sans','mono','serif'].forEach(f=>{ const b=document.getElementById('kf-'+f); if(b) b.onclick=()=>setKpiFont(f); });
+      /* Inter OpenType feature toggles (Typography → Advanced). Scoped to the KPI numerals via
+         --inter-feats (knobs.css). State is held as an explicit numFeats list in captureState/
+         applyState/sig — NOT as .on buttons — so the pills live outside .proto .toggle and are
+         never auto-captured or double-applied (mirrors the glass-advanced fields). */
+      const INTER_FEATS=['zero','ss01','ss02'];
+      const numFeats=new Set();
+      function applyNumFeats(list){
+        numFeats.clear();
+        (Array.isArray(list)?list:[]).forEach(f=>{ if(INTER_FEATS.includes(f)) numFeats.add(f); });
+        const css=INTER_FEATS.filter(f=>numFeats.has(f)).map(f=>`"${f}" 1`).join(', ');
+        if(css) root.style.setProperty('--inter-feats',css); else root.style.removeProperty('--inter-feats');
+        INTER_FEATS.forEach(f=>{ const b=document.getElementById('num-'+f); if(b) b.setAttribute('aria-pressed', numFeats.has(f)?'true':'false'); });
+      }
+      INTER_FEATS.forEach(f=>{ const b=document.getElementById('num-'+f); if(b) b.addEventListener('click',()=>{ if(numFeats.has(f)) numFeats.delete(f); else numFeats.add(f); applyNumFeats([...numFeats]); }); });
+      /* Typography "Advanced" reveal — mirrors gg-adv; the button is NOT inside .proto .toggle,
+         so revealing advanced controls is never recorded as theme state. */
+      const typoAdv=document.getElementById('typo-adv'), typoAdvGrp=document.getElementById('typo-adv-grp');
+      function setTypoAdvanced(adv){ adv=!!adv; if(typoAdvGrp) typoAdvGrp.hidden=!adv; if(typoAdv){ typoAdv.setAttribute('aria-pressed',adv?'true':'false'); typoAdv.textContent=adv?'Less':'Advanced'; } }
+      if(typoAdv) typoAdv.addEventListener('click',()=>setTypoAdvanced(typoAdv.getAttribute('aria-pressed')!=='true'));
       wireKnob('data-tabmodel',   [{id:'tabm-default',val:null},{id:'tabm-seg',val:'seg'}], false);
       wireKnob('data-tables',     [{id:'tbl-comfortable',val:null},{id:'tbl-lined',val:'lined'}], false);
       wireKnob('data-surfacefx',  [{id:'surf-flat',val:null},{id:'surf-frost',val:'frost'}], false);
@@ -845,8 +911,8 @@ import { getThemes, syncThemes, getAuthor, ensureAuthor, isCloudEnabled } from '
           const toggles = Array.from(document.querySelectorAll('.proto .toggle button[id]'));
           const orphanControls = toggles.filter(b => !BTN_ACTIONS[b.id]).map(b => b.id);
           const cssAttrs = ['data-mode','data-theme','data-density','data-layout','data-charts3d','data-coloruse',
-            'data-shell','data-composition','data-tabmodel','data-tables','data-tabs','data-surfacefx'];
-          const jsAttrs = ['data-3dscope','data-tabfx']; // consumed in chartMode() / view-switch, not CSS
+            'data-shell','data-pkgpos','data-composition','data-tabmodel','data-tables','data-tabs','data-surfacefx'];
+          const jsAttrs = ['data-3dscope','data-tabfx','data-l0reveal']; // consumed in chartMode() / view-switch / shell, not CSS
           let cssText = '';
           for (const s of Array.from(document.styleSheets)) {
             try { for (const r of Array.from(s.cssRules)) cssText += r.cssText; } catch (e) { /* cross-origin sheet */ }
@@ -1179,13 +1245,13 @@ import { getThemes, syncThemes, getAuthor, ensureAuthor, isCloudEnabled } from '
         const confirmRow=$('preset-confirm'), confirmText=$('preset-confirm-text');
         const DEFAULTS=[
           { id:'preset-enterprise-calm', name:'Enterprise Calm',
-            state:{ buttons:['mode-light','theme-mono','color-calm','shell-contrast','layout-default','tabm-seg','tabs-filled','tabfx-flat','comp-bento','density-spacious','kf-sans','c3d-default','d3-accent'],
+            state:{ buttons:['mode-light','theme-mono','color-calm','shell-contrast','layout-default','pkg-l1','l0-hover','tabm-seg','tabs-filled','tabfx-flat','comp-bento','density-spacious','kf-sans','c3d-default','d3-accent'],
               sliders:{'r-surface':'10','r-interactive':'8','kpi-weight':'300','r-glass':'0'}, hue:'#6366f1', hueActive:false, tab:'#6366f1' } },
           { id:'preset-bento-bold', name:'Bento Bold',
-            state:{ buttons:['mode-light','theme-mono','color-strategic','shell-tinted','layout-default','tabm-seg','tabs-filled','tabfx-flat','comp-hero','density-spacious','kf-sans','c3d-iso','d3-accent'],
+            state:{ buttons:['mode-light','theme-mono','color-strategic','shell-tinted','layout-default','pkg-l1','l0-hover','tabm-seg','tabs-filled','tabfx-flat','comp-hero','density-spacious','kf-sans','c3d-iso','d3-accent'],
               sliders:{'r-surface':'14','r-interactive':'9','kpi-weight':'200','r-glass':'0'}, hue:'#6366f1', hueActive:false, tab:'#6366f1' } },
           { id:'preset-exec-dark', name:'Executive Dark',
-            state:{ buttons:['mode-dark','theme-color','color-strategic','shell-contrast','layout-default','tabm-seg','tabs-filled','tabfx-slide','comp-bento','density-compact','kf-sans','c3d-glass','d3-accent'],
+            state:{ buttons:['mode-dark','theme-color','color-strategic','shell-contrast','layout-default','pkg-l1','l0-hover','tabm-seg','tabs-filled','tabfx-slide','comp-bento','density-compact','kf-sans','c3d-glass','d3-accent'],
               sliders:{'r-surface':'12','r-interactive':'9','kpi-weight':'300','r-glass':'0'}, hue:'#6366f1', hueActive:false, tab:'#6366f1' } }
         ];
         function load(){ try{ const r=JSON.parse(localStorage.getItem(LS)); if(r&&Array.isArray(r.presets)) return r; }catch(e){} return { presets: JSON.parse(JSON.stringify(DEFAULTS)), selected:'' }; }
@@ -1200,7 +1266,8 @@ import { getThemes, syncThemes, getAuthor, ensureAuthor, isCloudEnabled } from '
             hue: hueInput.value, hueActive: customHue!=null, tab: tabColorInput.value,
             brand: brandInput? brandInput.value : '#000000', brandActive: brandColor!=null,
             glassAdv: ggAdv ? ggAdv.getAttribute('aria-pressed')==='true' : false,
-            glassOp: gOp ? gOp.value : null, glassBl: gBl ? gBl.value : null
+            glassOp: gOp ? gOp.value : null, glassBl: gBl ? gBl.value : null,
+            numFeats: [...numFeats]
           };
         }
         if (import.meta.env.DEV) window.__captureState = captureState;   // dev-only hook for the glass self-check
@@ -1208,13 +1275,18 @@ import { getThemes, syncThemes, getAuthor, ensureAuthor, isCloudEnabled } from '
         // + .on sync) through the knob registry, instead of replaying .click() in array order.
         function applyState(st){
           if(!st) return;
-          (st.buttons||[]).forEach(id=>{ const fn=BTN_ACTIONS[id]; if(fn) fn(); });
+          const btns=st.buttons||[];
+          if(!btns.some(id=>id==='pkg-l1'||id==='pkg-status')) BTN_ACTIONS['pkg-l1']();
+          if(!btns.some(id=>id==='l0-hover'||id==='l0-click')) BTN_ACTIONS['l0-hover']();
+          btns.forEach(id=>{ const fn=BTN_ACTIONS[id]; if(fn) fn(); });
           if(st.sliders) for(const id in st.sliders){ const el=$(id); if(el){ el.value=st.sliders[id]; el.dispatchEvent(new Event('input')); } }
           // glass split: honor the stored advanced state (else force simple so any live axis overrides clear)
           if(typeof setGlassMode==='function'){
             setGlassMode(!!st.glassAdv);
             if(st.glassAdv){ if(gOp&&st.glassOp!=null){ gOp.value=st.glassOp; setGlassOp(+st.glassOp); } if(gBl&&st.glassBl!=null){ gBl.value=st.glassBl; setGlassBl(+st.glassBl); } }
           }
+          // Explicit set (clears features absent from the preset, so switching presets never leaves stale ones on).
+          applyNumFeats(st.numFeats||[]);
           if(tabColorInput && st.tab){ tabColorInput.value=st.tab; applyTabColor(); }
           if(hueInput){
             if(st.hue) hueInput.value=st.hue;
@@ -1231,7 +1303,8 @@ import { getThemes, syncThemes, getAuthor, ensureAuthor, isCloudEnabled } from '
         function sig(st){ st=st||{}; const sl=st.sliders||{}; const keys=['r-surface','r-interactive','kpi-weight','r-glass'];
           return JSON.stringify({ b:[...(st.buttons||[])].sort(), s:keys.map(k=>String(sl[k]==null?'':sl[k])),
             hue:st.hueActive?st.hue:null, tab:st.tab||null, brand:st.brandActive?st.brand:null,
-            ga:!!st.glassAdv, go:st.glassAdv?String(st.glassOp):null, gb:st.glassAdv?String(st.glassBl):null }); }
+            ga:!!st.glassAdv, go:st.glassAdv?String(st.glassOp):null, gb:st.glassAdv?String(st.glassBl):null,
+            nf:[...(st.numFeats||[])].sort() }); }
         function snap(){ lastSnap=sig(captureState()); }   // record the baseline right after apply/save
 
         /* ---- shared theme library (auto-sync to the cloud themes bin) ----

@@ -21,6 +21,7 @@ const DEFAULT_DRAFT = {
   tabFx: 'flat',
   kpiFont: 'sans',
   kpiWeight: 600,
+  numFeats: [],
   tables: 'plain',
   charts: 'flat',
   chartScope: 'accent',
@@ -153,6 +154,7 @@ const STEPS = [
         ],
       },
       { key: 'kpiWeight', label: 'Numeral weight', type: 'range', min: 100, max: 800, step: 100, suffix: '', art: 'kpi-weight' },
+      { key: 'numFeats', label: 'Inter features', type: 'feats' },
       {
         key: 'tables',
         label: 'Tables',
@@ -318,6 +320,7 @@ function renderGroup(group) {
   if (!isGroupVisible(group)) return '';
   if (group.type === 'range') return renderRange(group);
   if (group.type === 'accent') return renderAccent(group);
+  if (group.type === 'feats') return renderFeats(group);
   const options = group.options.filter(option => isOptionVisible(group, option));
   // Underline / Color tabs paint their active state with --tab-color, so offer a color
   // input (mirroring the Accent picker) right where the style is chosen. Filled keeps its
@@ -338,6 +341,8 @@ function isGroupVisible(group) {
   if (group.key === 'accent') return draft.palette !== 'mono';
   if (group.key === 'shell') return draft.layout === 'default';
   if (group.key === 'chartScope') return draft.charts !== 'flat';
+  // Inter OpenType features only render on the Sans (Inter) numerals; hide them otherwise.
+  if (group.key === 'numFeats') return draft.kpiFont === 'sans';
   return true;
 }
 
@@ -413,6 +418,27 @@ function renderAccent(group) {
     <div class="tc-accent-row" role="radiogroup" aria-label="${escapeHtml(group.label)}">
       ${ACCENTS.map(color => `<button type="button" class="tc-accent ${draft.accent === color ? 'active' : ''}" data-accent="${color}" style="--tc-swatch:${color}" aria-label="${color}" aria-pressed="${draft.accent === color ? 'true' : 'false'}"></button>`).join('')}
       <label class="tc-color-field"><input type="color" value="${draft.accent}" data-accent-input><span>Custom</span></label>
+    </div>
+  </section>`;
+}
+
+// Inter OpenType feature toggles (independent on/off, not a radio group). Each glyph previews
+// its own feature live. State is the draft.numFeats array, threaded through buildState/draftFromState.
+const NUM_FEATS = [
+  { value: 'zero', glyph: '0', title: 'Slashed zero' },
+  { value: 'ss01', glyph: '1', title: 'Alternate digits' },
+  { value: 'ss02', glyph: 'Il', title: 'Disambiguation' },
+];
+
+function renderFeats(group) {
+  const active = Array.isArray(draft.numFeats) ? draft.numFeats : [];
+  return `<section class="tc-group">
+    <div class="tc-group-title">${escapeHtml(group.label)} <span class="tc-group-note">Inter “Sans” numerals</span></div>
+    <div class="tc-feats" role="group" aria-label="${escapeHtml(group.label)}">
+      ${NUM_FEATS.map(f => {
+        const on = active.includes(f.value);
+        return `<button type="button" class="tc-feat ${on ? 'active' : ''}" data-feat="${f.value}" aria-pressed="${on ? 'true' : 'false'}"><b>${escapeHtml(f.glyph)}</b><span>${escapeHtml(f.title)}</span></button>`;
+      }).join('')}
     </div>
   </section>`;
 }
@@ -578,6 +604,16 @@ function wireStage() {
   overlay.querySelectorAll('[data-accent]').forEach(btn => {
     btn.addEventListener('click', () => {
       draft.accent = btn.dataset.accent;
+      applyDraft();
+      render();
+    });
+  });
+  overlay.querySelectorAll('[data-feat]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const feat = btn.dataset.feat;
+      const set = new Set(Array.isArray(draft.numFeats) ? draft.numFeats : []);
+      if (set.has(feat)) set.delete(feat); else set.add(feat);
+      draft.numFeats = [...set];
       applyDraft();
       render();
     });
@@ -767,6 +803,7 @@ function draftFromState(state) {
   next.accent = state.brandActive && state.brand ? state.brand : state.hueActive && state.hue ? state.hue : state.tab || next.accent;
   // Pin the tab color only when it diverges from the accent; otherwise leave null so tabs keep following the accent.
   next.tabColor = next.tabs !== 'filled' && state.tab && state.tab.toLowerCase() !== (next.accent || '').toLowerCase() ? state.tab : null;
+  next.numFeats = Array.isArray(state.numFeats) ? [...state.numFeats] : [];
   const sliders = state.sliders || {};
   next.surfaceRadius = numberOr(sliders['r-surface'], next.surfaceRadius);
   next.controlRadius = numberOr(sliders['r-interactive'], next.controlRadius);
@@ -794,6 +831,8 @@ function buildState(src) {
     `color-${src.energy}`,
     `shell-${shell}`,
     `layout-${src.layout}`,
+    'pkg-l1',
+    'l0-hover',
     src.finish === 'frost' ? 'surf-frost' : 'surf-flat',
     'comp-bento',
     `density-${src.density}`,
@@ -820,6 +859,7 @@ function buildState(src) {
     glassAdv: glassAdvanced,
     glassOp: String(glassOp),
     glassBl: String(glassBl),
+    numFeats: Array.isArray(src.numFeats) ? [...src.numFeats] : [],
   };
 }
 

@@ -39,3 +39,11 @@ import './views/ocpm-adoption.js';
 import './views/ocpm-activity.js';
 import './views/ocpm-history.js';
 import './views/inventory-cockpit.js';
+// Incident Management master + its tabless detail drawer (detail registered first
+// so the master can reveal it via window.IA.openSlideOver on an Incident List click).
+import './views/incident-details.js';
+import './views/incident-management.js';
+// Service Request Fulfillment — standalone catalog/RITM dashboard (same family).
+import './views/service-request.js';
+// SLA Performance — compliance / breach analytics (donut + multi-line trend).
+import './views/sla-performance.js';

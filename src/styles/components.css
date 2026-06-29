@@ -67,17 +67,38 @@
   .l1-brand .logo{width:22px;height:22px;}
   .l1-brand .ia-chev{width:14px;height:14px;color:var(--ia-muted);}
   #app:not(.pinned) .l1-brand{display:flex;}
-  #app:not(.pinned) .l1-searchrow{display:none;}
-  .l1-searchrow{display:flex;align-items:center;gap:6px;padding:14px 12px 8px;width:100%;}
+  .l1-searchrow{display:flex;align-items:center;gap:4px;padding:14px 12px 8px;width:100%;position:relative;min-height:54px;}
   .l1-search{flex:1;display:flex;align-items:center;gap:8px;height:34px;padding:0 10px;border:1px solid var(--ia-line);border-radius:9px;background:var(--ia-panel);color:var(--ia-muted-2);font-size:13px;}
+  .l1-search input{min-width:0;flex:1;border:0;outline:0;background:transparent;color:var(--ia-text);font:inherit;}
+  .l1-search input::placeholder{color:var(--ia-muted-2);}
   .l1-tool{width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:7px;color:var(--ia-muted);flex:none;}
   .l1-tool:hover{background:var(--ia-hover);color:var(--ia-ink);}
+  .pkg-switcher-slot:empty{display:none;}
+  .pkg-switcher-l1-slot{flex:1;min-width:0;position:relative;transition:opacity .18s ease, transform .22s cubic-bezier(.22,.61,.36,1);}
+  .pkg-switcher-l1-slot .pkg-switcher{width:100%;position:relative;}
+  .pkg-switcher-l1-slot .sb-item{width:100%;height:32px;padding:0 8px;font-weight:600;color:var(--ia-ink);background:var(--ia-panel);border:1px solid var(--ia-line);justify-content:flex-start;min-width:0;}
+  .pkg-switcher-l1-slot .sb-item:hover{background:var(--ia-hover);}
+  .pkg-switcher-l1-slot .sb-item > .icon:first-child{flex:none;}
+  .pkg-switcher-l1-slot .sb-item .pkg-current-name{min-width:0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .pkg-switcher-l1-slot .sb-item .ia-chev{margin-left:auto;}
+  .pkg-switcher-l1-slot .sb-pop{top:calc(100% + 8px);bottom:auto;left:0;width:224px;min-width:224px;z-index:140;}
+  .pkg-switcher-l1-slot .pkg-pop{padding:8px;}
+  .l1-search-panel{position:absolute;left:12px;right:12px;top:14px;opacity:0;transform:scaleX(.92);transform-origin:right center;pointer-events:none;z-index:4;transition:opacity .18s ease, transform .24s cubic-bezier(.22,.61,.36,1);}
+  .l1-searchrow.search-open .l1-search-panel{opacity:1;transform:none;pointer-events:auto;}
+  .l1-searchrow.search-open .pkg-switcher-l1-slot,
+  .l1-searchrow.search-open .l1-tool{opacity:0;transform:scale(.96);pointer-events:none;}
+  [data-pkgpos="status"] .pkg-switcher-status-slot{display:flex;align-items:center;}
+  [data-pkgpos="status"] .l1-search-panel{position:relative;left:auto;right:auto;top:auto;opacity:1;transform:none;pointer-events:auto;z-index:auto;flex:1;order:1;}
+  [data-pkgpos="status"] .l1-search-toggle{display:none;}
+  [data-pkgpos="status"] .l1-sort-tool{order:2;}
+  [data-pkgpos="status"] .l1-searchrow.search-open .l1-search-panel,
+  [data-pkgpos="status"] .l1-searchrow.search-open .l1-tool{opacity:1;transform:none;pointer-events:auto;}
   .l1-scroll{flex:1;overflow-y:auto;padding:4px 10px 10px;}
-  .l1-new{display:flex;align-items:center;gap:10px;height:36px;padding:0 10px;font-size:14px;font-weight:600;color:var(--ia-navy);border-radius:8px;width:100%;}
+  .l1-new{display:flex;align-items:center;gap:10px;height:31px;padding:0 10px;font-size:14px;font-weight:600;color:var(--ia-navy);border-radius:8px;width:100%;}
   .l1-new:hover{background:var(--ia-hover);}
   .l1-new .icon{color:var(--ia-navy);}
   .l1-group{margin-top:2px;}
-  .l1-grouphead{display:flex;align-items:center;gap:10px;height:36px;padding:0 10px;font-size:14px;font-weight:600;color:var(--ia-ink);border-radius:8px;width:100%;}
+  .l1-grouphead{display:flex;align-items:center;gap:10px;height:31px;padding:0 10px;font-size:14px;font-weight:600;color:var(--ia-ink);border-radius:8px;width:100%;}
   .l1-grouphead:hover{background:var(--ia-hover);}
   .l1-grouphead .icon{color:var(--ia-ink);}
   .l1-grouphead .gchev{margin-left:auto;width:15px;height:15px;color:var(--ia-muted);transition:transform .15s;}
@@ -86,7 +107,7 @@
   .l1-group.collapsed .l1-children{display:none;}
   /* block (not flex) so a long asset name truncates to one line with an ellipsis — line-height
      centers the single row, the leading icon is inline-aligned, nothing trails to be clipped */
-  .l1-leaf{display:block;line-height:34px;height:34px;padding:0 10px 0 38px;font-size:13.5px;color:var(--ia-text);border-radius:8px;width:100%;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .l1-leaf{display:block;line-height:29px;height:29px;padding:0 10px 0 38px;font-size:13.5px;color:var(--ia-text);border-radius:8px;width:100%;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .l1-leaf:hover{background:var(--ia-hover);}
   .l1-leaf.active{background:var(--ia-active);font-weight:500;}
   .l1-leaf.l1-leaf-ic{padding-left:20px;}
@@ -244,6 +265,7 @@
   .pkg-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;font-size:14px;color:var(--ia-ink);width:100%;text-align:left;}
   .pkg-row:hover{background:var(--ia-hover);}
   .pkg-row.active{background:#cfe0fb;color:#1e3a8a;font-weight:500;}
+  .pkg-row .pkg-name{min-width:0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .pkg-row .pcube{color:var(--ia-navy);width:18px;height:18px;flex:none;}
   /* active row has a fixed light-blue fill (#cfe0fb) + dark-blue text in every mode; pin the icon to match so it stays legible in dark mode (where --ia-navy is near-white) */
   .pkg-row.active .pcube{color:#1e3a8a;}
@@ -493,10 +515,10 @@
   .ctxmenu-item.danger .icon{color:#dc2626;}
 
   /* ===== L1 New Asset actions ===== */
-  .l1-action{display:flex;align-items:center;gap:11px;height:34px;padding:0 10px;font-size:14px;color:var(--ia-ink);border-radius:8px;width:100%;text-align:left;}
+  .l1-action{display:flex;align-items:center;gap:11px;height:30px;padding:0 10px;font-size:14px;color:var(--ia-ink);border-radius:8px;width:100%;text-align:left;}
   .l1-action:hover{background:var(--ia-hover);}
   .l1-action .icon{width:18px;height:18px;color:var(--ia-ink);}
-  .l1-divider{height:1px;background:var(--ia-line-soft);margin:8px 6px;}
+  .l1-divider{height:1px;background:var(--ia-line-soft);margin:5px 6px;}
 
 /* ===== mount tweaks ===== */
 #app{height:calc(100vh - 0px);} body{overflow:hidden;padding:0;background:var(--chrome-0);}

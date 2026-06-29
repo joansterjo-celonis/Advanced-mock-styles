@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
 <title>Advanced mock styles</title>
+<!-- Inter is self-hosted (bundled) via src/styles/fonts.css — see that file. This replaces the
+     earlier Google Fonts <link> so the Typography OpenType features work offline / behind networks
+     that block font CDNs. Vite hashes + resolves the font URL from that stylesheet. -->
 <!-- Access gate (separate layer): set your Google OAuth Web client ID here to enable
      "Sign in with Google". Leave blank to use the password only. -->
 <meta name="google-client-id" content=""/>
@@ -102,9 +105,10 @@
             
           </div>
           <div class="l1-searchrow">
-            <div class="l1-search"><svg class="icon icon-sm" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-3.5-3.5"/></svg><span>Search</span></div>
-            <button class="l1-tool"><svg class="icon" viewBox="0 0 24 24"><path d="M12 3v18M7 8l5-5 5 5M7 16l5 5 5-5"/></svg></button>
-            <button class="l1-tool"><svg class="icon" viewBox="0 0 24 24"><path d="M3 6h18M6 12h12M9 18h6"/></svg></button>
+            <div id="pkg-switcher-l1-slot" class="pkg-switcher-slot pkg-switcher-l1-slot"></div>
+            <button class="l1-tool l1-search-toggle" id="l1-search-toggle" aria-label="Search"><svg class="icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-3.5-3.5"/></svg></button>
+            <button class="l1-tool l1-sort-tool" aria-label="Sort"><svg class="icon" viewBox="0 0 24 24"><path d="M3 6h18M6 12h12M9 18h6"/></svg></button>
+            <div class="l1-search-panel" id="l1-search-panel"><div class="l1-search"><svg class="icon icon-sm" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-3.5-3.5"/></svg><input id="l1-search-input" placeholder="Search" aria-label="Search"></div></div>
           </div>
         </div>
         <div class="l1-scroll">
@@ -3714,9 +3718,11 @@
       </div>
     </div>
     <div class="statusbar glass-chrome">
-          <div class="sb-pop-wrap">
+          <div id="pkg-switcher-status-slot" class="pkg-switcher-slot pkg-switcher-status-slot">
+          <div class="sb-pop-wrap pkg-switcher" id="pkg-switcher" data-pkg-switcher>
             <button class="sb-item" data-pop="pkg"><svg class="icon" viewBox="0 0 24 24"><path d="M12 2l9 5v10l-9 5-9-5V7z"/><path d="M3 7l9 5 9-5M12 12v10"/></svg> Insulia insights <svg class="ia-chev" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
             <div class="sb-pop pkg-pop glass" id="pop-pkg"><button class="pkg-overview" id="pkg-overview"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>Space overview<svg class="arr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button><div class="pkg-search"><svg class="icon icon-sm" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-3.5-3.5"/></svg><span style="flex:1">Search packages</span></div><button class="pkg-new"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg> New Package</button><div class="pkg-list"><button class="pkg-row active"><svg class="icon pcube" viewBox="0 0 24 24"><path d="M12 2l9 5v10l-9 5-9-5V7z"/><path d="M3 7l9 5 9-5M12 12v10"/></svg> Insulia insights<svg class="more" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="5" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="12" cy="19" r="1.4"/></svg></button><button class="pkg-row"><svg class="icon pcube" viewBox="0 0 24 24"><path d="M12 2l9 5v10l-9 5-9-5V7z"/><path d="M3 7l9 5 9-5M12 12v10"/></svg> PnE - Product Analytics<svg class="more" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="5" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="12" cy="19" r="1.4"/></svg></button><button class="pkg-row"><svg class="icon pcube" viewBox="0 0 24 24"><path d="M12 2l9 5v10l-9 5-9-5V7z"/><path d="M3 7l9 5 9-5M12 12v10"/></svg> Product Analytics  Internal<svg class="more" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="5" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="12" cy="19" r="1.4"/></svg></button><button class="pkg-row"><svg class="icon pcube" viewBox="0 0 24 24"><path d="M12 2l9 5v10l-9 5-9-5V7z"/><path d="M3 7l9 5 9-5M12 12v10"/></svg> PnE - EMS Store 3.0<svg class="more" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="5" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="12" cy="19" r="1.4"/></svg></button><button class="pkg-row"><svg class="icon pcube" viewBox="0 0 24 24"><path d="M12 2l9 5v10l-9 5-9-5V7z"/><path d="M3 7l9 5 9-5M12 12v10"/></svg> PnE - EMS Store 3.0<svg class="more" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="5" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="12" cy="19" r="1.4"/></svg></button><button class="pkg-row"><svg class="icon pcube" viewBox="0 0 24 24"><path d="M12 2l9 5v10l-9 5-9-5V7z"/><path d="M3 7l9 5 9-5M12 12v10"/></svg> PnE - Pricing<svg class="more" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="5" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="12" cy="19" r="1.4"/></svg></button><button class="pkg-row"><svg class="icon pcube" viewBox="0 0 24 24"><path d="M12 2l9 5v10l-9 5-9-5V7z"/><path d="M3 7l9 5 9-5M12 12v10"/></svg> PnE - Product Ops<svg class="more" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="5" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="12" cy="19" r="1.4"/></svg></button><button class="pkg-row"><svg class="icon pcube" viewBox="0 0 24 24"><path d="M12 2l9 5v10l-9 5-9-5V7z"/><path d="M3 7l9 5 9-5M12 12v10"/></svg> PnE - Data Operations<svg class="more" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="5" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="12" cy="19" r="1.4"/></svg></button></div></div>
+          </div>
           </div>
 
           <div class="sb-pop-wrap">
@@ -3830,7 +3836,14 @@
     <div class="grp"><div class="label">Intensity <span class="hint-i">colour · shadow · gloss</span></div><div class="toggle"><button id="color-calm">Calm</button><button id="color-strategic" class="on">Strategic</button><button id="color-expressive">Expressive</button></div></div>
 
     <div class="proto-sec">Shell &amp; surfaces</div>
-    <div class="grp"><div class="label">Main Layout</div><div class="toggle"><button id="layout-default" class="on">Default</button><button id="layout-flowy">Flowy</button><button id="layout-flap">Flap</button></div></div>
+    <div class="grp layout-grp" id="layout-grp"><div class="label">Main Layout <button type="button" id="layout-adv" class="gg-adv" aria-pressed="false" title="Show advanced shell layout controls">Advanced</button></div><div class="toggle"><button id="layout-default" class="on">Default</button><button id="layout-flowy">Flowy</button><button id="layout-flap">Flap</button></div></div>
+    <div class="grp layout-adv-grp" id="layout-adv-grp" hidden>
+      <div class="label">Package switcher</div>
+      <div class="toggle"><button id="pkg-l1" class="on">L1</button><button id="pkg-status">Status bar</button></div>
+      <div class="label layout-adv-label">L0 reveal</div>
+      <div class="toggle"><button id="l0-hover" class="on">Hover</button><button id="l0-click">Click</button></div>
+      <div class="proto-hint">Advanced shell options move package selection between L1 and the status bar, and switch the L0 rail from hover reveal to brand-click reveal.</div>
+    </div>
     <div class="grp" id="shell-sep-grp"><div class="label">Shell separation</div><div class="toggle"><button id="shell-seamless">Seamless</button><button id="shell-tinted" class="on">Tinted</button><button id="shell-contrast">Contrast</button></div></div>
     <div class="grp"><div class="label">Surface finish <span class="hint-i">glass</span></div><div class="toggle"><button id="surf-flat" class="on">Flat</button><button id="surf-frost">Frosted</button></div></div>
     <div class="grp"><div class="label">Surface radius <span class="val" id="rs-val">12px</span></div><input type="range" id="r-surface" class="slider" min="0" max="28" value="12"></div>
@@ -3844,9 +3857,21 @@
     <div class="proto-sec">Content &amp; layout</div>
     <div class="grp"><div class="label">Composition</div><div class="toggle"><button id="comp-uniform">Uniform</button><button id="comp-bento" class="on">Bento</button><button id="comp-hero">Hero</button></div></div>
     <div class="grp"><div class="label">Density <span class="hint-i">spacing</span></div><div class="toggle"><button id="density-spacious" class="on">Spacious</button><button id="density-compact">Compact</button><button id="density-dense">Dense</button></div></div>
+    <div class="grp"><div class="label">Tables <span class="hint-i">row treatment</span></div><div class="toggle"><button id="tbl-comfortable" class="on">Plain</button><button id="tbl-lined">Lined</button></div></div>
+
+    <div class="proto-sec proto-sec-row"><span>Typography</span><button type="button" id="typo-adv" class="gg-adv" aria-pressed="false" title="Show advanced Inter OpenType features">Advanced</button></div>
     <div class="grp"><div class="label">Numeral weight <span class="val" id="kw-val">600</span></div><input type="range" id="kpi-weight" class="slider" min="100" max="800" step="100" value="600"></div>
     <div class="grp"><div class="label">Numeral font</div><div class="toggle"><button id="kf-sans" class="on">Sans</button><button id="kf-mono">Mono</button><button id="kf-serif">Serif</button></div></div>
-    <div class="grp"><div class="label">Tables <span class="hint-i">row treatment</span></div><div class="toggle"><button id="tbl-comfortable" class="on">Plain</button><button id="tbl-lined">Lined</button></div></div>
+    <div class="grp typo-adv-grp" id="typo-adv-grp" hidden>
+      <div class="label">Inter features <span class="hint-i">Sans numerals</span></div>
+      <div class="numfeat-na">Set <b>Numeral font</b> to <b>Sans</b> to use these Inter features.</div>
+      <div class="numfeat-row" id="numfeat-row">
+        <button type="button" class="numfeat" id="num-zero" data-feat="zero" aria-pressed="false"><b>0</b><span>Slashed zero</span></button>
+        <button type="button" class="numfeat" id="num-ss01" data-feat="ss01" aria-pressed="false"><b>1</b><span>Alt digits</span></button>
+        <button type="button" class="numfeat" id="num-ss02" data-feat="ss02" aria-pressed="false"><b>Il</b><span>Disambiguation</span></button>
+      </div>
+      <div class="proto-hint">Inter OpenType features for the &ldquo;Sans&rdquo; numerals &mdash; slashed zero, alternate digit shapes, and disambiguated similar glyphs (only visible with the Sans numeral font). <a href="https://rsms.me/inter/#features" target="_blank" rel="noopener">Reference ↗</a></div>
+    </div>
 
     <div class="proto-sec">Data visualization</div>
     <div class="grp"><div class="label">3D charts</div><div class="toggle"><button id="c3d-default" class="on">Flat</button><button id="c3d-iso">Isometric</button><button id="c3d-glass">Glass</button></div></div>

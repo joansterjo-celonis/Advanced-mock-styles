@@ -27,13 +27,13 @@ const ageBadge = '<span class="ocpm-age">' + s(13, 1.8, '<circle cx="12" cy="12"
 
 /* ---- KPI cells (these replace the screenshot's redacted pills) ---- */
 const kpi = (k, v, o) => { o = o || {};
-  // Hero (big) numerals count-up; the number lives in an inner [data-counter] span so the
-  // animation never wipes the trailing unit span. Smaller numerals stay static but still
-  // inherit the KPI weight/font knob via the .inv-kpi .v selector.
+  // Hero (big) numerals count-up; the number lives in an inner [data-counter] span. Smaller
+  // numerals stay static but still inherit the KPI weight/font knob via the .inv-kpi .v
+  // selector. The unit lives in the label text (e.g. "Total [m€]"), never a trailing span.
   const num = o.big ? '<span data-counter data-to="' + String(v).replace(/[^0-9.-]/g, '') + '">0</span>' : v;
   return '<div class="inv-kpi' + (o.big ? ' big' : '') + '">' +
     '<div class="k">' + k + '</div>' +
-    '<div class="v">' + num + (o.u ? '<span class="u">' + o.u + '</span>' : '') + '</div>' +
+    '<div class="v">' + num + '</div>' +
     (o.det ? '<span class="det">Details' + DET + '</span>' : '') +
   '</div>';
 };
@@ -49,18 +49,18 @@ const MONTHS = '2024-07|2024-10|2025-01|2025-04|2025-07';
 
 /* ============ TOP KPI ROW (4 cards) ============ */
 const topRow =
-  '<section class="card span-3" data-card><span class="gloss"></span><span class="rim"></span>' + kpi('Total', '1,284', { big: true, u: 'm€' }) + '</section>' +
-  '<section class="card span-3" data-card><span class="gloss"></span><span class="rim"></span>' + kpi('Quality', '64', { big: true, u: 'm€' }) + '</section>' +
-  '<section class="card span-3" data-card><span class="gloss"></span><span class="rim"></span>' + kpi('Sales', '312', { big: true, u: 'm€' }) + '</section>' +
-  '<section class="card span-3" data-card><span class="gloss"></span><span class="rim"></span>' + kpi('Recipe Desk', '24', { big: true, u: 'm€' }) + '</section>';
+  '<section class="card span-3" data-card><span class="gloss"></span><span class="rim"></span>' + kpi('Total [m€]', '1,284', { big: true }) + '</section>' +
+  '<section class="card span-3" data-card><span class="gloss"></span><span class="rim"></span>' + kpi('Quality [m€]', '64', { big: true }) + '</section>' +
+  '<section class="card span-3" data-card><span class="gloss"></span><span class="rim"></span>' + kpi('Sales [m€]', '312', { big: true }) + '</section>' +
+  '<section class="card span-3" data-card><span class="gloss"></span><span class="rim"></span>' + kpi('Recipe Desk [m€]', '24', { big: true }) + '</section>';
 
 /* ============ TOTAL STOCK (span-12) ============ */
-const mcol = (name, me, kt, d, dir) => '<div class="inv-mcol">' + kpi(name + ' [m€]', me, { u: '€' }) + kpi(name + ' [kt]', kt) + kd('12M Delta', d, dir) + '</div>';
+const mcol = (name, me, kt, d, dir) => '<div class="inv-mcol">' + kpi(name + ' [m€]', me) + kpi(name + ' [kt]', kt) + kd('12M Delta', d, dir) + '</div>';
 const totalStock =
   '<section class="card span-12" data-card><span class="gloss"></span><span class="rim"></span>' +
     '<div class="card-title">Total Stock</div>' +
     '<div class="inv-body">' +
-      '<div class="inv-left">' + kpi('Total Stock [m€]', '1,284', { big: true, u: 'm€' }) + kpi('Total Stock [kt]', '342') + kd('12M Delta', '-4.2 %', 'down') + '</div>' +
+      '<div class="inv-left">' + kpi('Total Stock [m€]', '1,284', { big: true }) + kpi('Total Stock [kt]', '342') + kd('12M Delta', '-4.2 %', 'down') + '</div>' +
       '<div class="inv-mid">' +
         '<button class="inv-chartbtn">' + GRID + 'Total / KPI Drilldown</button>' +
         '<div class="paxis-label">Total Stock [m€]</div>' +
@@ -82,7 +82,7 @@ const unrestricted =
   '<section class="card span-12" data-card><span class="gloss"></span><span class="rim"></span>' +
     '<div class="card-title">Unrestricted (Free) Stock</div>' +
     '<div class="inv-body">' +
-      '<div class="inv-left">' + kpi('Unrestricted [m€]', '918', { big: true, u: 'm€' }) + kpi('Unrestricted [kt]', '264') + kd('12M Delta', '-1.8 %', 'down') + '</div>' +
+      '<div class="inv-left">' + kpi('Unrestricted [m€]', '918', { big: true }) + kpi('Unrestricted [kt]', '264') + kd('12M Delta', '-1.8 %', 'down') + '</div>' +
       '<div class="inv-mid">' +
         '<div class="paxis-label">Unrestricted [kt]</div>' +
         chart('data-n="13" data-ymax="400000" data-seed="7" data-line="--cstop-3a" data-xlabels="' + MONTHS + '" data-series=\'[{"c":"--cstop-1a"}]\'') +
@@ -91,11 +91,11 @@ const unrestricted =
       '<div class="inv-right"><div class="inv-kpilist">' +
         kpi('ID Turns - Overall', '4.2', { det: true }) +
         kpi('FGDV &gt; 90 Days', '8.4 %') +
-        kpi('Scrap-To-Expire [m€]', '12', { u: '€', det: true }) +
-        kpi('No Forecast NIM [m€]', '22', { u: '€' }) +
-        kpi('Non-Mover [m€]', '38', { u: '€', det: true }) +
+        kpi('Scrap-To-Expire [m€]', '12', { det: true }) +
+        kpi('No Forecast NIM [m€]', '22') +
+        kpi('Non-Mover [m€]', '38', { det: true }) +
         kpi('CCDV &gt; 90 Days', '5.1 %') +
-        kpi('Slow-Mover (Excess) [m€]', '64', { u: '€', det: true }) +
+        kpi('Slow-Mover (Excess) [m€]', '64', { det: true }) +
       '</div></div>' +
     '</div>' +
   '</section>';
@@ -116,25 +116,25 @@ function smallSection(title, btn, leftK, chartAttrs, legItems, rightK) {
 }
 
 const qStock = smallSection('Q-Stock', 'Cockpit',
-  kpi('Q-Stock [m€]', '64', { big: true, u: 'm€' }) + kpi('Q-Stock [kt]', '18') + kd('12M Delta', '+2.4 %', 'up'),
+  kpi('Q-Stock [m€]', '64', { big: true }) + kpi('Q-Stock [kt]', '18') + kd('12M Delta', '+2.4 %', 'up'),
   'data-n="13" data-ymax="40000" data-seed="11" data-line="--cstop-3a" data-xlabels="' + MONTHS + '" data-series=\'[{"c":"--cstop-1a"}]\'',
   [{ c: '--cstop-1a', t: 'Q-Stock [k]' }, { c: '--cstop-3a', t: 'Q-Stock [kt]' }],
-  kpi('Expired Q-Stock [m€]', '6', { u: '€' }) + kpi('WIP Exceeded [m€]', '14', { u: '€' }) + kpi('UD Overdue [m€]', '4', { u: '€' }));
+  kpi('Expired Q-Stock [m€]', '6') + kpi('WIP Exceeded [m€]', '14') + kpi('UD Overdue [m€]', '4'));
 
 const blocked = smallSection('Blocked Stock', 'L3 Cockpit',
-  kpi('Blocked [m€]', '28', { big: true, u: 'm€' }) + kpi('Blocked [kt]', '9') + kd('12M Delta', '-0.9 %', 'down'),
+  kpi('Blocked [m€]', '28', { big: true }) + kpi('Blocked [kt]', '9') + kd('12M Delta', '-0.9 %', 'down'),
   'data-n="13" data-ymax="30000" data-seed="13" data-line="--cstop-3a" data-xlabels="' + MONTHS + '" data-series=\'[{"c":"--cstop-1a"}]\'',
   [{ c: '--cstop-1a', t: 'Blocked [k]' }, { c: '--cstop-3a', t: 'Blocked [kt]' }],
-  kpi('Blocked Stock &gt;7 days [m€]', '12', { u: '€' }) + kpi('ID Days since Blocking', '34') + kpi('Expired Blocked Stock [m€]', '3', { u: '€' }));
+  kpi('Blocked Stock &gt;7 days [m€]', '12') + kpi('ID Days since Blocking', '34') + kpi('Expired Blocked Stock [m€]', '3'));
 
 const rework = smallSection('Rework', 'Cockpit',
-  kpi('Rework [m€]', '9', { big: true, u: 'm€' }) + kpi('Rework [kt]', '3') + kd('12M Delta', '-1.2 %', 'down'),
+  kpi('Rework [m€]', '9', { big: true }) + kpi('Rework [kt]', '3') + kd('12M Delta', '-1.2 %', 'down'),
   'data-n="13" data-ymax="6000" data-seed="17" data-line="--cstop-3a" data-xlabels="' + MONTHS + '" data-series=\'[{"c":"--cstop-1a"}]\'',
   [{ c: '--cstop-1a', t: 'Rework [k]' }, { c: '--cstop-3a', t: 'Rework [m€]' }],
-  kpi('# Rework Batches', '142') + kpi('Without Consumption [m€]', '5', { u: '€' }));
+  kpi('# Rework Batches', '142') + kpi('Without Consumption [m€]', '5'));
 
 const disposal = smallSection('thereof Disposal', 'Cockpit',
-  kpi('Total Disposal [m€]', '7', { big: true, u: 'm€' }) + kpi('Additional Disposal [kt]', '2') + kpi('Disposal Stock', '18'),
+  kpi('Total Disposal [m€]', '7', { big: true }) + kpi('Additional Disposal [kt]', '2') + kpi('Disposal Stock', '18'),
   'data-n="13" data-ymax="6000" data-seed="19" data-line="--cstop-3a" data-xlabels="' + MONTHS + '" data-series=\'[{"c":"--cstop-1a"}]\'',
   [{ c: '--cstop-1a', t: 'Disposal [k]' }, { c: '--cstop-3a', t: 'Disposal [m€]' }],
   kpi('# Batches Marked for Disposal', '64'));

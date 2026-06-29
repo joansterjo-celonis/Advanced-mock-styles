@@ -5,23 +5,35 @@ import { icons } from './icons.js';
   const app = document.getElementById('app');
   const l0 = document.getElementById('l0');
   let hoverTimer = null;
-  function openHover(){ if(!app.classList.contains('pinned')) app.classList.add('l0-open'); }
-  function closeHover(){ app.classList.remove('l0-open'); }
+  let l0Reveal = 'hover';
+  function openL0(){ if(!app.classList.contains('pinned')) app.classList.add('l0-open'); }
+  function closeL0(){ app.classList.remove('l0-open'); }
+  function toggleL0(){ if(app.classList.contains('l0-open')) closeL0(); else openL0(); }
+  function setL0Reveal(mode){
+    l0Reveal = mode === 'click' ? 'click' : 'hover';
+    clearTimeout(hoverTimer);
+    closeL0();
+  }
   document.querySelectorAll('[data-revealer]').forEach(function(el){
-    el.addEventListener('mouseenter', openHover);
-    el.addEventListener('click', function(e){ e.stopPropagation(); openHover(); });
+    el.addEventListener('mouseenter', function(){ if(l0Reveal==='hover') openL0(); });
+    el.addEventListener('click', function(e){
+      e.stopPropagation();
+      if(l0Reveal==='click') toggleL0();
+      else openL0();
+    });
   });
   l0.addEventListener('mouseenter', function(){ clearTimeout(hoverTimer); });
   l0.addEventListener('mouseleave', function(){
-    if(app.classList.contains('pinned')) return;
-    hoverTimer = setTimeout(closeHover, 160);
+    if(app.classList.contains('pinned') || l0Reveal!=='hover') return;
+    hoverTimer = setTimeout(closeL0, 160);
   });
+  l0.addEventListener('click', function(e){ e.stopPropagation(); });
   document.querySelectorAll('[data-pin]').forEach(function(btn){
     btn.addEventListener('click', function(e){ e.stopPropagation(); app.classList.add('pinned'); app.classList.remove('l0-open'); });
   });
   document.getElementById('unpinBtn').addEventListener('click', function(e){
     e.stopPropagation();
-    if(app.classList.contains('pinned')){ app.classList.remove('pinned'); closeHover(); }
+    if(app.classList.contains('pinned')){ app.classList.remove('pinned'); closeL0(); }
     else { app.classList.add('pinned'); app.classList.remove('l0-open'); }
   });
   const routes = { home:'route-home', studio:'route-studio', context:'route-context', datalake:'route-datalake', space:'route-space' };
@@ -31,7 +43,7 @@ import { icons } from './icons.js';
     app.dataset.route = route;
     document.querySelectorAll('.nav-item').forEach(function(n){ n.classList.toggle('active', n.dataset.nav===route); });
     if(route==='context'){ var rc=document.getElementById('route-context'); rc.classList.add('mode-overview'); rc.classList.remove('mode-editor'); }
-    if(!app.classList.contains('pinned')) closeHover();
+    if(!app.classList.contains('pinned')) closeL0();
   }
   document.querySelectorAll('.nav-item').forEach(function(n){ n.addEventListener('click', function(){ go(n.dataset.nav); }); });
   go('context');
@@ -57,7 +69,48 @@ import { icons } from './icons.js';
     document.querySelectorAll('.sb-pop').forEach(function(p){p.classList.remove('open');});
     document.querySelectorAll('.sb-item[data-pop]').forEach(function(b){b.classList.remove('active-pop');});
   }
+  function setPackagePlacement(pos){
+    var target = pos === 'status' ? document.getElementById('pkg-switcher-status-slot') : document.getElementById('pkg-switcher-l1-slot');
+    var switcher = document.getElementById('pkg-switcher');
+    if(!target || !switcher || switcher.parentNode === target) return;
+    closeAllPops();
+    closeL1Search();
+    target.appendChild(switcher);
+  }
+  var l1SearchRow=document.querySelector('.l1-searchrow');
+  var l1SearchToggle=document.getElementById('l1-search-toggle');
+  var l1SearchInput=document.getElementById('l1-search-input');
+  function openL1Search(){
+    if(!l1SearchRow || document.documentElement.getAttribute('data-pkgpos')==='status') return;
+    closeAllPops();
+    l1SearchRow.classList.add('search-open');
+    setTimeout(function(){ if(l1SearchInput) l1SearchInput.focus(); }, 40);
+  }
+  function closeL1Search(){
+    if(!l1SearchRow) return;
+    l1SearchRow.classList.remove('search-open');
+    if(l1SearchInput) l1SearchInput.blur();
+  }
+  if(l1SearchToggle) l1SearchToggle.addEventListener('click', function(e){ e.stopPropagation(); openL1Search(); });
+  setPackagePlacement(document.documentElement.getAttribute('data-pkgpos'));
+  setL0Reveal(document.documentElement.getAttribute('data-l0reveal'));
+  var shellKnobObserver = new MutationObserver(function(muts){
+    muts.forEach(function(m){
+      if(m.attributeName === 'data-pkgpos') setPackagePlacement(document.documentElement.getAttribute('data-pkgpos'));
+      if(m.attributeName === 'data-l0reveal') setL0Reveal(document.documentElement.getAttribute('data-l0reveal'));
+    });
+  });
+  shellKnobObserver.observe(document.documentElement, { attributes:true, attributeFilter:['data-pkgpos','data-l0reveal'] });
   document.querySelectorAll('.sb-item[data-pop]').forEach(function(btn){
+    if(btn.dataset.pop === 'pkg'){
+      Array.prototype.slice.call(btn.childNodes).forEach(function(n){
+        if(n.nodeType !== Node.TEXT_NODE || !n.textContent.trim()) return;
+        var s = document.createElement('span');
+        s.className = 'pkg-current-name';
+        s.textContent = n.textContent.trim();
+        btn.replaceChild(s, n);
+      });
+    }
     btn.addEventListener('click', function(e){
       e.stopPropagation();
       var pop = btn.parentNode.querySelector('.sb-pop');
@@ -68,6 +121,19 @@ import { icons } from './icons.js';
   });
   document.querySelectorAll('.sb-pop').forEach(function(p){ p.addEventListener('click', function(e){ e.stopPropagation(); }); });
   document.addEventListener('click', closeAllPops);
+  document.addEventListener('click', function(){ if(l0Reveal==='click' && !app.classList.contains('pinned')) closeL0(); });
+  document.querySelectorAll('.pkg-row').forEach(function(r){
+    var name = '';
+    Array.prototype.slice.call(r.childNodes).forEach(function(n){
+      if(n.nodeType !== Node.TEXT_NODE || !n.textContent.trim()) return;
+      name = n.textContent.trim();
+      var s = document.createElement('span');
+      s.className = 'pkg-name';
+      s.textContent = name;
+      r.replaceChild(s, n);
+    });
+    if(name) r.setAttribute('data-tip', name);
+  });
   document.querySelectorAll('.pkg-row').forEach(function(r){
     r.addEventListener('click', function(){
       document.querySelectorAll('.pkg-row').forEach(function(x){ x.classList.remove('active'); });
@@ -91,7 +157,7 @@ import { icons } from './icons.js';
   document.querySelectorAll('.search-box').forEach(function(b){ b.style.cursor='pointer'; b.addEventListener('click', function(e){ e.stopPropagation(); openSearch(); }); });
   document.addEventListener('keydown', function(e){
     if((e.metaKey||e.ctrlKey) && (e.key==='k'||e.key==='K')){ e.preventDefault(); openSearch(); }
-    if(e.key==='Escape'){ closeSearch(); }
+    if(e.key==='Escape'){ closeSearch(); closeL0(); closeL1Search(); }
   });
   gOverlay.addEventListener('click', function(e){ if(e.target===gOverlay) closeSearch(); });
   function gsRefresh(){
@@ -258,8 +324,13 @@ import { icons } from './icons.js';
     }
     function openTab(v){
       if(!v) return;
+      // Opening an asset from the tree (or an overview card) is a navigation, so it must leave
+      // a live side-by-side split first — exactly like clicking a tab does (split-view.js owns
+      // the tab-click exit). Otherwise the chosen view activates while hidden behind the split,
+      // and BOTH flap tabs lose the .active that anchors them over their pane (the flap vanishes).
+      if(window.IA && typeof window.IA.exitSplitView==='function') window.IA.exitSplitView();
       var rc=document.getElementById('route-context'); rc.classList.remove('mode-overview'); rc.classList.add('mode-editor');
-      makeTab(v); hideEmpty(); activateTab(v); selectView(v);
+      makeTab(v); hideEmpty(); activateTab(v); activateLeaf(v); selectView(v);
     }
     function escAttr(v){ return String(v||'').replace(/["\\]/g,'\\$&'); }
     function activateLeaf(v){
@@ -316,7 +387,7 @@ import { icons } from './icons.js';
         var pick=(next && next.matches('.ia-tab[data-view]')) ? next
                : ((prev && prev.matches('.ia-tab[data-view]')) ? prev
                : document.querySelector('.tabbar .tabs .ia-tab[data-view]'));
-        if(pick){ activateTab(pick.dataset.view); selectView(pick.dataset.view); }
+        if(pick){ activateTab(pick.dataset.view); activateLeaf(pick.dataset.view); selectView(pick.dataset.view); }
         else { showEmpty(); }
       } else if(!document.querySelector('.tabbar .tabs .ia-tab[data-view]')){ showEmpty(); }
     }
@@ -328,7 +399,7 @@ import { icons } from './icons.js';
         var x=e.target.closest('.ia-x');
         if(x){ e.stopPropagation(); closeTab(x.closest('.ia-tab')); return; }
         var t=e.target.closest('.ia-tab[data-view]');
-        if(t){ hideEmpty(); activateTab(t.dataset.view); selectView(t.dataset.view); }
+        if(t){ hideEmpty(); activateTab(t.dataset.view); activateLeaf(t.dataset.view); selectView(t.dataset.view); }
       });
       // let a vertical mouse wheel scroll the tab strip horizontally (trackpads already do this)
       tabs.addEventListener('wheel',function(e){
@@ -337,17 +408,19 @@ import { icons } from './icons.js';
       },{passive:false});
     }
 
-    // L1 leaves + overview rows open (and reopen) the editor on the right dashboard
+    // L1 leaves + overview rows open (and reopen) the editor on the right dashboard.
+    // Delegated (not per-element) so leaves added after boot by registerView() — i.e.
+    // every dynamically registered view — open exactly like the built-in ones.
     var map={'operations view':'order-management','order management':'order-management','purchase order':'purchase-order','rework and quality':'rework-quality','insights':'insights'};
-    document.querySelectorAll('.l1-leaf, .ctx-overview .ovrow, .ctx-overview .sp-card, #route-context .ia-ov-card').forEach(function(el){
-      el.addEventListener('click',function(){
-        var t=(el.textContent||'').trim().toLowerCase(); var v=el.dataset.view||map[t];
-        if(v){ openTab(v); }
-        else {
-          var rc=document.getElementById('route-context'); rc.classList.remove('mode-overview'); rc.classList.add('mode-editor');
-          var av=document.querySelector('#content .view.active'); if(av){ renderChartsIn(av); runCounters(av); }
-        }
-      });
+    document.addEventListener('click',function(e){
+      var el=e.target.closest('.l1-leaf, .ctx-overview .ovrow, .ctx-overview .sp-card, #route-context .ia-ov-card');
+      if(!el) return;
+      var t=(el.textContent||'').trim().toLowerCase(); var v=el.dataset.view||map[t];
+      if(v){ openTab(v); }
+      else {
+        var rc=document.getElementById('route-context'); rc.classList.remove('mode-overview'); rc.classList.add('mode-editor');
+        var av=document.querySelector('#content .view.active'); if(av){ renderChartsIn(av); runCounters(av); }
+      }
     });
     // gear / settings opens the prototype controls
     var proto=document.getElementById('proto');

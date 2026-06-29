@@ -340,7 +340,6 @@
   /* KPI cell (replaces the screenshot's redacted pills) */
   .inv-kpi .k { font-size:11px; color:var(--text-dim); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .inv-kpi .v { font-size:21px; font-weight:600; color:var(--text); font-variant-numeric:tabular-nums; line-height:1.1; white-space:nowrap; }
-  .inv-kpi .v .u { font-size:12px; color:var(--text-dim); font-weight:500; margin-left:2px; }
   .inv-kpi.big .v { font-size:30px; }
   .inv-kpi .d { font-size:11px; font-weight:600; font-variant-numeric:tabular-nums; }
   .inv-kpi .d.up { color:var(--success); } .inv-kpi .d.down { color:var(--danger); }
@@ -357,4 +356,69 @@
   /* centred blue pill button above charts (Cockpit / KPI Drilldown) */
   .inv-chartbtn { align-self:center; background:var(--accent); color:var(--accent-text,#fff); font-size:11px; font-weight:600; padding:5px 16px; border-radius:7px; display:inline-flex; align-items:center; gap:6px; cursor:pointer; border:0; margin-bottom:2px; }
   .inv-chart { min-height:120px; }
+
+  /* ===== Incident Management · Incident Details (master list → side-by-side detail) =====
+     A master dashboard (Incident Management) whose Incident List links open a tabless
+     Incident Details view in the established side-by-side split pane. Reuses .bento / .card /
+     .kpi-strip / .ptable / hbarcat; only the cells unique to this pair live here. */
+
+  /* KPI strip column counts (mirrors the existing kpi6 / kpi8 precedent) */
+  .kpi-strip.kpi2 { grid-template-columns:repeat(2,1fr); }
+  .kpi-strip.kpi4 { grid-template-columns:repeat(4,1fr); }
+  @media (max-width:680px){ .kpi-strip.kpi4 { grid-template-columns:repeat(2,1fr); } }
+  /* shared little "i" info dot used in KPI labels + card titles */
+  .inc-i { display:inline-grid; place-items:center; width:14px; height:14px; border-radius:50%; border:1px solid var(--text-faint); color:var(--text-faint); font-size:9px; font-weight:400; line-height:1; vertical-align:1px; margin-left:4px; cursor:default; flex:none; }
+
+  /* in-content hero (title + description) — borderless band above the cards */
+  .inc-hero { grid-column:span 12; padding:2px 2px 0; }
+  .inc-hero h1 { margin:0; font-size:21px; font-weight:650; letter-spacing:-0.02em; color:var(--text); }
+  .inc-hero .sub { margin:5px 0 0; font-size:12.5px; color:var(--text-dim); }
+
+  /* incident-number links (master list + detail cross-references) */
+  .inc-link { color:var(--accent); cursor:pointer; text-decoration:none; }
+  .inc-link:hover { text-decoration:underline; }
+  .ptable tbody tr.is-sel td { background:var(--card-strong); }
+
+  /* detail band: two tracks — the tall attribute list on the left, and a stacked
+     column on the right (SLA Records above Related Problem). align-items:stretch lets
+     the right track match the attribute card's height; Related Problem then flex-grows
+     to fill the slack so no dead space is left under the SLA table. Stacks on a narrow
+     drawer. */
+  .inc-cols { grid-column:span 12; display:grid; grid-template-columns:1fr 2.5fr; gap:var(--gap); align-items:stretch; }
+  /* reset the bento default (.card{grid-column:span 4}) so each direct child occupies
+     one track of THIS grid instead of spanning the whole row. */
+  .inc-cols > .card, .inc-cols > .inc-col { grid-column:auto; min-width:0; }
+  /* right track: stack the two cards with the standard gap; the last (Related Problem)
+     grows to bottom-align the track with the attribute list and centres its empty state
+     across the full grown height. */
+  .inc-col { display:flex; flex-direction:column; gap:var(--gap); min-width:0; }
+  .inc-col > .card:last-child { flex:1 1 auto; display:flex; flex-direction:column; }
+  .inc-col > .card:last-child .inc-empty { flex:1; }
+  @media (max-width:760px){ .inc-cols { grid-template-columns:1fr; } }
+
+  /* attribute list (label + value rows) */
+  .inc-attrs { display:flex; flex-direction:column; gap:13px; margin-top:14px; }
+  .inc-attr .k { font-size:11px; font-weight:600; color:var(--text-dim); }
+  .inc-attr .v { font-size:13.5px; color:var(--text); margin-top:2px; }
+
+  /* right-aligned card toolbar (download / kebab) for the activity table */
+  .inc-tools { display:flex; align-items:center; justify-content:flex-end; gap:12px; color:var(--text-faint); margin-bottom:2px; }
+  .inc-tools svg { cursor:pointer; }
+  .inc-tools svg:hover { color:var(--text); }
+
+  /* related-problem empty state */
+  .inc-empty { display:flex; align-items:center; justify-content:center; min-height:118px; margin-top:10px; color:var(--text-faint); font-size:12.5px; }
+
+  /* ===== Service Request Fulfillment (same dashboard family: hero · KPI strip · hbarcat · table) ===== */
+  .kpi-strip.kpi5 { grid-template-columns:repeat(5,1fr); }
+  @media (max-width:1180px){ .kpi-strip.kpi5 { grid-template-columns:repeat(3,1fr); } }
+  @media (max-width:680px){ .kpi-strip.kpi5 { grid-template-columns:repeat(2,1fr); } }
+  /* right-aligned x-axis caption under a horizontal-bar chart */
+  .dash-xlabel { font-size:11px; color:var(--text-dim); text-align:right; margin-top:6px; }
+
+  /* generic chart legend (swatch rows + optional "+N" overflow pill) — donut / line charts */
+  .dash-legend { display:flex; flex-wrap:wrap; align-items:center; gap:7px 16px; margin-top:10px; font-size:11px; color:var(--text-dim); }
+  .dash-legend.center { justify-content:center; }
+  .dash-legitem { display:inline-flex; align-items:center; gap:6px; }
+  .dash-swatch { width:10px; height:10px; border-radius:2px; flex:none; }
 

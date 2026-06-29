@@ -133,6 +133,11 @@
     font-weight:var(--kpi-weight) !important;
     font-family:var(--kpi-font);
     letter-spacing:-0.02em; font-variant-numeric:tabular-nums;
+    /* Inter OpenType features (Typography → Advanced): zero / ss01 / ss02. Unset ⇒ `normal`
+       ⇒ pixel-identical to before. Additive — tnum keeps flowing from font-variant-numeric
+       above, so feature-settings only layers the toggled stylistic sets / slashed zero on top.
+       Only renders when --kpi-font is Inter ("Sans"); no-op on the mono/serif options. */
+    font-feature-settings:var(--inter-feats, normal);
   }
 
   /* ---- F · Tab model ---- */

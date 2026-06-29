@@ -626,6 +626,60 @@
   background:transparent;
 }
 
+/* Inter OpenType feature pills (Typography group). Independent on/off toggles; each glyph
+   previews its own feature live via font-feature-settings. */
+.tc-group-note {
+  margin-left:8px;
+  font-weight:500;
+  letter-spacing:0;
+  text-transform:none;
+  color:var(--ia-muted);
+}
+.tc-feats {
+  display:grid;
+  grid-template-columns:repeat(3, minmax(0, 1fr));
+  gap:12px;
+}
+.tc-feat {
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:6px;
+  padding:14px 8px;
+  border:1px solid var(--ia-line);
+  border-radius:14px;
+  background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.012));
+  color:var(--ia-muted);
+  cursor:pointer;
+  text-align:center;
+  transition:color .15s, border-color .15s, background .15s, box-shadow .15s;
+}
+.tc-feat:hover {
+  color:var(--ia-text);
+  border-color:var(--ia-line-strong, var(--ia-line));
+}
+.tc-feat.active {
+  color:var(--ia-text);
+  border-color:var(--tc-accent, #6366f1);
+  box-shadow:0 0 0 1px var(--tc-accent, #6366f1);
+}
+.tc-feat b {
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  font-size:22px;
+  font-weight:650;
+  line-height:1;
+  font-variant-numeric:tabular-nums;
+}
+.tc-feat span {
+  font-size:11px;
+  color:var(--ia-muted-2);
+}
+/* Zero pill: CSS-drawn slash so the preview always shows, even if the Inter webfont didn't load. */
+.tc-feat[data-feat="zero"] b { position:relative; }
+.tc-feat[data-feat="zero"] b::after { content:""; position:absolute; left:50%; top:50%; width:2px; height:0.95em; background:currentColor; border-radius:1px; transform:translate(-50%,-50%) rotate(20deg); pointer-events:none; }
+.tc-feat[data-feat="ss01"] b { font-feature-settings:"ss01" 1; }
+.tc-feat[data-feat="ss02"] b { font-feature-settings:"ss02" 1; }
+
 /* Inline color picker revealed under the Tabs options (Underline / Color). */
 .tc-subfield {
   margin-top:12px;

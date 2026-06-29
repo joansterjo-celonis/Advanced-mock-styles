@@ -75,11 +75,18 @@ test('slide-away then default navigation back leaves the view visible (no opacit
   expect(s.height).toBeGreaterThan(50);
 });
 
-test('slide plays for registered tabs too, not just the first three static tabs', async ({ page }) => {
-  await setFx(page, 'slide');
+test('slide plays for sidebar-opened tabs too, not just the three static defaults', async ({ page }) => {
+  // `insights` is a registered view — it is no longer one of the 3 default tabs, so the user
+  // opens it from the sidebar. Opening it must create a working tab whose clicks animate the
+  // slide via the delegated strip handler in shell.js (registered tabs carry no own listener).
+  await page.locator('.l1-children .l1-leaf[data-view="insights"]').click();
+  await expect(page.locator(TAB('insights'))).toBeVisible();
 
-  // `insights` is a registered (dynamic) tab — these fire selectView TWICE per click (their own
-  // listener + the delegated strip handler). The duplicate call must not snap the slide shut.
+  await setFx(page, 'slide');
+  // Park on a static tab so the next insights click animates a fresh slide.
+  await page.locator(TAB('order-management')).click();
+  await page.waitForTimeout(500);
+
   // Read the state synchronously right after the click, mid-flight, so the slide is still running.
   const mid = await page.evaluate((sel) => {
     document.querySelector(sel).click();
