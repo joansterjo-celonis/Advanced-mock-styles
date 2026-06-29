@@ -93,6 +93,13 @@
 
   .rq-placeholder { display:flex; align-items:center; justify-content:center; min-height:420px; color:var(--text-faint); font-size:14px; border:1px dashed var(--border); border-radius:var(--r-surface); }
 
+  /* Gallery sub-tabs (More charts / Even more charts / … / Playground): pin each chart SVG
+     out of flow so a preserveAspectRatio:none viewBox can never drive the card's grid-row
+     height (same measure-loop guard as the .metric hbarcat rule in shell.css). The wrap keeps
+     its flex/explicit height, the SVG just stretches to fill it. */
+  .rq-gallery .chart-wrap { position:relative; }
+  .rq-gallery .chart-wrap > svg { position:absolute; inset:0; }
+
   /* ===== Slide-fade tab transition ===== */
   .content.fx-scene { overflow:hidden !important; }
   /* both views overlap and slide; faces are positioned to the content padding box by JS */
@@ -213,6 +220,11 @@
   .preset-actions button#preset-save:not(:disabled) { border-color:rgba(255,255,255,0.5); color:#fff; }
   /* light mode: white-on-white would vanish — use ink + dark border for the same primary lift */
   [data-mode="light"] .preset-actions button#preset-save:not(:disabled) { border-color:rgba(0,0,0,0.45); color:#15161a; }
+  .preset-actions button#preset-export-figma:not(:disabled) { border-color:rgba(139,92,246,0.55); color:#c4b5fd; }
+  [data-mode="light"] .preset-actions button#preset-export-figma:not(:disabled) { border-color:rgba(91,33,182,0.42); color:#4c1d95; }
+  .preset-actions button#preset-export-figma:not(:disabled):hover { color:#fff; border-color:#8b5cf6; background:rgba(139,92,246,0.18); }
+  [data-mode="light"] .preset-actions button#preset-export-figma:not(:disabled):hover { color:#fff; border-color:#6d28d9; background:#6d28d9; }
+  .preset-actions button#preset-export-figma.is-exporting { opacity:.72; cursor:progress; animation:preset-sync-pulse 1s ease-in-out infinite; }
   .preset-actions button#preset-del:not(:disabled):hover { color:#e5484d; border-color:#e5484d; background:transparent; }
   .preset-actions button:disabled { opacity:.34; cursor:default; }
   .preset-actions button:disabled:hover { background:transparent; border-color:var(--chrome-border); color:var(--chrome-text); }

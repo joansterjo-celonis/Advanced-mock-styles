@@ -145,6 +145,27 @@
     --legend-1:#6366f1; --legend-2:#10b981; --legend-3:#f59e0b; --legend-4:#ec4899;
     --cstop-1a:#6366f1; --cstop-1b:#4338ca; --cstop-2a:#10b981; --cstop-3a:#f59e0b; --cstop-4a:#ec4899;
   }
+
+  /* VIVID colour combos: selectable multi-hue stories for the donut/ring/map tokens.
+     Per-chart bar/line/area tints come from VIVID_COMBOS in data.js via vividTint().
+     "Prism" is the default and uses the base rules above (no attribute needed). These
+     rules sit after the light-mode override so they win in both light and dark. */
+  [data-theme="vivid"][data-vivid-palette="ocean"] {
+    --legend-1:#2563eb; --legend-2:#06b6d4; --legend-3:#0ea5e9; --legend-4:#14b8a6;
+    --cstop-1a:#2563eb; --cstop-1b:#1d4ed8; --cstop-2a:#06b6d4; --cstop-3a:#0ea5e9; --cstop-4a:#14b8a6;
+  }
+  [data-theme="vivid"][data-vivid-palette="sunset"] {
+    --legend-1:#f97316; --legend-2:#f59e0b; --legend-3:#ef4444; --legend-4:#ec4899;
+    --cstop-1a:#f97316; --cstop-1b:#c2410c; --cstop-2a:#f59e0b; --cstop-3a:#ef4444; --cstop-4a:#ec4899;
+  }
+  [data-theme="vivid"][data-vivid-palette="forest"] {
+    --legend-1:#16a34a; --legend-2:#0d9488; --legend-3:#65a30d; --legend-4:#ca8a04;
+    --cstop-1a:#16a34a; --cstop-1b:#15803d; --cstop-2a:#0d9488; --cstop-3a:#65a30d; --cstop-4a:#ca8a04;
+  }
+  [data-theme="vivid"][data-vivid-palette="berry"] {
+    --legend-1:#8b5cf6; --legend-2:#d946ef; --legend-3:#ec4899; --legend-4:#6366f1;
+    --cstop-1a:#8b5cf6; --cstop-1b:#7c3aed; --cstop-2a:#d946ef; --cstop-3a:#ec4899; --cstop-4a:#6366f1;
+  }
   [data-mode="light"] .app { border-color: rgba(0,0,0,0.10); box-shadow: 0 40px 90px -50px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.7); }
   [data-mode="light"] .card { background:#fff; box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 14px 30px -20px rgba(0,0,0,0.16), 0 0 calc(8px + var(--card-glow)*26px) -6px rgba(0,0,0, calc(var(--card-glow)*0.18)); }
   [data-mode="light"] .card:hover { box-shadow: 0 2px 5px rgba(0,0,0,0.06), 0 22px 42px -18px rgba(0,0,0,0.22), 0 0 0 1px rgba(0,0,0,0.06); }
