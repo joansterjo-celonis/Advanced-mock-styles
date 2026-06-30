@@ -18,11 +18,11 @@ export function svgText(E2,x,y,s,a){ const t=E2('text',{x:x,y:y,'text-anchor':a|
    Reads the live theme colours (CSS vars) so Mono/Color/Vivid/hue all apply.
    mode: null (flat) | 'iso' (isometric extrusion) | 'glass' (frosted low-relief)
    ============================================================ */
-export function chartMode(wrap){ // returns 'iso'|'glass'|null
+export function chartMode(wrap){ // returns 'iso'|'glass'|'webgl'|null
   // per-chart override (right-click menu) wins over the global knobs
   const ov = wrap && wrap.getAttribute ? wrap.getAttribute('data-chart-look') : null;
   if(ov==='flat') return null;
-  if(ov==='iso' || ov==='glass') return ov;
+  if(ov==='iso' || ov==='glass' || ov==='webgl') return ov;
   // otherwise follow the global Charts-look + 3D-scope knobs
   const look = document.documentElement.getAttribute('data-charts3d'); if(!look) return null;
   let scope = document.documentElement.getAttribute('data-3dscope') || 'full';
@@ -132,3 +132,82 @@ export function bar3dH(svg, x, yTop, len, th, color, mode){
   }
   svg.appendChild(g); return g;
 }
+
+/* ============================================================
+   PATTERN FILL toolkit — the "Patterns" sub-variant of the Flat look.
+   Keeps each series' colour fill and layers a distinct monochrome
+   texture (hatch / cross / dots / grid …) on top, plus marker-shape
+   and line-dash variation, so series read without relying on colour.
+   Active only when the global knob data-chartfill='pattern' AND the
+   chart is flat (chartMode === null). ============================================================ */
+export function patternFillOn(){ return document.documentElement.getAttribute('data-chartfill')==='pattern'; }
+export function usePattern(wrap){ return patternFillOn() && chartMode(wrap)===null; }
+// Texture marks are "cut" to the surface colour behind the chart, so they always
+// contrast with the (already surface-contrasting) coloured fill — in any theme / mode.
+function patternInk(el){ return cssVar('--bg-1', el) || (document.documentElement.getAttribute('data-mode')==='light' ? '#ffffff' : '#16171b'); }
+const PAT_PX = 6;   // target ON-SCREEN tile size (px) — held constant across every chart type
+// user-units-per-CSS-pixel for this svg, so a PAT_PX on-screen tile is sized correctly no
+// matter how the chart's viewBox scales (pie uses a fixed 440-wide viewBox; bars are ~1:1).
+function patScaleFor(svg, el){
+  try { const vb=(svg.getAttribute('viewBox')||'').split(/[ ,]+/).map(Number); const vbw=vb.length>=4?vb[2]:0, px=(el&&el.clientWidth)||0;
+    if(vbw>0 && px>0){ const s=vbw/px; if(s>0.2 && s<6) return s; } } catch(e){}
+  return 1;
+}
+// Build (once per <svg> + texture kind) an SVG <pattern> and return its url(#id).
+// kind 0 = solid → returns null (no overlay, so a solid/first series stays solid).
+export function patternUrl(svg, idx, el){
+  const kind=((idx|0)%8+8)%8; if(kind===0) return null;
+  const k = (svg.__patScale!=null) ? svg.__patScale : (svg.__patScale = patScaleFor(svg, el));
+  svg.__patCache = svg.__patCache || {}; if(svg.__patCache[kind]) return svg.__patCache[kind];
+  let defs=svg.querySelector('defs'); if(!defs){ defs=E('defs',{}); svg.insertBefore(defs, svg.firstChild); }
+  const ink=patternInk(el), sw=(1.15*k).toFixed(2), S=(PAT_PX*k).toFixed(2), f=n=>(n*k).toFixed(2), id='pat'+nextGid();
+  const kids=[];
+  const line=(d)=>{ kids.push(E('path',{d:d,stroke:ink,'stroke-width':sw,fill:'none','stroke-linecap':'square'})); };
+  const fwd=()=>{ line(`M${f(-1)},${f(1)} l${f(2)},${f(-2)}`); line(`M0,${S} l${S},-${S}`); line(`M${f(5)},${f(7)} l${f(2)},${f(-2)}`); };   // 45° forward
+  const back=()=>{ line(`M${f(-1)},${f(5)} l${f(2)},${f(2)}`); line(`M0,0 l${S},${S}`); line(`M${f(5)},${f(-1)} l${f(2)},${f(2)}`); };       // 45° backward
+  switch(kind){
+    case 1: fwd(); break;                                   // diagonal /
+    case 2: back(); break;                                  // diagonal \
+    case 3: fwd(); back(); break;                           // crosshatch
+    case 4: kids.push(E('circle',{cx:f(3),cy:f(3),r:f(1.2),fill:ink})); break;   // dots
+    case 5: line(`M0,${f(3)} H${S}`); break;                // horizontal rules
+    case 6: line(`M${f(3)},0 V${S}`); break;                // vertical rules
+    case 7: line(`M0,0 H${S} M0,0 V${S}`); break;           // grid / squares
+  }
+  const pat=E('pattern',{id:id,patternUnits:'userSpaceOnUse',width:S,height:S}); kids.forEach(c=>pat.appendChild(c)); defs.appendChild(pat);
+  const url='url(#'+id+')'; svg.__patCache[kind]=url; return url;
+}
+// Drop a non-interactive textured copy over an already-painted coloured rect/bar.
+export function overlayRect(svg, x, y, w, h, idx, el, rx){
+  const u=patternUrl(svg, idx, el); if(!u) return null;
+  const r=E('rect',{x:(+x).toFixed(1),y:(+y).toFixed(1),width:Math.max(0,+w).toFixed(1),height:Math.max(0,+h).toFixed(1),fill:u,'pointer-events':'none'});
+  if(rx) r.setAttribute('rx', rx); svg.appendChild(r); return r;
+}
+// Drop a textured copy over an arbitrary path (donut/pie slice, violin/funnel body).
+export function overlayPath(svg, d, idx, el){
+  const u=patternUrl(svg, idx, el); if(!u) return null;
+  const p=E('path',{d:d,fill:u,'pointer-events':'none'}); svg.appendChild(p); return p;
+}
+// Drop a textured copy over a circle (bubbles).
+export function overlayCircle(svg, cx, cy, r, idx, el){
+  const u=patternUrl(svg, idx, el); if(!u) return null;
+  const c=E('circle',{cx:(+cx).toFixed(1),cy:(+cy).toFixed(1),r:(+r).toFixed(1),fill:u,'pointer-events':'none'}); svg.appendChild(c); return c;
+}
+// Marker shapes for scatter/line series. open=true → hollow (filled with the surface
+// colour, outlined in the series colour) for an extra non-colour distinction.
+export function marker(svg, cx, cy, r, idx, color, open, el){
+  const kind=((idx|0)%5+5)%5; cx=+cx; cy=+cy; r=+r; let m;
+  const tri=(dy)=>`${cx},${(cy-r*dy).toFixed(1)} ${(cx-r).toFixed(1)},${(cy+r*dy*0.85).toFixed(1)} ${(cx+r).toFixed(1)},${(cy+r*dy*0.85).toFixed(1)}`;
+  if(kind===0) m=E('circle',{cx:cx,cy:cy,r:r});
+  else if(kind===1) m=E('polygon',{points:tri(1)});                                   // triangle up
+  else if(kind===2) m=E('rect',{x:(cx-r).toFixed(1),y:(cy-r).toFixed(1),width:(2*r).toFixed(1),height:(2*r).toFixed(1)});
+  else if(kind===3) m=E('polygon',{points:`${cx},${(cy-r).toFixed(1)} ${(cx+r).toFixed(1)},${cy} ${cx},${(cy+r).toFixed(1)} ${(cx-r).toFixed(1)},${cy}`});  // diamond
+  else m=E('polygon',{points:tri(-1)});                                               // triangle down
+  if(open){ m.style.fill=patternInk(el); m.style.stroke=color; m.style.strokeWidth=1.4; }
+  else m.style.fill=color;
+  svg.appendChild(m); return m;
+}
+// Per-series line dash (solid, dashed, dotted, dash-dot …). idx 0 = solid.
+export function dashFor(idx){ return ['','6 4','1 4','8 3 2 3','4 3'][((idx|0)%5+5)%5]; }
+// CSS class for an HTML legend swatch so it mirrors the on-chart texture (see charts.css .lp1…lp7).
+export function patternSwatchClass(idx){ const k=((idx|0)%8+8)%8; return k? ' lp'+k : ''; }

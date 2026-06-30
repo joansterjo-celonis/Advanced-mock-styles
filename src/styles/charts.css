@@ -16,6 +16,20 @@
   .rq-pie-label { font-size:10.5px; fill:var(--text-dim); }
   .rq-pie-lead { stroke:var(--text-faint); stroke-width:1; fill:none; }
 
+  /* ===== Pattern fill — legend swatch textures =====
+     Mirror the on-chart <pattern> tiles (effects.js). The series colour is applied
+     inline as background-color; these classes layer the monochrome texture (cut to the
+     surface colour --bg-1) on top, so legends match the textured charts in any theme. */
+  .lp1 { background-image: repeating-linear-gradient(45deg,  var(--bg-1) 0 1.2px, transparent 1.2px 4px); }
+  .lp2 { background-image: repeating-linear-gradient(-45deg, var(--bg-1) 0 1.2px, transparent 1.2px 4px); }
+  .lp3 { background-image: repeating-linear-gradient(45deg,  var(--bg-1) 0 1px, transparent 1px 4px),
+                            repeating-linear-gradient(-45deg, var(--bg-1) 0 1px, transparent 1px 4px); }
+  .lp4 { background-image: radial-gradient(var(--bg-1) 1px, transparent 1.4px); background-size: 4px 4px; }
+  .lp5 { background-image: repeating-linear-gradient(0deg,  var(--bg-1) 0 1.2px, transparent 1.2px 4px); }
+  .lp6 { background-image: repeating-linear-gradient(90deg, var(--bg-1) 0 1.2px, transparent 1.2px 4px); }
+  .lp7 { background-image: repeating-linear-gradient(0deg,  var(--bg-1) 0 1px, transparent 1px 4px),
+                            repeating-linear-gradient(90deg, var(--bg-1) 0 1px, transparent 1px 4px); }
+
   /* world map */
   .rq-mapwrap { position:relative; flex:1; min-height:0; display:flex; align-items:center; justify-content:center; }
   .rq-mapinner { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; }

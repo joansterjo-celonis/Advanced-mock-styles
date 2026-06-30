@@ -181,6 +181,7 @@ const STEPS = [
           { value: 'flat', title: 'Flat', desc: 'Fast, editorial, and precise.', art: 'charts-flat' },
           { value: 'iso', title: 'Isometric', desc: 'Dimensional bars and tilted surfaces for hero impact.', art: 'charts-iso' },
           { value: 'glass', title: 'Glass', desc: 'Glossy, translucent chart materials that match frosted surfaces.', art: 'charts-glass' },
+          { value: 'webgl', title: 'WebGL', desc: 'Real interactive 3D charts rendered with three.js — lit, glossy, and orbitable.', art: 'charts-webgl' },
         ],
       },
       {
@@ -788,7 +789,7 @@ function hydrateOptionArt() {
   rootEl.setAttribute('data-3dscope', 'full');
   chartCards.forEach(card => {
     const mode = (card.getAttribute('data-kind') || '').replace('charts-', '');
-    if (mode === 'iso' || mode === 'glass') rootEl.setAttribute('data-charts3d', mode);
+    if (mode === 'iso' || mode === 'glass' || mode === 'webgl') rootEl.setAttribute('data-charts3d', mode);
     else rootEl.removeAttribute('data-charts3d');
     api.renderChartsIn(card);
   });
@@ -826,7 +827,7 @@ function draftFromState(state) {
   next.tabFx = has('tabfx-slide') ? 'slide' : 'flat';
   next.kpiFont = pick(['kf-serif', 'kf-mono', 'kf-sans'], 'kf-sans').replace('kf-', '');
   next.tables = has('tbl-lined') ? 'lined' : 'plain';
-  next.charts = has('c3d-glass') ? 'glass' : has('c3d-iso') ? 'iso' : 'flat';
+  next.charts = has('c3d-webgl') ? 'webgl' : has('c3d-glass') ? 'glass' : has('c3d-iso') ? 'iso' : 'flat';
   next.chartScope = has('d3-full') ? 'full' : 'accent';
   next.accent = state.brandActive && state.brand ? state.brand : state.hueActive && state.hue ? state.hue : state.tab || next.accent;
   // Pin the tab color only when it diverges from the accent; otherwise leave null so tabs keep following the accent.
@@ -868,7 +869,7 @@ function buildState(src) {
     `tabs-${tabs}`,
     src.tabFx === 'slide' ? 'tabfx-slide' : 'tabfx-flat',
     src.tables === 'lined' ? 'tbl-lined' : 'tbl-comfortable',
-    src.charts === 'iso' ? 'c3d-iso' : src.charts === 'glass' ? 'c3d-glass' : 'c3d-default',
+    src.charts === 'iso' ? 'c3d-iso' : src.charts === 'glass' ? 'c3d-glass' : src.charts === 'webgl' ? 'c3d-webgl' : 'c3d-default',
     chartScope === 'full' ? 'd3-full' : 'd3-accent',
   ];
   return {
