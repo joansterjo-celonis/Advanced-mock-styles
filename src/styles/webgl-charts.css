@@ -1,0 +1,79 @@
+/* ============================================================
+   WebGL 3D charts (Charts-look = "webgl") — canvas fill rules.
+   Isolated, removable layer: each chart blits into a per-chart
+   <canvas.webgl-chart> that fills its .chart-wrap. The existing SVG
+   chart rules are untouched.
+   ============================================================ */
+
+canvas.webgl-chart {
+  position: absolute;
+  inset: 0;
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+  /* the canvas owns the interaction (drag-to-orbit + hover); let vertical
+     scroll still pass through so cards stay scrollable */
+  touch-action: pan-y;
+  cursor: grab;
+}
+canvas.webgl-chart:active { cursor: grabbing; }
+
+/* Give the wrap a positioning context only when it hosts a webgl canvas, so
+   we never alter layout for the SVG charts. */
+.chart-wrap:has(> canvas.webgl-chart) { position: relative; }
+
+/* Galleries already pin their SVG out of flow (charts.css); mirror that for
+   the canvas so a preserveAspectRatio:none box can't drive card height. */
+.rq-gallery .chart-wrap > canvas.webgl-chart { position: absolute; inset: 0; }
+
+/* ---- Process Explorer graph (Charts-look = "webgl") ----
+   The graph isn't a .chart-wrap; its 3D canvas mounts straight onto the
+   scrollable .pgraph-card. While WebGL is active we swap the scroll-to-pan SVG
+   board for an orbit/zoom 3D stage: hide the SVG/HTML layout and clip the card.
+   Removing [data-webgl] (on teardown) restores the original SVG board exactly. */
+.pgraph-card[data-webgl] { overflow: hidden; }
+.pgraph-card[data-webgl] > .pgraph { display: none; }
+.pgraph-card > canvas.webgl-chart { position: absolute; inset: 0; }
+
+/* The 1640px-tall SVG board normally drives the card height (the card spans both
+   grid rows). With the board hidden for the 3D stage, pin the grid to a sane
+   landscape-ish height so the camera can frame the whole process map instead of
+   an extreme-portrait sliver; the right-column metrics table keeps its own
+   internal scroll. Scoped to WebGL mode only, so the SVG layout is untouched. */
+.process-content:has(.pgraph-card[data-webgl]) { height: clamp(520px, 76vh, 900px); }
+.process-content:has(.pgraph-card[data-webgl]) .p-right-2 { min-height: 0; overflow: hidden; }
+.process-content:has(.pgraph-card[data-webgl]) .ptable-scroll { overflow: auto; }
+
+/* ---- Navigation flythrough toggle (top-left overlay on the 3D process map) ----
+   Drives a red dot along the longest flow with a Google-Maps style POV camera.
+   !important on the layout props escapes shell.css's broad
+   `.card > *:not(.gloss):not(.rim):not(.sheen){position:relative;z-index:2}` reset
+   (specificity 0,4,0), which would otherwise drop the button into normal flow
+   below the full-height canvas and hide it. */
+.pgraph-fly-btn {
+  position: absolute !important;
+  top: 12px !important;
+  left: 12px !important;
+  z-index: 5 !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: 11px;
+  cursor: pointer;
+  color: var(--text, #e8eaf0);
+  background: color-mix(in srgb, var(--bg-1, #14161d) 78%, transparent);
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.14));
+  box-shadow: 0 8px 22px -12px rgba(0, 0, 0, 0.7);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  transition: background 0.16s ease, color 0.16s ease, border-color 0.16s ease, transform 0.12s ease;
+}
+.pgraph-fly-btn:hover { transform: translateY(-1px); background: color-mix(in srgb, var(--bg-1, #14161d) 92%, #fff 8%); }
+.pgraph-fly-btn:active { transform: translateY(0); }
+.pgraph-fly-btn:focus-visible { outline: 2px solid var(--cstop-1a, #6366f1); outline-offset: 2px; }
+.pgraph-fly-btn svg { width: 17px; height: 17px; display: block; }
+.pgraph-fly-btn.on { color: #fff; background: #e0392b; border-color: #e0392b; box-shadow: 0 8px 24px -8px rgba(224, 57, 43, 0.6); }
+.pgraph-fly-btn.on:hover { background: #ec4636; }

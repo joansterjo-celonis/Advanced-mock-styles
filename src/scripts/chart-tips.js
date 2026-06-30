@@ -21,6 +21,7 @@ tip.setAttribute('aria-hidden', 'true');
 document.body.appendChild(tip);
 
 let curEl = null;        // element whose content is currently shown
+let curSig = '';         // content signature so a single host (e.g. a WebGL canvas) can update its rows as the hovered datum changes
 let visible = false;
 let px = 0, py = 0;      // last pointer position
 let raf = 0;
@@ -65,7 +66,7 @@ function show() {
 }
 function hide() {
   if (!visible) return;
-  visible = false; curEl = null;
+  visible = false; curEl = null; curSig = '';
   tip.classList.remove('open');
   tip.setAttribute('aria-hidden', 'true');
 }
@@ -76,7 +77,10 @@ document.addEventListener('pointermove', (e) => {
   const el = e.target && e.target.closest ? e.target.closest('[data-ctip]') : null;
   if (!el) { hide(); return; }
   px = e.clientX; py = e.clientY;
-  if (el !== curEl) { curEl = el; render(el); }
+  // Re-render on element change OR content change (the WebGL canvas keeps the same
+  // host element but rewrites data-ctip/-rows as you move between 3D datums).
+  const sig = (el.getAttribute('data-ctip') || '') + '\u0001' + (el.getAttribute('data-ctip-rows') || '');
+  if (el !== curEl || sig !== curSig) { curEl = el; curSig = sig; render(el); }
   show();
   if (!raf) raf = requestAnimationFrame(position);
 }, { passive: true });

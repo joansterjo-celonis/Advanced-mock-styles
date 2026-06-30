@@ -23,6 +23,14 @@ async function bootEditor(page) {
     rc.classList.add('mode-editor');
   });
   await page.locator('#fab').click();
+  await expect(page.locator('#preset-export-btn')).toBeVisible();
+}
+
+async function openExportMenu(page) {
+  const trigger = page.locator('#preset-export-btn');
+  if (await page.locator('#preset-export-menu').isHidden()) {
+    await trigger.click();
+  }
   await expect(page.locator('#preset-export-figma')).toBeVisible();
 }
 
@@ -99,15 +107,86 @@ test('export package can include pixel reference images for Figma fidelity', asy
   expect(result.byteLength).toBeGreaterThan(10000);
 });
 
-test('export button is isolated from startup and only loads exporter on demand', async ({ page }) => {
+test('export dropdown is isolated from startup and only loads exporter on demand', async ({ page }) => {
   await bootEditor(page);
-  const btn = page.locator('#preset-export-figma');
-  await expect(btn).toHaveText('Export Figma');
-  await expect(btn).toBeEnabled();
+  const trigger = page.locator('#preset-export-btn');
+  await expect(trigger).toContainText('Export');
+  await expect(trigger).toBeEnabled();
+
+  // the menu starts closed and reveals both options on demand
+  await expect(page.locator('#preset-export-menu')).toBeHidden();
+  await trigger.click();
+  await expect(page.locator('#preset-export-figma')).toBeVisible();
+  await expect(page.locator('#preset-export-shots')).toBeVisible();
 
   const loadedBeforeClick = await page.evaluate(() => {
     const resources = performance.getEntriesByType('resource').map((entry) => entry.name);
     return resources.some((name) => name.includes('/src/scripts/figma-export.js'));
   });
   expect(loadedBeforeClick).toBe(false);
+});
+
+test('screenshot export captures home, packages, editor views, and modals', async ({ page }) => {
+  test.setTimeout(60_000);
+  await bootEditor(page);
+  await openExportMenu(page);
+  await page.locator('#main .tabs .ia-tab[data-view="purchase-order"]').click();
+  await expect(page.locator('#content .view[data-view="purchase-order"].active')).toBeVisible();
+
+  const result = await page.evaluate(async () => {
+    const before = {
+      route: document.getElementById('app')?.dataset.route || null,
+      view: document.querySelector('.view.active')?.getAttribute('data-view') || null,
+      openModals: Array.from(document.querySelectorAll('.modal-overlay.open')).map((el) => el.id),
+    };
+    const mod = await import('/Advanced-mock-styles/src/scripts/figma-export.js');
+    const pkg = await mod.exportAllScreenshots(
+      { id: 'custom', name: 'Custom' },
+      { scale: 0.5, download: false, viewIds: ['order-management'] },
+    );
+    const after = {
+      route: document.getElementById('app')?.dataset.route || null,
+      view: document.querySelector('.view.active')?.getAttribute('data-view') || null,
+      openModals: Array.from(document.querySelectorAll('.modal-overlay.open')).map((el) => el.id),
+    };
+    return {
+      kind: pkg.kind,
+      screenIds: pkg.manifest.screens.map((screen) => screen.id),
+      screenDims: pkg.manifest.screens.map((screen) => ({ id: screen.id, w: screen.width, h: screen.height })),
+      fileNames: Object.keys(pkg.files).sort(),
+      pngCount: Object.keys(pkg.files).filter((name) => name.endsWith('.png')).length,
+      zipHeader: Array.from(pkg.bytes.slice(0, 4)),
+      viewportW: window.innerWidth,
+      before,
+      after,
+    };
+  });
+
+  expect(result.kind).toBe('screenshots');
+  expect(result.screenIds).toContain('home');
+  expect(result.screenIds).toContain('packages');
+  expect(result.screenIds).toContain('modal-deploy');
+  expect(result.screenIds).toContain('modal-package-history');
+  expect(result.fileNames).toContain('manifest.json');
+  expect(result.fileNames).toContain('screens/home.png');
+  expect(result.fileNames).toContain('screens/packages.png');
+  expect(result.fileNames).toContain('modals/deploy.png');
+  expect(result.fileNames).toContain('modals/package-history.png');
+
+  // Inner view sub-tabs are captured: Order Management has several sub-tabs, so it
+  // must produce more than one screen, each on its own file.
+  const orderManagementScreens = result.screenIds.filter((id) => id.startsWith('view-order-management'));
+  expect(orderManagementScreens.length).toBeGreaterThan(1);
+  expect(result.fileNames.some((name) => /^screens\/view-order-management__.*\.png$/.test(name))).toBe(true);
+
+  // Screens are full-app captures (not cropped cut-outs): width tracks the viewport.
+  const homeShot = result.screenDims.find((s) => s.id === 'home');
+  expect(homeShot.w).toBeGreaterThan(result.viewportW * 0.6);
+  const modalShot = result.screenDims.find((s) => s.id === 'modal-deploy');
+  expect(modalShot.w).toBe(homeShot.w);
+  expect(modalShot.h).toBe(homeShot.h);
+
+  expect(result.pngCount).toBeGreaterThan(4);
+  expect(result.zipHeader).toEqual([80, 75, 3, 4]);
+  expect(result.after).toEqual(result.before);
 });

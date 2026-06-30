@@ -16,6 +16,20 @@
   .rq-pie-label { font-size:10.5px; fill:var(--text-dim); }
   .rq-pie-lead { stroke:var(--text-faint); stroke-width:1; fill:none; }
 
+  /* ===== Pattern fill — legend swatch textures =====
+     Mirror the on-chart <pattern> tiles (effects.js). The series colour is applied
+     inline as background-color; these classes layer the monochrome texture (cut to the
+     surface colour --bg-1) on top, so legends match the textured charts in any theme. */
+  .lp1 { background-image: repeating-linear-gradient(45deg,  var(--bg-1) 0 1.2px, transparent 1.2px 4px); }
+  .lp2 { background-image: repeating-linear-gradient(-45deg, var(--bg-1) 0 1.2px, transparent 1.2px 4px); }
+  .lp3 { background-image: repeating-linear-gradient(45deg,  var(--bg-1) 0 1px, transparent 1px 4px),
+                            repeating-linear-gradient(-45deg, var(--bg-1) 0 1px, transparent 1px 4px); }
+  .lp4 { background-image: radial-gradient(var(--bg-1) 1px, transparent 1.4px); background-size: 4px 4px; }
+  .lp5 { background-image: repeating-linear-gradient(0deg,  var(--bg-1) 0 1.2px, transparent 1.2px 4px); }
+  .lp6 { background-image: repeating-linear-gradient(90deg, var(--bg-1) 0 1.2px, transparent 1.2px 4px); }
+  .lp7 { background-image: repeating-linear-gradient(0deg,  var(--bg-1) 0 1px, transparent 1px 4px),
+                            repeating-linear-gradient(90deg, var(--bg-1) 0 1px, transparent 1px 4px); }
+
   /* world map */
   .rq-mapwrap { position:relative; flex:1; min-height:0; display:flex; align-items:center; justify-content:center; }
   .rq-mapinner { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; }
@@ -220,11 +234,23 @@
   .preset-actions button#preset-save:not(:disabled) { border-color:rgba(255,255,255,0.5); color:#fff; }
   /* light mode: white-on-white would vanish — use ink + dark border for the same primary lift */
   [data-mode="light"] .preset-actions button#preset-save:not(:disabled) { border-color:rgba(0,0,0,0.45); color:#15161a; }
-  .preset-actions button#preset-export-figma:not(:disabled) { border-color:rgba(139,92,246,0.55); color:#c4b5fd; }
-  [data-mode="light"] .preset-actions button#preset-export-figma:not(:disabled) { border-color:rgba(91,33,182,0.42); color:#4c1d95; }
-  .preset-actions button#preset-export-figma:not(:disabled):hover { color:#fff; border-color:#8b5cf6; background:rgba(139,92,246,0.18); }
-  [data-mode="light"] .preset-actions button#preset-export-figma:not(:disabled):hover { color:#fff; border-color:#6d28d9; background:#6d28d9; }
-  .preset-actions button#preset-export-figma.is-exporting { opacity:.72; cursor:progress; animation:preset-sync-pulse 1s ease-in-out infinite; }
+  /* Export dropdown: its own full-width row so the menu has room (the proto panel clips horizontal overflow) */
+  .preset-export { position:relative; flex:1 0 100%; display:flex; }
+  .preset-export-trigger { display:flex; align-items:center; justify-content:center; gap:6px; }
+  .preset-export-trigger .ia-chev { width:13px; height:13px; transition:transform .15s; }
+  .preset-export-trigger[aria-expanded="true"] .ia-chev { transform:rotate(180deg); }
+  .preset-actions .preset-export-trigger:not(:disabled) { border-color:rgba(139,92,246,0.55); color:#c4b5fd; }
+  [data-mode="light"] .preset-actions .preset-export-trigger:not(:disabled) { border-color:rgba(91,33,182,0.42); color:#4c1d95; }
+  .preset-actions .preset-export-trigger:not(:disabled):hover { color:#fff; border-color:#8b5cf6; background:rgba(139,92,246,0.18); }
+  [data-mode="light"] .preset-actions .preset-export-trigger:not(:disabled):hover { color:#fff; border-color:#6d28d9; background:#6d28d9; }
+  .preset-actions .preset-export-trigger.is-exporting { opacity:.72; cursor:progress; animation:preset-sync-pulse 1s ease-in-out infinite; }
+  .preset-export-menu { position:absolute; left:0; right:0; top:calc(100% + 6px); z-index:60; display:flex; flex-direction:column; gap:2px; padding:6px; background:#1b1e25; border:1px solid var(--chrome-border); border-radius:10px; box-shadow:0 18px 40px -16px rgba(0,0,0,0.7); }
+  [data-mode="light"] .preset-export-menu { background:#fff; border-color:rgba(0,0,0,0.12); box-shadow:0 18px 40px -16px rgba(0,0,0,0.28); }
+  .preset-export-menu[hidden] { display:none; }
+  .preset-actions .preset-export-menu .pe-item { flex:none; height:auto; width:100%; text-align:left; justify-content:flex-start; padding:8px 10px; border:0; border-radius:7px; background:transparent; color:var(--chrome-text); }
+  .preset-actions .preset-export-menu .pe-item:hover { background:var(--chrome-hover); border-color:transparent; color:var(--chrome-text); }
+  .preset-actions .preset-export-menu .pe-item:disabled { opacity:.45; cursor:default; }
+  .preset-actions .preset-export-menu .pe-item:disabled:hover { background:transparent; }
   .preset-actions button#preset-del:not(:disabled):hover { color:#e5484d; border-color:#e5484d; background:transparent; }
   .preset-actions button:disabled { opacity:.34; cursor:default; }
   .preset-actions button:disabled:hover { background:transparent; border-color:var(--chrome-border); color:var(--chrome-text); }

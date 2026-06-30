@@ -10,6 +10,9 @@ import '../styles/charts.css';
 import '../styles/knobs.css';
 import '../styles/components.css';
 import '../styles/effects.css';
+// WebGL 3D charts — isolated, removable layer (canvas fill rules for the
+// three.js renderer; the engine lazy-imports the JS only when "webgl" is selected).
+import '../styles/webgl-charts.css';
 // Side-by-side asset split — isolated, removable layer (after components/effects
 // so its tie-breaking selectors, e.g. .ctx-canvas.sv-host overflow, win the cascade).
 import '../styles/split-view.css';
