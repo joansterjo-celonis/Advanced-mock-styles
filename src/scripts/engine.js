@@ -164,6 +164,9 @@ import { getThemes, syncThemes, getAuthor, ensureAuthor, isCloudEnabled } from '
         { let off=0; segs.forEach(s=>{ const len=C*s.p/100;
             const hit=E('circle',{cx:cx,cy:cy,r:r,fill:'none',stroke:'transparent','stroke-width':sw+6,'stroke-dasharray':`${len.toFixed(2)} ${(C-len).toFixed(2)}`,'stroke-dashoffset':(-off).toFixed(2),transform:`rotate(-90 ${cx} ${cy})`,'pointer-events':'stroke'});
             setTip(hit,s.l,[['Share',s.p.toFixed(2)+'%']]); svg.appendChild(hit); off+=len; }); }
+        // keep the (static) side-legend swatches in sync with the ring textures (reverts on Classic)
+        const leg=wrap.parentElement&&wrap.parentElement.querySelector('.donut-legend'); if(leg){ const pat=usePattern(wrap);
+          leg.querySelectorAll('.sw').forEach((s,i)=>{ s.className='sw'+(pat?patternSwatchClass(i):''); }); }
         wrap.appendChild(svg);
       }
 
@@ -794,7 +797,8 @@ import { getThemes, syncThemes, getAuthor, ensureAuthor, isCloudEnabled } from '
         const ramp=['--cstop-1b','--cstop-1a','--cstop-2a','--cstop-3a','--cstop-4a'].map(v=>cssVar(v,wrap)).filter(Boolean);
         const stops=ramp.length?ramp:[cssVar('--cstop-1a',wrap)||'#6366f1'];
         const rampColor=t=>{ if(stops.length===1)return rgbaC(stops[0],0.2+0.72*t); const p=t*(stops.length-1), i=Math.min(stops.length-2,Math.floor(p)), f=p-i, a=toRGB(stops[i]), b=toRGB(stops[i+1]); return `rgb(${Math.round(a.r+(b.r-a.r)*f)},${Math.round(a.g+(b.g-a.g)*f)},${Math.round(a.b+(b.b-a.b)*f)})`; };
-        const m3=chartMode(wrap), svg=E('svg',{viewBox:`0 0 ${W} ${H}`,preserveAspectRatio:'none'});
+        const m3=chartMode(wrap), pat=usePattern(wrap), svg=E('svg',{viewBox:`0 0 ${W} ${H}`,preserveAspectRatio:'none'});
+        const heatTex=[1,2,3,4,7];   // value buckets → every cell textured, sparse → dense (diagonal → grid)
         rows.forEach((rl,ri)=>{ cols.forEach((cl,ci)=>{ const v=(mat[ri]&&mat[ri][ci])||0, t=Math.max(0,Math.min(1,(v-vmin)/vspan)), x=padL+cw*ci, y=padT+ch*ri, cellCol=rampColor(t), w=Math.max(0.5,cw-2), hh=Math.max(0.5,ch-2);
             let cell;
             if(m3==='iso'){
@@ -809,6 +813,7 @@ import { getThemes, syncThemes, getAuthor, ensureAuthor, isCloudEnabled } from '
               svg.appendChild(E('rect',{x:x.toFixed(1),y:y.toFixed(1),width:w.toFixed(1),height:(hh*0.5).toFixed(1),rx:3,fill:`url(#${sheenGrad(svg,false)})`,'pointer-events':'none'}));
             } else {
               cell=E('rect',{x:x.toFixed(1),y:y.toFixed(1),width:w.toFixed(1),height:hh.toFixed(1),rx:2}); cell.style.fill=cellCol; svg.appendChild(cell);
+              if(pat) overlayRect(svg, x, y, w, hh, heatTex[Math.min(heatTex.length-1,Math.round(t*(heatTex.length-1)))], wrap, 2);   // texture density ↑ with value
             }
             setTip(cell,rl+' \u00b7 '+cl,[['Value',fmt(v)+(unit?' '+unit:'')]]); });
           const lt=svgText(E,padL-6,padT+ch*ri+ch/2+3,String(rl),'end'); lt.setAttribute('font-size','8.5'); svg.appendChild(lt); });
@@ -1790,6 +1795,8 @@ import { getThemes, syncThemes, getAuthor, ensureAuthor, isCloudEnabled } from '
           syncVividComboButtons();
           if(!btns.some(id=>id==='pkg-l1'||id==='pkg-status')) BTN_ACTIONS['pkg-l1']();
           if(!btns.some(id=>id==='l0-hover'||id==='l0-click')) BTN_ACTIONS['l0-hover']();
+          if(!btns.some(id=>id==='cfill-classic'||id==='cfill-pattern')) BTN_ACTIONS['cfill-classic']();   // presets predating the fill-style knob default to Classic
+
           btns.forEach(id=>{ const fn=BTN_ACTIONS[id]; if(fn) fn(); });
           if(st.sliders) for(const id in st.sliders){ const el=$(id); if(el){ el.value=st.sliders[id]; el.dispatchEvent(new Event('input')); } }
           // glass split: honor the stored advanced state (else force simple so any live axis overrides clear)

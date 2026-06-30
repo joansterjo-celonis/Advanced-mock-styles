@@ -26,6 +26,7 @@ const DEFAULT_DRAFT = {
   numFeats: [],
   tables: 'plain',
   charts: 'flat',
+  chartFill: 'classic',
   chartScope: 'accent',
   name: '',
 };
@@ -182,6 +183,14 @@ const STEPS = [
           { value: 'iso', title: 'Isometric', desc: 'Dimensional bars and tilted surfaces for hero impact.', art: 'charts-iso' },
           { value: 'glass', title: 'Glass', desc: 'Glossy, translucent chart materials that match frosted surfaces.', art: 'charts-glass' },
           { value: 'webgl', title: 'WebGL', desc: 'Real interactive 3D charts rendered with three.js — lit, glossy, and orbitable.', art: 'charts-webgl' },
+        ],
+      },
+      {
+        key: 'chartFill',
+        label: 'Fill style',
+        options: [
+          { value: 'classic', title: 'Classic', desc: 'Solid color fills — series separated by hue alone.', art: 'fill-classic' },
+          { value: 'pattern', title: 'Patterns', desc: 'Hatching, dots, and crosshatch textures over each series, so charts read without relying on color.', art: 'fill-pattern' },
         ],
       },
       {
@@ -346,6 +355,7 @@ function isGroupVisible(group) {
   if (group.key === 'vividPalette') return draft.palette === 'vivid';
   if (group.key === 'accent') return draft.palette !== 'mono';
   if (group.key === 'shell') return draft.layout === 'default';
+  if (group.key === 'chartFill') return draft.charts === 'flat';   // Patterns are a flat-only sub-variant
   if (group.key === 'chartScope') return draft.charts !== 'flat';
   // Inter OpenType features only render on the Sans (Inter) numerals; hide them otherwise.
   if (group.key === 'numFeats') return draft.kpiFont === 'sans';
@@ -782,19 +792,31 @@ function hydrateOptionArt() {
   const stage = overlay && overlay.querySelector('.tc-stage');
   if (!stage || typeof api.renderChartsIn !== 'function') return;
   const chartCards = stage.querySelectorAll('.tc-component-art[data-kind^="charts-"]');
-  if (!chartCards.length) return;
+  const fillCards = stage.querySelectorAll('.tc-component-art[data-kind^="fill-"]');
+  if (!chartCards.length && !fillCards.length) return;
   const rootEl = document.documentElement;
   const prevLook = rootEl.getAttribute('data-charts3d');
   const prevScope = rootEl.getAttribute('data-3dscope');
+  const prevFill = rootEl.getAttribute('data-chartfill');
   rootEl.setAttribute('data-3dscope', 'full');
+  // 3D-look cards: force each look, never patterns
   chartCards.forEach(card => {
     const mode = (card.getAttribute('data-kind') || '').replace('charts-', '');
     if (mode === 'iso' || mode === 'glass' || mode === 'webgl') rootEl.setAttribute('data-charts3d', mode);
     else rootEl.removeAttribute('data-charts3d');
+    rootEl.removeAttribute('data-chartfill');
+    api.renderChartsIn(card);
+  });
+  // Fill-style cards: always flat, force the Classic / Patterns fill so the difference shows
+  fillCards.forEach(card => {
+    const fill = (card.getAttribute('data-kind') || '').replace('fill-', '');
+    rootEl.removeAttribute('data-charts3d');
+    if (fill === 'pattern') rootEl.setAttribute('data-chartfill', 'pattern'); else rootEl.removeAttribute('data-chartfill');
     api.renderChartsIn(card);
   });
   if (prevLook) rootEl.setAttribute('data-charts3d', prevLook); else rootEl.removeAttribute('data-charts3d');
   if (prevScope) rootEl.setAttribute('data-3dscope', prevScope); else rootEl.removeAttribute('data-3dscope');
+  if (prevFill) rootEl.setAttribute('data-chartfill', prevFill); else rootEl.removeAttribute('data-chartfill');
 }
 
 function applyModalMaterial() {
@@ -828,6 +850,7 @@ function draftFromState(state) {
   next.kpiFont = pick(['kf-serif', 'kf-mono', 'kf-sans'], 'kf-sans').replace('kf-', '');
   next.tables = has('tbl-lined') ? 'lined' : 'plain';
   next.charts = has('c3d-webgl') ? 'webgl' : has('c3d-glass') ? 'glass' : has('c3d-iso') ? 'iso' : 'flat';
+  next.chartFill = has('cfill-pattern') ? 'pattern' : 'classic';
   next.chartScope = has('d3-full') ? 'full' : 'accent';
   next.accent = state.brandActive && state.brand ? state.brand : state.hueActive && state.hue ? state.hue : state.tab || next.accent;
   // Pin the tab color only when it diverges from the accent; otherwise leave null so tabs keep following the accent.
@@ -854,6 +877,7 @@ function buildState(src) {
   const shell = src.layout === 'default' ? src.shell : 'tinted';
   const tabs = src.palette === 'mono' && src.tabs === 'color' ? 'filled' : src.tabs;
   const chartScope = src.charts === 'flat' ? 'accent' : src.chartScope;
+  const chartFill = src.charts === 'flat' ? src.chartFill : 'classic';   // patterns only exist on the flat look
   const buttons = [
     src.appearance === 'light' ? 'mode-light' : 'mode-dark',
     `theme-${src.palette}`,
@@ -870,6 +894,7 @@ function buildState(src) {
     src.tabFx === 'slide' ? 'tabfx-slide' : 'tabfx-flat',
     src.tables === 'lined' ? 'tbl-lined' : 'tbl-comfortable',
     src.charts === 'iso' ? 'c3d-iso' : src.charts === 'glass' ? 'c3d-glass' : src.charts === 'webgl' ? 'c3d-webgl' : 'c3d-default',
+    chartFill === 'pattern' ? 'cfill-pattern' : 'cfill-classic',
     chartScope === 'full' ? 'd3-full' : 'd3-accent',
   ];
   return {
@@ -946,7 +971,9 @@ function summaryItems() {
     ['Layout', labelFor('layout', draft.layout)],
     ['Shape', `${draft.surfaceRadius}px / ${draft.controlRadius}px`],
     ['Density', labelFor('density', draft.density)],
-    ['Charts', labelFor('charts', draft.charts)],
+    ['Charts', draft.charts === 'flat' && draft.chartFill === 'pattern'
+      ? `${labelFor('charts', draft.charts)} \u00B7 Patterns`
+      : labelFor('charts', draft.charts)],
   ];
 }
 
@@ -986,7 +1013,7 @@ function renderArt(art, value, amount = 0) {
     const bl = amount && typeof amount === 'object' ? Number(amount.bl) || 0 : level;
     return renderGlassScene(level, op, bl);
   }
-  if (/^(density|tabs|tables|charts)-/.test(art)) {
+  if (/^(density|tabs|tables|charts|fill)-/.test(art)) {
     return `<div class="tc-art tc-component-art" data-kind="${escapeAttr(art)}" style="--tc-level:${level};--tc-accent:${draft.accent}">
       ${renderComponentArt(art)}
     </div>`;
@@ -1058,6 +1085,15 @@ function renderComponentArt(art) {
             <tr><td>SO-1143</td><td>Ready</td><td>12K</td></tr>
           </tbody>
         </table>
+      </div>
+    </div>`;
+  }
+  // Fill-style art uses a real multi-series grouped bar so Classic (solid hues) vs
+  // Patterns (textured series) is obvious. hydrateOptionArt() renders it under flat + the forced fill.
+  if (art.startsWith('fill-')) {
+    return `<div class="tc-frag tc-frag-chart">
+      <div class="card metric" data-card>
+        <div class="chart-wrap" data-chart="groupbars" data-ymax="80" data-cats='["Q1","Q2","Q3"]' data-series='[{"c":"--cstop-1a","name":"A","vals":[44,60,66]},{"c":"--cstop-2a","name":"B","vals":[30,38,32]},{"c":"--cstop-3a","name":"C","vals":[18,26,42]}]'></div>
       </div>
     </div>`;
   }
