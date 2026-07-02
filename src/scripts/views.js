@@ -47,3 +47,5 @@ import './views/incident-management.js';
 import './views/service-request.js';
 // SLA Performance — compliance / breach analytics (donut + multi-line trend).
 import './views/sla-performance.js';
+// P2P Analytics — Procure-to-Pay suite (KPI Overview / Cycle Time / Approval Workflow sub-tabs).
+import './views/p2p-analytics.js';

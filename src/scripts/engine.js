@@ -175,7 +175,10 @@ import { getThemes, syncThemes, getAuthor, ensureAuthor, isCloudEnabled } from '
       function area(wrap){
         const key=wrap.dataset.key||'rej';
         const W=Math.max(Math.round(wrap.clientWidth),220), H=Math.max(Math.round(wrap.clientHeight),100);
-        const padL=30,padR=10,padT=8,padB=18, innerW=W-padL-padR, innerH=H-padT-padB;
+        // "flush" hero mode: drop the axis gutters so the area bleeds to the block edges
+        // (used inside CTA media so the viz reads as integrated, not a shrunken chart).
+        const flush = wrap.dataset.flush==='1' || !!wrap.closest('.pg-cta-media');
+        const padL=flush?0:30,padR=flush?0:10,padT=flush?6:8,padB=flush?0:18, innerW=W-padL-padR, innerH=H-padT-padB;
         let pts; if(key==='po'){ pts=series(91,18,60,28,1.0); } else { pts=series(101,N,52,26,0.2); }
         const mx=Math.max(...pts)*1.15;
         const tint=vividTint(key);
@@ -207,8 +210,10 @@ import { getThemes, syncThemes, getAuthor, ensureAuthor, isCloudEnabled } from '
           pts.forEach((v,i)=>{ if(i%2)return; const x=padL+step*i,y=padT+innerH-(v/mx)*innerH; const c=E('circle',{cx:x.toFixed(1),cy:y.toFixed(1),r:2.2}); c.style.fill=lineCol; svg.appendChild(c); });
         }
         const T=(x,y,s,a)=>svgText(E,x,y,s,a);
-        svg.appendChild(T(padL,padT+7,'50K','end'));
-        svg.appendChild(T(padL,H-5,'2022-01','start')); svg.appendChild(T(padL+innerW,H-5,'2024-01','end'));
+        if(!flush){
+          svg.appendChild(T(padL,padT+7,'50K','end'));
+          svg.appendChild(T(padL,H-5,'2022-01','start')); svg.appendChild(T(padL+innerW,H-5,'2024-01','end'));
+        }
         for(let i=0;i<pts.length;i++){ const cxp=padL+step*i, x0=Math.max(padL,cxp-step/2), x1=Math.min(padL+innerW,cxp+step/2); hitRect(svg,x0,padT,x1-x0,innerH,monthLabel(i),[['Value',fmt(pts[i])]]); }
         wrap.appendChild(svg);
       }

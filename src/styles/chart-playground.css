@@ -314,10 +314,20 @@
 .pg-activity-spark { flex: 0 0 auto; min-height: 46px; }
 .pg-activity-pie { flex: 1; min-height: 130px; }
 
+/* 1b) Activity trend — pie dropped; the trend moves up into a header row (KPI + inline
+   sparkline) so the calendar heatmap gets the full width below for a cleaner read. */
+.pg-build .pg-cell.pg-combo-activity2 { min-height: 320px; }
+.pg-act2-head { display: flex; align-items: center; gap: 18px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+.pg-act2-kpi { flex: 0 0 auto; }
+.pg-act2-vrow { display: flex; align-items: baseline; gap: 8px; margin-top: 2px; }
+.pg-act2-spark { flex: 1; min-width: 0; min-height: 44px; align-self: stretch; }
+.pg-act2-cal { flex: 1; min-height: 150px; }
+
 /* 2) Active streak — icon chip + big duration + dot-grid accumulation.
    Vertical stack: category icon, the headline number, then the grid growing to
    fill so the "how many so far" reads as a tangible, countable object. */
 .pg-build .pg-cell.pg-combo-streak { min-height: 320px; }
+.pg-streak-head { display: flex; align-items: center; gap: 14px; }
 .pg-streak-icon {
   width: 46px; height: 46px; border-radius: 14px; flex: 0 0 auto;
   display: inline-flex; align-items: center; justify-content: center;
@@ -331,10 +341,11 @@
 /* 3) Radial gauge — bounded metric as an arc sweeping toward its ceiling, with
    the KPI seated in the opening and qualitative bands behind the value arc. */
 .pg-build .pg-cell.pg-combo-gauge { min-height: 320px; }
-.pg-gauge-plot { flex: 1; min-height: 150px; }
-.pg-gauge-center { position: absolute; left: 0; right: 0; bottom: 16%; display: flex; flex-direction: column; align-items: center; pointer-events: none; text-align: center; }
-.pg-gauge-center b { font-size: 30px; font-weight: 600; letter-spacing: -0.025em; line-height: 1.05; color: var(--text); font-variant-numeric: tabular-nums; }
-.pg-gauge-center span { font-size: 11.5px; color: var(--text-dim); margin-top: 3px; }
+.pg-gauge-plot { flex: 1; min-height: 150px; container-type: inline-size; }
+.pg-gauge-center { position: absolute; left: 0; right: 0; bottom: 14%; display: flex; flex-direction: column; align-items: center; pointer-events: none; text-align: center; }
+/* Scale the headline with the gauge width so it fills the arc opening at any card size. */
+.pg-gauge-center b { font-size: clamp(32px, 15cqi, 60px); font-weight: 600; letter-spacing: -0.03em; line-height: 1; color: var(--text); font-variant-numeric: tabular-nums; }
+.pg-gauge-center span { font-size: clamp(11px, 3.4cqi, 14px); color: var(--text-dim); margin-top: 4px; }
 
 /* 4) Milestone timeline — a left-to-right rail with done / active / upcoming
    nodes. Fixed label height keeps every node on one horizontal line so the
@@ -374,3 +385,111 @@
 .pg-rank-bar { height: 8px; border-radius: 999px; background: rgba(128,128,128,0.16); overflow: hidden; }
 .pg-rank-bar i { display: block; height: 100%; border-radius: 999px; background: var(--cstop-1a); }
 .pg-rank-v { font-size: 13px; font-weight: 600; color: var(--text); font-variant-numeric: tabular-nums; }
+
+/* 6) Category mix — mini KPIs + a single 100%-width segmented share bar + legend.
+   One stacked bar is the most compact part-to-whole readout and keeps the exact
+   segment labels inline (via .pg-legend), unlike a pie. */
+/* No chart to fill space, so opt out of the grid row-stretch and hug the content
+   (title + mini KPIs + share bar + legend) instead of matching the taller neighbour. */
+.pg-build .pg-cell.pg-combo-mix { min-height: 0; align-self: start; }
+.pg-combo-mix .pg-mini-kpis { margin-top: 2px; }
+.pg-segbar { display: flex; width: 100%; height: 16px; border-radius: 999px; overflow: hidden; margin-top: 4px; background: rgba(128,128,128,0.16); }
+.pg-segbar > span { display: block; height: 100%; flex: 0 0 auto; }
+.pg-segbar > span + span { box-shadow: inset 1.5px 0 0 var(--bg-1); }
+
+/* 7) Response time range — range KPI + baseline stats + bars. A min-max band plus a
+   baseline reference communicates spread and normalcy better than a single average. */
+.pg-kpi-unit { font-size: 16px; font-weight: 500; color: var(--text-dim); }
+.pg-combo-range .pg-plot { flex: 1; min-height: 130px; }
+
+/* ============================================================
+   KPI cards — compact single-metric tiles. Three flavours share a
+   header (accent icon chip + label) and a headline value + delta, then
+   differ in the readout: a full-width trend spark, a progress-to-target
+   bar, or a percentage ring. All numerals use [data-counter] so they
+   animate and follow the weight/font knob.
+   ============================================================ */
+.pg-build .pg-cell.pg-combo-kpi { min-height: 210px; }
+.pg-kpi-head { display: flex; align-items: center; gap: 10px; }
+.pg-kpi-head .pg-kpi-k { font-size: 12px; }
+.pg-kpi-chip {
+  width: 34px; height: 34px; border-radius: 10px; flex: 0 0 auto;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: color-mix(in srgb, var(--accent) 12%, var(--card-strong));
+  border: 1px solid var(--border); color: color-mix(in srgb, var(--accent) 62%, var(--text));
+}
+.pg-kpi-chip svg { width: 18px; height: 18px; }
+.pg-kpi-vrow { display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; }
+/* Oversize the headline so the number is the titular element of the tile. */
+.pg-combo-kpi .pg-kpi-v { font-size: 40px; letter-spacing: -0.03em; }
+
+/* a) trend tile — full-width sparkline (flush + inline so it reads as a trend line). */
+.pg-kpi-spark { flex: 1; min-height: 56px; align-self: stretch; }
+
+/* b) progress-to-target — bar pinned to the bottom with a caption row. */
+.pg-goalwrap { display: flex; flex-direction: column; gap: 7px; margin-top: auto; }
+.pg-goalbar { height: 10px; border-radius: 999px; background: rgba(128,128,128,0.16); overflow: hidden; }
+.pg-goalbar > i { display: block; height: 100%; border-radius: 999px; background: var(--cstop-1a); }
+.pg-goalcap { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+
+/* c) ring tile — donut ring with a centred % and a small stat rail beside it. */
+.pg-ringkpi { display: flex; flex: 1; align-items: center; gap: 16px; min-height: 140px; }
+.pg-ringkpi-chart { flex: 0 0 auto; width: 128px; height: 128px; }
+.pg-ringkpi-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; text-align: center; }
+.pg-ringkpi-center b { font-size: 27px; font-weight: 600; letter-spacing: -0.025em; line-height: 1; color: var(--text); font-variant-numeric: tabular-nums; }
+.pg-ringkpi-center span { font-size: 10.5px; color: var(--text-dim); margin-top: 3px; }
+.pg-ringkpi-meta { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 9px; }
+.pg-ringkpi-stat { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.pg-ringkpi-meta .pg-delta { align-self: flex-start; }
+
+/* ============================================================
+   CTA / prompt cards — media (viz or illustration) + heading +
+   description + actions. Anatomy: top media block, then body text,
+   then the action row pinned to the bottom.
+   ============================================================ */
+.pg-build .pg-cell.pg-combo-cta { min-height: 300px; }
+.pg-cta-media { border-radius: var(--r-surface, 12px); overflow: hidden; flex: 0 0 auto; }
+/* visualization media: a fixed-height block the chart fills; axis text hidden so it
+   reads as a hero viz rather than a shrunken full chart. No panel fill — the chart sits
+   directly on the card (its own area gradient carries the colour). */
+.pg-cta-media-chart { height: 138px; display: flex; }
+/* area/line media bleeds edge-to-edge (the renderer drops its axis gutters in flush
+   mode) so the viz feels built into the block rather than dropped on top of it. */
+.pg-cta-media-chart:not(.pg-cta-media-gauge) { padding: 0; }
+.pg-cta-media-chart .pg-plot { flex: 1; align-self: stretch; }
+.pg-cta-media .chart-wrap svg text { display: none; }
+/* report media: a compact KPI (value + delta) seats above the trend so the tile reads
+   as a complete stat-with-trend; the chart still bleeds to the block edges below it. */
+.pg-cta-report .pg-cta-media-chart { flex-direction: column; }
+.pg-cta-stat { display: flex; align-items: flex-end; justify-content: space-between; gap: 8px; padding: 10px 12px 2px; }
+.pg-cta-stat-k { font-size: 11px; color: var(--text-dim); }
+.pg-cta-stat-v { font-size: 22px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.1; color: var(--text); font-variant-numeric: tabular-nums; margin-top: 1px; }
+/* gauge media: keep a little breathing room and the plot centred. */
+.pg-cta-media-gauge { padding: 12px 10px 0; }
+.pg-cta-media-gauge .pg-plot { justify-content: center; }
+/* KPI seated in the gauge opening (its own svg value text is hidden), so the arc reads
+   as a complete metric rather than decoration. */
+.pg-cta-gauge-center { position: absolute; left: 0; right: 0; bottom: 6px; display: flex; flex-direction: column; align-items: center; pointer-events: none; text-align: center; }
+.pg-cta-gauge-center b { font-size: 26px; font-weight: 600; letter-spacing: -0.02em; line-height: 1; color: var(--text); font-variant-numeric: tabular-nums; }
+.pg-cta-gauge-center span { font-size: 10px; color: var(--text-dim); margin-top: 2px; }
+/* illustration media: an accent-tinted gradient block with a large centered icon
+   (theme-driven, so it recolors with the Brand/Palette knobs). */
+.pg-cta-media-art {
+  height: 138px; display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(150deg, color-mix(in srgb, var(--accent) 22%, var(--bg-1)), color-mix(in srgb, var(--accent) 44%, var(--bg-1)));
+}
+.pg-cta-media-art .icon { width: 42px; height: 42px; color: color-mix(in srgb, var(--accent) 55%, var(--text)); opacity: 0.85; }
+/* inline "connect" illustration: theme-driven (accent/card/text vars) so it recolours
+   with the Brand/Palette knobs; scales to fit the media block, centred. */
+.pg-cta-art { width: 100%; height: 100%; display: block; }
+
+.pg-cta-body { display: flex; flex-direction: column; gap: 4px; }
+.pg-cta-title { font-size: 15px; font-weight: 650; color: var(--text); letter-spacing: -0.01em; }
+.pg-cta-desc { font-size: 12px; line-height: 1.45; color: var(--text-dim);
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
+
+/* Action row pinned to the bottom; primary grows, secondary hugs its content. Both
+   reuse existing button styles, so their look tracks the app's button conventions. */
+.pg-cta-actions { display: flex; align-items: stretch; gap: 8px; margin-top: auto; }
+.pg-cta-actions .btn-validate { flex: 1; margin-top: 0; align-self: auto; }
+.pg-cta-actions .pg-focus-btn { margin-left: 0; align-self: stretch; flex: 0 0 auto; height: 34px; }

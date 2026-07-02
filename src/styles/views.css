@@ -425,3 +425,50 @@
   .dash-legitem { display:inline-flex; align-items:center; gap:6px; }
   .dash-swatch { width:10px; height:10px; border-radius:2px; flex:none; }
 
+  /* ===== P2P Analytics view (KPI Overview / Cycle Time / Approval Workflow sub-tabs) ===== */
+  .p2p-view .dash-head h1 { font-size:18px; }
+  /* shared info bubble — the design system only styles .i inside .tr-view/.ocpm-view */
+  .p2p-view .i { width:14px; height:14px; border-radius:50%; border:1px solid var(--text-faint); color:var(--text-faint);
+    display:inline-grid; place-items:center; font-size:9px; vertical-align:1px; cursor:default; font-weight:400; flex:none; }
+
+  /* filter pill row (reuses .hpill; spans the full bento width) */
+  .p2p-filters { grid-column:1 / -1; display:flex; flex-wrap:wrap; gap:10px; }
+
+  /* status badges (semantic; warn has no token so a fixed amber is used) */
+  .p2p-badge { display:inline-flex; align-items:center; height:22px; padding:0 10px; border-radius:999px;
+    font-size:11px; font-weight:600; letter-spacing:.02em; white-space:nowrap; }
+  .p2p-badge.ok { background:color-mix(in srgb, var(--success) 16%, transparent); color:var(--success); }
+  .p2p-badge.warn { background:color-mix(in srgb, #f59e0b 20%, transparent); color:#f59e0b; }
+  .p2p-badge.crit { background:color-mix(in srgb, var(--danger) 16%, transparent); color:var(--danger); }
+
+  /* delta subtext under kpi-strip cells + rich KPI cards (semantic direction colour) */
+  .p2p-delta { display:block; font-size:11.5px; margin-top:8px; }
+  .p2p-kdelta { font-weight:600; white-space:nowrap; }
+  .p2p-delta.up, .p2p-kdelta.up { color:var(--danger); }
+  .p2p-delta.down, .p2p-kdelta.down { color:var(--success); }
+  .p2p-delta.flat, .p2p-kdelta.flat { color:var(--text-dim); }
+
+  /* rich KPI card row (5 across; internal grid so .card's default span-4 must be reset) */
+  .p2p-kpirow { grid-column:1 / -1; display:grid; grid-template-columns:repeat(5,1fr); gap:var(--gap); }
+  @media (max-width:1180px){ .p2p-kpirow { grid-template-columns:repeat(3,1fr); } }
+  @media (max-width:680px){ .p2p-kpirow { grid-template-columns:repeat(2,1fr); } }
+  .p2p-kcard { grid-column:auto; display:flex; flex-direction:column; }
+  .p2p-klabel { font-size:12px; font-weight:600; color:var(--text-dim); display:flex; align-items:center; gap:6px; }
+  .p2p-kval { font-size:30px; font-weight:700; letter-spacing:-0.02em; color:var(--text); margin-top:8px; line-height:1; font-variant-numeric:tabular-nums; }
+  .p2p-ktarget { display:flex; align-items:center; justify-content:space-between; gap:8px; font-size:11.5px; color:var(--text-dim); margin-top:10px; }
+  .p2p-kbullet { height:40px; margin-top:8px; }
+  .p2p-kfoot { margin-top:auto; padding-top:12px; }
+
+  /* summary statistics list (label + value rows in a 3-column grid) */
+  .p2p-statlist { display:grid; grid-template-columns:repeat(3,1fr); gap:0 36px; margin-top:8px; }
+  .p2p-statrow { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:11px 0; border-bottom:1px solid var(--border); }
+  .p2p-statrow .l { font-size:12.5px; color:var(--text-dim); }
+  .p2p-statrow .v { font-size:16px; font-weight:600; color:var(--text); font-variant-numeric:tabular-nums; }
+  @media (max-width:760px){ .p2p-statlist { grid-template-columns:1fr; } }
+
+  /* refresh-info footer line */
+  .p2p-refresh { font-size:11.5px; color:var(--text-dim); text-align:center; padding:6px 4px; }
+
+  /* tables: trailing kebab column + first-column truncation (match the other views) */
+  .p2p-view .ptable th.tr-kebab, .p2p-view .ptable td.tr-kebab { width:24px; text-align:center; color:var(--text-faint); }
+
