@@ -1,7 +1,7 @@
 // ============================================================
 //  Asset header — the single source of truth for a view's header.
 // ============================================================
-// Every context view (Order Management, Purchase Order, Rework & Quality,
+// Every context view (Order Management, Rework & Quality,
 // Insights, Tracking Analysis, OCPM, …) renders its title bar (+ optional
 // sub-tabs) through buildAssetHeader(). Edit a button, swap an icon, or
 // restructure the bar HERE and EVERY view updates — there is no per-view

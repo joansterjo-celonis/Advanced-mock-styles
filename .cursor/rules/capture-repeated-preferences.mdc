@@ -1,0 +1,19 @@
+---
+description: Turn repeated user preferences into rules to keep the system cohesive
+alwaysApply: true
+---
+
+# Capture Repeated Preferences
+
+When the user gives the same instruction or correction **more than once** (a
+recurring styling/behaviour/convention preference):
+
+1. Briefly confirm the intended convention with the user (ask, don't assume the
+   exact scope/values).
+2. Once confirmed, write it into `.cursor/rules/` as a focused, always-apply rule
+   with a concrete BAD/GOOD example.
+3. Apply it consistently across the codebase from then on, so the topic doesn't
+   need to be discussed again.
+
+The goal is a cohesive system: preferences become durable rules instead of being
+re-litigated each session.

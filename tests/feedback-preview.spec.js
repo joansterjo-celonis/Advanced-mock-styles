@@ -16,7 +16,7 @@ const BASE_RECT = { x: 260, y: 210, w: 180, h: 92 };
 
 function feedbackEntry({
   id = 'fb-test',
-  viewId = 'purchase-order',
+  viewId = 'rework-quality',
   sub = null,
   scroll = { source: 'ctx-canvas', top: 0, viewId },
   rect = BASE_RECT,
@@ -142,22 +142,22 @@ test('preview from another route returns to Context Models editor', async ({ pag
 });
 
 test('preview reopens a closed target tab', async ({ page }) => {
-  await boot(page, [feedbackEntry({ id: 'fb-closed', viewId: 'purchase-order' })]);
+  await boot(page, [feedbackEntry({ id: 'fb-closed', viewId: 'rework-quality' })]);
   await enterEditor(page);
-  await page.locator(TAB('purchase-order')).evaluate((tab) => tab.remove());
-  await expect(page.locator(TAB('purchase-order'))).toHaveCount(0);
+  await page.locator(TAB('rework-quality')).evaluate((tab) => tab.remove());
+  await expect(page.locator(TAB('rework-quality'))).toHaveCount(0);
 
   await openFirstFeedback(page);
 
-  await expect(page.locator(TAB('purchase-order'))).toBeVisible();
-  await expect(page.locator(TAB('purchase-order'))).toHaveClass(/(^|\s)active(\s|$)/);
-  await expect(page.locator(`${VIEW('purchase-order')}.active`)).toBeVisible();
+  await expect(page.locator(TAB('rework-quality'))).toBeVisible();
+  await expect(page.locator(TAB('rework-quality'))).toHaveClass(/(^|\s)active(\s|$)/);
+  await expect(page.locator(`${VIEW('rework-quality')}.active`)).toBeVisible();
 });
 
 test('preview exits split view before restoring the captured screen', async ({ page }, testInfo) => {
-  await boot(page, [feedbackEntry({ id: 'fb-split-preview', viewId: 'purchase-order' })]);
+  await boot(page, [feedbackEntry({ id: 'fb-split-preview', viewId: 'rework-quality' })]);
   await enterEditor(page);
-  await page.locator(TAB('purchase-order')).click({ button: 'right' });
+  await page.locator(TAB('rework-quality')).click({ button: 'right' });
   await page.locator('#sv-tab-ctxmenu [data-sv-action="split"]').click();
   await expect(page.locator('.sv-split')).toHaveCount(1);
   await attachPage(testInfo, 'before-split-preview', page);
@@ -165,7 +165,7 @@ test('preview exits split view before restoring the captured screen', async ({ p
   await openFirstFeedback(page);
 
   await expect(page.locator('.sv-split')).toHaveCount(0);
-  await expect(page.locator(`${VIEW('purchase-order')}.active`)).toBeVisible();
+  await expect(page.locator(`${VIEW('rework-quality')}.active`)).toBeVisible();
   await expect(page.locator('.fb-marker')).toBeVisible();
   await attachPage(testInfo, 'after-split-preview', page);
 });
@@ -173,11 +173,11 @@ test('preview exits split view before restoring the captured screen', async ({ p
 test('creating feedback in split view captures the marked pane screen', async ({ page }) => {
   await boot(page, []);
   await enterEditor(page);
-  await page.locator(TAB('purchase-order')).click({ button: 'right' });
+  await page.locator(TAB('rework-quality')).click({ button: 'right' });
   await page.locator('#sv-tab-ctxmenu [data-sv-action="split"]').click();
   await expect(page.locator('.sv-split')).toHaveCount(1);
 
-  const right = await page.locator('.sv-pane-right > .view[data-view="purchase-order"]').boundingBox();
+  const right = await page.locator('.sv-pane-right > .view[data-view="rework-quality"]').boundingBox();
   await page.locator('#fab-feedback').click();
   await page.locator('.fb-menu-item[data-act="give"]').click();
   await page.mouse.move(right.x + 80, right.y + 110);
@@ -192,10 +192,10 @@ test('creating feedback in split view captures the marked pane screen', async ({
     const doc = JSON.parse(localStorage.getItem(key) || '{"items":[]}');
     return doc.items[doc.items.length - 1];
   }, BIN_KEY);
-  expect(saved.screen.viewId).toBe('purchase-order');
+  expect(saved.screen.viewId).toBe('rework-quality');
   expect(saved.screen.split.active).toBe(true);
   expect(saved.screen.split.pane).toBe('right');
-  expect(saved.view.id).toBe('purchase-order');
+  expect(saved.view.id).toBe('rework-quality');
 });
 
 [

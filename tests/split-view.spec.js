@@ -59,8 +59,8 @@ test.beforeEach(async ({ page }) => {
 test('single-view tab switching is unaffected by the split layer', async ({ page }) => {
   // Never enters split: guards that the capture-phase exit listener no-ops when
   // not split, so normal asset switching keeps working exactly as before.
-  await page.locator(TAB('purchase-order')).click();
-  await expect(page.locator('#content .view[data-view="purchase-order"].active')).toBeVisible();
+  await page.locator(TAB('rework-quality')).click();
+  await expect(page.locator('#content .view[data-view="rework-quality"].active')).toBeVisible();
   await expect(page.locator('.sv-split')).toHaveCount(0);
   await expect(page.locator('.view.active')).toHaveCount(1);
 
@@ -75,27 +75,27 @@ test('right-click an inactive tab offers "Open side by side"; active tab does no
   await expect(page.locator('#sv-tab-ctxmenu.open')).toHaveCount(0);
 
   // Inactive tab → menu appears with the single action.
-  await page.locator(TAB('purchase-order')).click({ button: 'right' });
+  await page.locator(TAB('rework-quality')).click({ button: 'right' });
   const menu = page.locator('#sv-tab-ctxmenu.open');
   await expect(menu).toBeVisible();
   await expect(menu.locator('[data-sv-action="split"]')).toHaveText(/Open side by side/);
 });
 
 test('opening side by side shows both assets in two panes', async ({ page }) => {
-  await page.locator(TAB('purchase-order')).click({ button: 'right' });
+  await page.locator(TAB('rework-quality')).click({ button: 'right' });
   await page.locator('#sv-tab-ctxmenu [data-sv-action="split"]').click();
 
   await expect(page.locator('.sv-split')).toHaveCount(1);
   await expect(page.locator('.sv-pane')).toHaveCount(2);
   // Left = the previously active asset, right = the chosen one — both visible.
   await expect(page.locator(PANE_VIEW('order-management'))).toBeVisible();
-  await expect(page.locator(PANE_VIEW('purchase-order'))).toBeVisible();
+  await expect(page.locator(PANE_VIEW('rework-quality'))).toBeVisible();
   // #content is hidden, the canvas is flagged as the split host.
   await expect(page.locator('.ctx-canvas.sv-host')).toHaveCount(1);
   // Both tabs read as paired/open — the secondary borrows the real .active class
   // so it styles identically to the open tab under any tab-style knob.
-  await expect(page.locator(TAB('purchase-order'))).toHaveClass(/sv-tab-split/);
-  await expect(page.locator(TAB('purchase-order'))).toHaveClass(/(^|\s)active(\s|$)/);
+  await expect(page.locator(TAB('rework-quality'))).toHaveClass(/sv-tab-split/);
+  await expect(page.locator(TAB('rework-quality'))).toHaveClass(/(^|\s)active(\s|$)/);
   await expect(page.locator(TAB('order-management'))).toHaveClass(/(^|\s)active(\s|$)/);
 
   // Single-active invariant preserved: still exactly one .view.active element.
@@ -103,7 +103,7 @@ test('opening side by side shows both assets in two panes', async ({ page }) => 
 });
 
 test('dragging the centre divider resizes panes and reflows charts', async ({ page }) => {
-  await page.locator(TAB('purchase-order')).click({ button: 'right' });
+  await page.locator(TAB('rework-quality')).click({ button: 'right' });
   await page.locator('#sv-tab-ctxmenu [data-sv-action="split"]').click();
   await expect(page.locator('.sv-split')).toHaveCount(1);
 
@@ -149,7 +149,7 @@ test('each pane scrolls independently', async ({ page }) => {
 });
 
 test('exit via the divider close button returns to a single view', async ({ page }) => {
-  await page.locator(TAB('purchase-order')).click({ button: 'right' });
+  await page.locator(TAB('rework-quality')).click({ button: 'right' });
   await page.locator('#sv-tab-ctxmenu [data-sv-action="split"]').click();
   await expect(page.locator('.sv-split')).toHaveCount(1);
 
@@ -166,7 +166,7 @@ test('exit via the divider close button returns to a single view', async ({ page
 });
 
 test('clicking a tab exits split and switches to that asset', async ({ page }) => {
-  await page.locator(TAB('purchase-order')).click({ button: 'right' });
+  await page.locator(TAB('rework-quality')).click({ button: 'right' });
   await page.locator('#sv-tab-ctxmenu [data-sv-action="split"]').click();
   await expect(page.locator('.sv-split')).toHaveCount(1);
 
@@ -179,14 +179,14 @@ test('clicking a tab exits split and switches to that asset', async ({ page }) =
 test('split works in the Flowy layout too', async ({ page }) => {
   await page.evaluate(() => document.documentElement.setAttribute('data-layout', 'flowy'));
 
-  await page.locator(TAB('purchase-order')).click({ button: 'right' });
+  await page.locator(TAB('rework-quality')).click({ button: 'right' });
   await page.locator('#sv-tab-ctxmenu [data-sv-action="split"]').click();
 
   await expect(page.locator('.sv-split')).toHaveCount(1);
   await expect(page.locator(PANE_VIEW('order-management'))).toBeVisible();
-  await expect(page.locator(PANE_VIEW('purchase-order'))).toBeVisible();
+  await expect(page.locator(PANE_VIEW('rework-quality'))).toBeVisible();
   // In Flowy each pane reads as the framed scroll card (has a border-radius).
-  const radius = await page.locator(PANE_VIEW('purchase-order')).evaluate(
+  const radius = await page.locator(PANE_VIEW('rework-quality')).evaluate(
     (el) => getComputedStyle(el).borderTopLeftRadius,
   );
   expect(parseFloat(radius)).toBeGreaterThan(0);
@@ -204,7 +204,7 @@ test('Flap layout anchors BOTH flaps over their panes (left flap reflows like th
   await expect(page.locator('#content .view[data-view="rework-quality"].active')).toBeVisible();
 
   // Split with another asset on the right.
-  await page.locator(TAB('purchase-order')).click({ button: 'right' });
+  await page.locator(TAB('order-management')).click({ button: 'right' });
   await page.locator('#sv-tab-ctxmenu [data-sv-action="split"]').click();
   await expect(page.locator('.sv-split')).toHaveCount(1);
 
@@ -222,7 +222,7 @@ test('Flap layout anchors BOTH flaps over their panes (left flap reflows like th
 
   // Both flaps start within their own pane.
   expect(await flapInPane('rework-quality', '.sv-pane-left')).toBe(true);
-  expect(await flapInPane('purchase-order', '.sv-pane-right')).toBe(true);
+  expect(await flapInPane('order-management', '.sv-pane-right')).toBe(true);
 
   // Drag the divider left → the left pane shrinks. The left flap must REFLOW to stay within it
   // (the regression: it used to keep its slot and spill across the divider).
@@ -234,7 +234,7 @@ test('Flap layout anchors BOTH flaps over their panes (left flap reflows like th
   await page.mouse.up();
 
   await expect.poll(() => flapInPane('rework-quality', '.sv-pane-left')).toBe(true);
-  expect(await flapInPane('purchase-order', '.sv-pane-right')).toBe(true);
+  expect(await flapInPane('order-management', '.sv-pane-right')).toBe(true);
 });
 
 test('opening an asset from the tree exits a flap split cleanly (no orphaned flaps)', async ({ page }) => {
@@ -244,8 +244,8 @@ test('opening an asset from the tree exits a flap split cleanly (no orphaned fla
   // tab. Tree navigation must exit the split first, exactly like a tab click.
   await page.evaluate(() => document.documentElement.setAttribute('data-layout', 'flap'));
 
-  // Split order-management (active/left) with purchase-order (right).
-  await page.locator(TAB('purchase-order')).click({ button: 'right' });
+  // Split order-management (active/left) with rework-quality (right).
+  await page.locator(TAB('rework-quality')).click({ button: 'right' });
   await page.locator('#sv-tab-ctxmenu [data-sv-action="split"]').click();
   await expect(page.locator('.sv-split')).toHaveCount(1);
 

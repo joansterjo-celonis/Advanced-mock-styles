@@ -57,7 +57,7 @@ test('slide-away then default navigation back leaves the view visible (no opacit
 
   // Slide away from order-management → it becomes the "old" view and gets a fill:forwards
   // exit animation that used to linger at opacity:0.
-  await page.locator(TAB('purchase-order')).click();
+  await page.locator(TAB('rework-quality')).click();
   await page.waitForTimeout(500); // let the slide settle
 
   // Switch the transition knob to Default, then navigate BACK. The default path only toggles
@@ -75,8 +75,8 @@ test('slide-away then default navigation back leaves the view visible (no opacit
   expect(s.height).toBeGreaterThan(50);
 });
 
-test('slide plays for sidebar-opened tabs too, not just the three static defaults', async ({ page }) => {
-  // `insights` is a registered view — it is no longer one of the 3 default tabs, so the user
+test('slide plays for sidebar-opened tabs too, not just the two static defaults', async ({ page }) => {
+  // `insights` is a registered view — it is no longer one of the 2 default tabs, so the user
   // opens it from the sidebar. Opening it must create a working tab whose clicks animate the
   // slide via the delegated strip handler in shell.js (registered tabs carry no own listener).
   await page.locator('.l1-children .l1-leaf[data-view="insights"]').click();
@@ -112,7 +112,7 @@ test('rapid slide switching never leaves a stuck / invisible active view', async
   await setFx(page, 'slide');
 
   // Fire switches faster than the 380ms animation so each one interrupts the last.
-  const order = ['purchase-order', 'rework-quality', 'order-management'];
+  const order = ['rework-quality', 'order-management'];
   for (let i = 0; i < 12; i++) {
     await page.locator(TAB(order[i % order.length])).click();
     await page.waitForTimeout(90);

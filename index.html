@@ -118,9 +118,8 @@
             <div class="l1-children">
               <!-- Generic, composition-responsive dashboards first (knob-driven layout) … -->
               <button class="l1-leaf l1-leaf-ic active" data-view="order-management"><svg class="icon" data-icon="view" viewBox="0 0 24 24"></svg>Order Management</button>
-              <button class="l1-leaf l1-leaf-ic" data-view="purchase-order"><svg class="icon" data-icon="view" viewBox="0 0 24 24"></svg>Purchase Order</button>
               <button class="l1-leaf l1-leaf-ic" data-view="rework-quality"><svg class="icon" data-icon="view" viewBox="0 0 24 24"></svg>Chart Playground</button>
-              <button class="l1-leaf l1-leaf-ic" data-view="insights"><svg class="icon" data-icon="view" viewBox="0 0 24 24"></svg>Insights</button>
+              <button class="l1-leaf l1-leaf-ic" data-view="insights"><svg class="icon" data-icon="view" viewBox="0 0 24 24"></svg>Showcase views 2.0</button>
               <!-- … then bespoke, fixed-grid detail views (data-fixed bentos, opt out of Composition) -->
               <button class="l1-leaf l1-leaf-ic" data-view="tracking-analysis"><svg class="icon" data-icon="view" viewBox="0 0 24 24"></svg>Tracking Analysis - PQL editor view</button>
               <button class="l1-leaf l1-leaf-ic" data-view="ocpm-adoption"><svg class="icon" data-icon="view" viewBox="0 0 24 24"></svg>OCPM adoption view</button>
@@ -170,7 +169,7 @@
         <div class="tabbar glass-chrome">
           <button class="tab-tool" title="Asset tree"><svg class="icon" viewBox="0 0 24 24"><circle cx="6" cy="6" r="2"/><circle cx="18" cy="6" r="2"/><circle cx="12" cy="18" r="2"/><path d="M8 6h8M7 8l4 8M17 8l-4 8"/></svg></button>
           <div class="tab-sep"></div>
-          <div class="tabs"><div class="ia-tab active" data-view="order-management"><svg class="icon" data-icon="view" viewBox="0 0 24 24"></svg><span class="ia-tab-lbl">Order Management</span><span class="ia-x" title="Close" aria-label="Close tab"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 6l12 12M18 6 6 18"/></svg></span></div><div class="ia-tab" data-view="purchase-order"><svg class="icon" data-icon="view" viewBox="0 0 24 24"></svg><span class="ia-tab-lbl">Purchase Order</span><span class="ia-x" title="Close" aria-label="Close tab"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 6l12 12M18 6 6 18"/></svg></span></div><div class="ia-tab" data-view="rework-quality"><svg class="icon" data-icon="view" viewBox="0 0 24 24"></svg><span class="ia-tab-lbl">Chart Playground</span><span class="ia-x" title="Close" aria-label="Close tab"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 6l12 12M18 6 6 18"/></svg></span></div><button class="ia-tab-add"><svg class="icon" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button></div><div class="right">
+          <div class="tabs"><div class="ia-tab active" data-view="order-management"><svg class="icon" data-icon="view" viewBox="0 0 24 24"></svg><span class="ia-tab-lbl">Order Management</span><span class="ia-x" title="Close" aria-label="Close tab"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 6l12 12M18 6 6 18"/></svg></span></div><div class="ia-tab" data-view="rework-quality"><svg class="icon" data-icon="view" viewBox="0 0 24 24"></svg><span class="ia-tab-lbl">Chart Playground</span><span class="ia-x" title="Close" aria-label="Close tab"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 6l12 12M18 6 6 18"/></svg></span></div><button class="ia-tab-add"><svg class="icon" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button></div><div class="right">
             <button class="tab-tool"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="19" r="1.6"/></svg></button>
             <div class="search-box" style="width:200px;"><svg class="icon icon-sm" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-3.5-3.5"/></svg><span>Search</span><span class="ia-kbd">&#8984;K</span></div>
             <span class="ai-diamond"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.6c.55 5.3 4.5 9.25 9.8 9.8-5.3.55-9.25 4.5-9.8 9.8-.55-5.3-4.5-9.25-9.8-9.8 5.3-.55 9.25-4.5 9.8-9.8z" fill="url(#aiGrad)"/></svg></span>
@@ -495,33 +494,6 @@
                 <div style="padding:14px; display:flex; flex-direction:column; gap:14px">
                   <div class="sk" style="height:11px; width:38%"></div><div class="sk" style="height:11px; width:30%"></div><div class="sk" style="height:11px; width:42%"></div><div class="sk" style="height:11px; width:26%"></div><div class="sk" style="height:11px; width:34%"></div>
                 </div>
-              </section>
-            </div>
-          </section>
-
-          <!-- ============ VIEW: PURCHASE ORDER (old bento) ============ -->
-          <section class="view" data-view="purchase-order">
-            <!-- header injected by engine.js → components/asset-header.js (MARKUP_HEADERS) -->
-            <div class="bento">
-              <section class="card span-8" data-card style="min-height:var(--row-tall)">
-                <span class="gloss"></span><span class="sheen"></span><span class="rim"></span>
-                <div class="ch"><span class="label">Order value · last 30 days</span></div>
-                <div style="display:flex; align-items:end; gap:14px; margin-top:8px;"><div style="font-size:46px;font-weight:600;letter-spacing:-.03em;color:var(--text)" data-counter data-to="2438901" data-prefix="$">$0</div></div>
-                <div class="chart-wrap" style="height:120px" data-chart="area" data-key="po"></div>
-              </section>
-              <section class="card span-4" data-card style="min-height:var(--row-tall)">
-                <span class="gloss"></span><span class="sheen"></span><span class="rim"></span>
-                <div class="ch"><span class="label">Touchless rate</span></div>
-                <div style="font-size:46px;font-weight:600;letter-spacing:-.03em;color:var(--text);margin-top:8px" data-counter data-to="64.2" data-suffix="%" data-decimals="1">0%</div>
-                <p style="color:var(--text-dim);font-size:12.5px;margin-top:8px">Touchless PO rate, rising 3rd week.</p>
-              </section>
-              <section class="card span-4" data-card><span class="gloss"></span><span class="sheen"></span><span class="rim"></span><div class="ch"><span class="label">Processing now</span></div><div style="font-size:36px;font-weight:600;color:var(--text);margin-top:10px" data-counter data-to="1284">0</div></section>
-              <section class="card span-4" data-card><span class="gloss"></span><span class="sheen"></span><span class="rim"></span><div class="ch"><span class="label">Avg approval</span></div><div style="font-size:36px;font-weight:600;color:var(--text);margin-top:10px" data-counter data-to="184" data-suffix="h">0h</div></section>
-              <section class="card span-4" data-card><span class="gloss"></span><span class="sheen"></span><span class="rim"></span><div class="ch"><span class="label">Maverick buying</span></div><div style="font-size:36px;font-weight:600;color:var(--text);margin-top:10px" data-counter data-to="8" data-suffix="%">0%</div></section>
-              <section class="card span-12" data-card style="min-height:var(--row-tall)">
-                <span class="gloss"></span><span class="sheen"></span><span class="rim"></span>
-                <div class="ch"><span class="label">PO volume by category</span></div>
-                <div class="chart-wrap" style="height:150px" data-chart="combo" data-key="po2" data-rightmax="100" data-leftlabel="" data-rightline="green"></div>
               </section>
             </div>
           </section>
@@ -4100,6 +4072,38 @@
                 <span class="pg-combo-head-s">Charts paired with KPIs and other elements &mdash; the same controls restyle them live.</span>
               </div>
 
+              <!-- Goal progress shown as two configurations of one component (two bullets vs one), side by side. -->
+              <section class="card span-4 metric pg-cell pg-combo pg-combo-goal" data-card>
+                <span class="gloss"></span><span class="sheen"></span><span class="rim"></span>
+                <div class="pg-cell-title">Goal progress<span class="pg-cell-type">KPI + bullet</span></div>
+                <div class="pg-kpi-row">
+                  <div class="pg-kpi-main">
+                    <div class="pg-kpi-k">Pipeline vs target</div>
+                    <div class="pg-kpi-v" data-counter data-to="82" data-suffix="%">0%</div>
+                  </div>
+                  <span class="pg-delta up">&#8593; on track</span>
+                </div>
+                <div class="pg-bullets pg-combo-bullets">
+                  <div class="chart-wrap pg-bullet" data-chart="bullet" data-label="Q3 pipeline [&euro;M]" data-value="8.2" data-target="10" data-max="12" data-unit="M" data-bands='[6,9]'></div>
+                  <div class="chart-wrap pg-bullet" data-chart="bullet" data-label="Signed [&euro;M]" data-value="6.4" data-target="7" data-max="12" data-unit="M" data-bands='[5,8]'></div>
+                </div>
+              </section>
+
+              <section class="card span-4 metric pg-cell pg-combo pg-combo-goal" data-card>
+                <span class="gloss"></span><span class="sheen"></span><span class="rim"></span>
+                <div class="pg-cell-title">Goal progress<span class="pg-cell-type">KPI + single bullet</span></div>
+                <div class="pg-kpi-row">
+                  <div class="pg-kpi-main">
+                    <div class="pg-kpi-k">Spend vs budget</div>
+                    <div class="pg-kpi-v" data-counter data-to="83" data-suffix="%">0%</div>
+                  </div>
+                  <span class="pg-delta up">&#8593; on track</span>
+                </div>
+                <div class="pg-bullets pg-combo-bullets">
+                  <div class="chart-wrap pg-bullet" data-chart="bullet" data-label="YTD spend [&euro;M]" data-value="3.82" data-target="4.6" data-max="5" data-unit="M" data-bands='[3,4.6]'></div>
+                </div>
+              </section>
+
               <section class="card span-4 metric pg-cell pg-combo pg-combo-kpi" data-card>
                 <span class="gloss"></span><span class="sheen"></span><span class="rim"></span>
                 <div class="pg-cell-title">Revenue &amp; trend<span class="pg-cell-type">KPI + area</span></div>
@@ -4108,7 +4112,7 @@
                     <div class="pg-kpi-k">Net revenue [EUR]</div>
                     <div class="pg-kpi-v" data-counter data-to="4.82" data-prefix="&euro;" data-suffix="M" data-decimals="2">&euro;0M</div>
                   </div>
-                  <span class="pg-delta up">&#9650; 12.4%</span>
+                  <span class="pg-delta up">&#8593; 12.4%</span>
                 </div>
                 <div class="pg-plot pg-plot-spark"><div class="chart-wrap" data-chart="area" data-key="po"></div></div>
               </section>
@@ -4138,43 +4142,27 @@
                 <div class="pg-plot"><div class="chart-wrap" data-chart="groupbars" data-ymax="80" data-unit="k" data-cats='["Q1","Q2","Q3","Q4"]' data-series='[{"c":"--cstop-1a","name":"2024","vals":[42,55,61,70]},{"c":"--legend-3","name":"2025","vals":[50,58,66,78]}]'></div></div>
               </section>
 
-              <section class="card span-4 metric pg-cell pg-combo pg-combo-goal" data-card>
-                <span class="gloss"></span><span class="sheen"></span><span class="rim"></span>
-                <div class="pg-cell-title">Goal progress<span class="pg-cell-type">KPI + bullet</span></div>
-                <div class="pg-kpi-row">
-                  <div class="pg-kpi-main">
-                    <div class="pg-kpi-k">Pipeline vs target</div>
-                    <div class="pg-kpi-v" data-counter data-to="82" data-suffix="%">0%</div>
-                  </div>
-                  <span class="pg-delta up">&#9650; on track</span>
-                </div>
-                <div class="pg-bullets pg-combo-bullets">
-                  <div class="chart-wrap pg-bullet" data-chart="bullet" data-label="Q3 pipeline [&euro;M]" data-value="8.2" data-target="10" data-max="12" data-unit="M" data-bands='[6,9]'></div>
-                  <div class="chart-wrap pg-bullet" data-chart="bullet" data-label="Signed [&euro;M]" data-value="6.4" data-target="7" data-max="12" data-unit="M" data-bands='[5,8]'></div>
-                </div>
-              </section>
-
               <section class="card span-6 metric pg-cell pg-combo pg-combo-wall" data-card>
                 <span class="gloss"></span><span class="sheen"></span><span class="rim"></span>
                 <div class="pg-cell-title">Metrics wall<span class="pg-cell-type">KPIs + sparklines</span></div>
                 <div class="pg-wall">
                   <div class="pg-wall-tile">
-                    <div class="pg-wall-head"><span class="pg-kpi-k">Revenue</span><span class="pg-delta up">&#9650; 8%</span></div>
+                    <div class="pg-wall-head"><span class="pg-kpi-k">Revenue</span><span class="pg-delta up">&#8593; 8%</span></div>
                     <span class="pg-wall-v" data-counter data-to="4.8" data-prefix="&euro;" data-suffix="M" data-decimals="1">&euro;0M</span>
                     <div class="pg-plot pg-plot-mini"><div class="chart-wrap" data-chart="area" data-key="po"></div></div>
                   </div>
                   <div class="pg-wall-tile">
-                    <div class="pg-wall-head"><span class="pg-kpi-k">Active users</span><span class="pg-delta up">&#9650; 5%</span></div>
+                    <div class="pg-wall-head"><span class="pg-kpi-k">Active users</span><span class="pg-delta up">&#8593; 5%</span></div>
                     <span class="pg-wall-v" data-counter data-to="12.4" data-suffix="K" data-decimals="1">0K</span>
                     <div class="pg-plot pg-plot-mini"><div class="chart-wrap" data-chart="area" data-key="rej"></div></div>
                   </div>
                   <div class="pg-wall-tile">
-                    <div class="pg-wall-head"><span class="pg-kpi-k">Error rate</span><span class="pg-delta down">&#9660; 2%</span></div>
+                    <div class="pg-wall-head"><span class="pg-kpi-k">Error rate</span><span class="pg-delta down">&#8595; 2%</span></div>
                     <span class="pg-wall-v" data-counter data-to="0.34" data-suffix="%" data-decimals="2">0%</span>
                     <div class="pg-plot pg-plot-mini"><div class="chart-wrap" data-chart="dots"></div></div>
                   </div>
                   <div class="pg-wall-tile">
-                    <div class="pg-wall-head"><span class="pg-kpi-k">Conversion</span><span class="pg-delta up">&#9650; 1.2pt</span></div>
+                    <div class="pg-wall-head"><span class="pg-kpi-k">Conversion</span><span class="pg-delta up">&#8593; 1.2pt</span></div>
                     <span class="pg-wall-v" data-counter data-to="3.9" data-suffix="%" data-decimals="1">0%</span>
                     <div class="pg-plot pg-plot-mini"><div class="chart-wrap" data-chart="dots"></div></div>
                   </div>
@@ -4186,15 +4174,15 @@
                 <div class="pg-cell-title">Trend watchlist<span class="pg-cell-type">stat + sparkline</span></div>
                 <div class="pg-watch">
                   <div class="pg-watch-row">
-                    <div class="pg-watch-info"><div class="pg-watch-head"><span class="pg-kpi-k">Throughput</span><span class="pg-delta up">&#9650; 6%</span></div><div class="pg-watch-v">1,284</div></div>
+                    <div class="pg-watch-info"><div class="pg-watch-head"><span class="pg-kpi-k">Throughput</span><span class="pg-delta up">&#8593; 6%</span></div><div class="pg-watch-v">1,284</div></div>
                     <div class="pg-plot pg-spark-inline"><div class="chart-wrap" data-chart="area" data-key="po"></div></div>
                   </div>
                   <div class="pg-watch-row">
-                    <div class="pg-watch-info"><div class="pg-watch-head"><span class="pg-kpi-k">Backlog</span><span class="pg-delta down">&#9660; 4%</span></div><div class="pg-watch-v">312</div></div>
+                    <div class="pg-watch-info"><div class="pg-watch-head"><span class="pg-kpi-k">Backlog</span><span class="pg-delta down">&#8595; 4%</span></div><div class="pg-watch-v">312</div></div>
                     <div class="pg-plot pg-spark-inline"><div class="chart-wrap" data-chart="area" data-key="rej"></div></div>
                   </div>
                   <div class="pg-watch-row">
-                    <div class="pg-watch-info"><div class="pg-watch-head"><span class="pg-kpi-k">Cycle time</span><span class="pg-delta down">&#9660; 9%</span></div><div class="pg-watch-v">18h</div></div>
+                    <div class="pg-watch-info"><div class="pg-watch-head"><span class="pg-kpi-k">Cycle time</span><span class="pg-delta down">&#8595; 9%</span></div><div class="pg-watch-v">18h</div></div>
                     <div class="pg-plot pg-spark-inline"><div class="chart-wrap" data-chart="area" data-key="po"></div></div>
                   </div>
                 </div>
@@ -4208,7 +4196,7 @@
                     <div class="pg-plot pg-plot-radial pg-yoy-chart"><div class="chart-wrap" data-chart="donut" data-segs='[["On time",64,"--cstop-1a"],["Late",36,"--cstop-1b"]]'></div><div class="donut-legend pg-native-legend" aria-hidden="true"></div><div class="pg-yoy-center"><b>64%</b><span>on time</span></div></div>
                     <div class="pg-yoy-cap"><b>2024</b></div>
                   </div>
-                  <div class="pg-yoy-delta"><span class="pg-delta up">&#9650; 7pt</span></div>
+                  <div class="pg-yoy-delta"><span class="pg-delta up">&#8593; 7pt</span></div>
                   <div class="pg-yoy-item">
                     <div class="pg-plot pg-plot-radial pg-yoy-chart"><div class="chart-wrap" data-chart="donut" data-segs='[["On time",71,"--cstop-1a"],["Late",29,"--cstop-1b"]]'></div><div class="donut-legend pg-native-legend" aria-hidden="true"></div><div class="pg-yoy-center"><b>71%</b><span>on time</span></div></div>
                     <div class="pg-yoy-cap"><b>2025</b></div>
@@ -4225,6 +4213,274 @@
                   <div class="pg-dist-stats"><div><span class="pg-stat-k">p90</span><span class="pg-stat-v">28h</span></div><div><span class="pg-stat-k">SLA met</span><span class="pg-stat-v">94%</span></div></div>
                 </div>
                 <div class="pg-plot"><div class="chart-wrap" data-chart="histogram" data-bins="14" data-xmin="0" data-xmax="48" data-unit="h" data-values='[2,3,3,4,4,5,5,6,6,7,7,8,8,9,10,10,11,12,13,14,15,16,17,18,20,22,24,26,3,4,5,6,7,8,9,10,12,14,28,32]'></div></div>
+              </section>
+
+              <!-- ===== Bespoke compositions: fancy, purpose-built widgets for bespoke use cases ===== -->
+              <div class="pg-combo-head span-12">
+                <span class="pg-combo-head-t">Bespoke compositions</span>
+                <span class="pg-combo-head-s">Purpose-built widgets &mdash; KPI tiles, activity calendars, streaks, gauges, timelines and rankings &mdash; that still follow the live controls.</span>
+              </div>
+
+              <section class="card span-4 metric pg-cell pg-combo pg-combo-kpi pg-kpi-trend" data-card>
+                <span class="gloss"></span><span class="sheen"></span><span class="rim"></span>
+                <div class="pg-kpi-head">
+                  <div class="pg-kpi-k">Revenue this month <span style="opacity:.5">ⓘ</span></div>
+                </div>
+                <div class="pg-kpi-vrow">
+                  <div class="pg-kpi-v"><span data-counter data-to="4.82" data-prefix="&euro;" data-suffix="M" data-decimals="2">&euro;0M</span></div>
+                  <span class="pg-delta up">&#8593; 8.4%</span>
+                </div>
+                <div class="pg-plot pg-spark-inline pg-kpi-spark"><div class="chart-wrap" data-chart="area" data-key="po" data-flush="1"></div></div>
+              </section>
+
+              <section class="card span-4 metric pg-cell pg-combo pg-combo-kpi pg-kpi-goal" data-card>
+                <span class="gloss"></span><span class="sheen"></span><span class="rim"></span>
+                <div class="pg-kpi-head">
+                  <div class="pg-kpi-k">Orders fulfilled <span style="opacity:.5">ⓘ</span></div>
+                </div>
+                <div class="pg-kpi-vrow">
+                  <div class="pg-kpi-v"><span data-counter data-to="3240">0</span></div>
+                  <span class="pg-delta up">&#8593; 12%</span>
+                </div>
+                <div class="pg-goalwrap">
+                  <div class="pg-goalbar"><i style="width:81%"></i></div>
+                  <div class="pg-goalcap"><span class="pg-sub-k">81% of target</span><span class="pg-sub-k">4,000 goal</span></div>
+                </div>
+              </section>
+
+              <section class="card span-4 metric pg-cell pg-combo pg-combo-kpi pg-kpi-ring" data-card>
+                <span class="gloss"></span><span class="sheen"></span><span class="rim"></span>
+                <div class="pg-kpi-head">
+                  <div class="pg-kpi-k">On-time delivery <span style="opacity:.5">ⓘ</span></div>
+                </div>
+                <div class="pg-ringkpi">
+                  <div class="pg-plot pg-plot-radial pg-ringkpi-chart">
+                    <div class="chart-wrap" data-chart="donut" data-segs='[["On time",94,"--cstop-1a"],["Late",6,"--cstop-1b"]]'></div>
+                    <div class="pg-ringkpi-center"><b data-counter data-to="94" data-suffix="%">0%</b><span>on time</span></div>
+                  </div>
+                  <div class="pg-ringkpi-meta">
+                    <div class="pg-ringkpi-stat"><span class="pg-stat-k">Target</span><span class="pg-stat-v">90%</span></div>
+                    <div class="pg-ringkpi-stat"><span class="pg-stat-k">Last month</span><span class="pg-stat-v">91%</span></div>
+                    <span class="pg-delta up">&#8593; 3 pts</span>
+                  </div>
+                </div>
+              </section>
+
+              <section class="card span-8 metric pg-cell pg-combo pg-combo-activity" data-card>
+                <span class="gloss"></span><span class="sheen"></span><span class="rim"></span>
+                <div class="pg-cell-title">Engagement overview<span class="pg-cell-type">calendar + trend + pie</span></div>
+                <div class="pg-activity-body">
+                  <div class="pg-activity-cal">
+                    <div class="pg-sub-k">Daily activity &middot; last 6 months</div>
+                    <div class="pg-plot pg-cal-plot"><div class="chart-wrap" data-chart="calheat" data-rows="7" data-months='["Nov","Dec","Jan","Feb","Mar","Apr"]'></div></div>
+                    <div class="pg-cal-scale"><span>Less</span><i class="pg-cal-sw l0"></i><i class="pg-cal-sw l1"></i><i class="pg-cal-sw l2"></i><i class="pg-cal-sw l3"></i><i class="pg-cal-sw l4"></i><span>More</span></div>
+                  </div>
+                  <div class="pg-activity-side">
+                    <div class="pg-activity-top">
+                      <div class="pg-kpi-row">
+                        <div class="pg-kpi-main"><div class="pg-kpi-k">Goal completion</div><div class="pg-kpi-v" data-counter data-to="98" data-suffix="%">0%</div></div>
+                        <span class="pg-delta up">&#8593; 98%</span>
+                      </div>
+                      <div class="pg-plot pg-spark-inline pg-activity-spark"><div class="chart-wrap" data-chart="area" data-key="po"></div></div>
+                    </div>
+                    <div class="pg-plot pg-plot-radial pg-activity-pie"><div class="chart-wrap" data-chart="pie" data-segs='[["Active",58,"--cstop-1a"],["Idle",26,"--cstop-2a"],["New",16,"--legend-3"]]'></div><div class="donut-legend pg-native-legend" aria-hidden="true"></div></div>
+                  </div>
+                </div>
+              </section>
+
+              <section class="card span-8 metric pg-cell pg-combo pg-combo-activity2" data-card>
+                <span class="gloss"></span><span class="sheen"></span><span class="rim"></span>
+                <div class="pg-cell-title">Activity trend<span class="pg-cell-type">calendar + trend</span></div>
+                <div class="pg-act2-head">
+                  <div class="pg-act2-kpi">
+                    <div class="pg-kpi-k">Goal completion</div>
+                    <div class="pg-act2-vrow"><span class="pg-kpi-v" data-counter data-to="98" data-suffix="%">0%</span><span class="pg-delta up">&#8593; 98%</span></div>
+                  </div>
+                  <div class="pg-plot pg-spark-inline pg-act2-spark"><div class="chart-wrap" data-chart="area" data-key="po"></div></div>
+                </div>
+                <div class="pg-sub-k">Daily activity &middot; last 6 months</div>
+                <div class="pg-plot pg-cal-plot pg-act2-cal"><div class="chart-wrap" data-chart="calheat" data-rows="7" data-months='["Nov","Dec","Jan","Feb","Mar","Apr"]'></div></div>
+                <div class="pg-cal-scale"><span>Less</span><i class="pg-cal-sw l0"></i><i class="pg-cal-sw l1"></i><i class="pg-cal-sw l2"></i><i class="pg-cal-sw l3"></i><i class="pg-cal-sw l4"></i><span>More</span></div>
+              </section>
+
+              <section class="card span-4 metric pg-cell pg-combo pg-combo-streak" data-card>
+                <span class="gloss"></span><span class="sheen"></span><span class="rim"></span>
+                <div class="pg-cell-title">Active streak<span class="pg-cell-type">stat + dot grid</span></div>
+                <div class="pg-streak-head">
+                  <div class="pg-streak-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7.5V12l3 1.8"></path></svg>
+                  </div>
+                  <div class="pg-streak-main">
+                    <div class="pg-streak-v"><span data-counter data-to="13">0</span> Days</div>
+                    <div class="pg-sub-k">109 hours, 23 minutes</div>
+                  </div>
+                </div>
+                <div class="pg-plot pg-streak-grid"><div class="chart-wrap" data-chart="dotgrid" data-total="40" data-filled="13" data-cols="10" data-gap="7"></div></div>
+              </section>
+
+              <section class="card span-4 metric pg-cell pg-combo pg-combo-gauge" data-card>
+                <span class="gloss"></span><span class="sheen"></span><span class="rim"></span>
+                <div class="pg-cell-title">Service health<span class="pg-cell-type">radial gauge</span></div>
+                <div class="pg-plot pg-plot-radial pg-gauge-plot">
+                  <div class="chart-wrap" data-chart="gauge" data-value="86" data-max="100" data-target="90" data-bands='[60,85]' data-unit="%"></div>
+                  <div class="pg-gauge-center"><b data-counter data-to="86" data-suffix="%">0%</b><span>uptime this quarter</span></div>
+                </div>
+                <div class="pg-legend" data-pg-legend='[["At risk","--cstop-1b"],["Fair","--cstop-2a"],["Healthy","--cstop-4a"]]'></div>
+              </section>
+
+              <section class="card span-8 metric pg-cell pg-combo pg-combo-timeline" data-card>
+                <span class="gloss"></span><span class="sheen"></span><span class="rim"></span>
+                <div class="pg-cell-title">Delivery milestones<span class="pg-cell-type">timeline rail</span></div>
+                <div class="pg-timeline">
+                  <div class="pg-tl-step done"><span class="pg-tl-node"></span><div class="pg-tl-label">Kickoff</div><div class="pg-tl-date">Nov 2</div></div>
+                  <div class="pg-tl-step done"><span class="pg-tl-node"></span><div class="pg-tl-label">Design</div><div class="pg-tl-date">Dec 8</div></div>
+                  <div class="pg-tl-step active"><span class="pg-tl-node"></span><div class="pg-tl-label">Build</div><div class="pg-tl-date">In progress</div></div>
+                  <div class="pg-tl-step"><span class="pg-tl-node"></span><div class="pg-tl-label">QA</div><div class="pg-tl-date">Mar 14</div></div>
+                  <div class="pg-tl-step"><span class="pg-tl-node"></span><div class="pg-tl-label">Launch</div><div class="pg-tl-date">Apr 1</div></div>
+                </div>
+              </section>
+
+              <section class="card span-12 metric pg-cell pg-combo pg-combo-rank" data-card>
+                <span class="gloss"></span><span class="sheen"></span><span class="rim"></span>
+                <div class="pg-cell-title">Top performers<span class="pg-cell-type">ranked leaderboard</span></div>
+                <div class="pg-rank">
+                  <div class="pg-rank-row"><span class="pg-rank-pos p1">1</span><span class="pg-rank-name">Barcelona hub</span><span class="pg-rank-bar"><i style="width:100%"></i></span><span class="pg-rank-v">4,820</span><span class="pg-delta up">&#8593; 12%</span></div>
+                  <div class="pg-rank-row"><span class="pg-rank-pos p2">2</span><span class="pg-rank-name">Mobile Inc.</span><span class="pg-rank-bar"><i style="width:87%"></i></span><span class="pg-rank-v">4,210</span><span class="pg-delta up">&#8593; 6%</span></div>
+                  <div class="pg-rank-row"><span class="pg-rank-pos p3">3</span><span class="pg-rank-name">SCT Inc.</span><span class="pg-rank-bar"><i style="width:83%"></i></span><span class="pg-rank-v">3,980</span><span class="pg-delta down">&#8595; 3%</span></div>
+                  <div class="pg-rank-row"><span class="pg-rank-pos">4</span><span class="pg-rank-name">PAQ Deutschland</span><span class="pg-rank-bar"><i style="width:73%"></i></span><span class="pg-rank-v">3,540</span><span class="pg-delta up">&#8593; 2%</span></div>
+                  <div class="pg-rank-row"><span class="pg-rank-pos">5</span><span class="pg-rank-name">Unisono AG</span><span class="pg-rank-bar"><i style="width:60%"></i></span><span class="pg-rank-v">2,910</span><span class="pg-delta up">&#8593; 9%</span></div>
+                </div>
+              </section>
+
+              <section class="card span-6 metric pg-cell pg-combo pg-combo-mix" data-card>
+                <span class="gloss"></span><span class="sheen"></span><span class="rim"></span>
+                <div class="pg-cell-title">Delivery mix<span class="pg-cell-type">KPIs + share bar</span></div>
+                <div class="pg-mini-kpis">
+                  <div class="pg-mini"><div class="pg-kpi-k">On time</div><div class="pg-mini-v" data-counter data-to="64" data-suffix="%">0%</div></div>
+                  <div class="pg-mini"><div class="pg-kpi-k">Late</div><div class="pg-mini-v" data-counter data-to="24" data-suffix="%">0%</div></div>
+                  <div class="pg-mini"><div class="pg-kpi-k">Early</div><div class="pg-mini-v" data-counter data-to="12" data-suffix="%">0%</div></div>
+                </div>
+                <div class="pg-segbar">
+                  <span style="flex-basis:64%;background:var(--cstop-1a)"></span>
+                  <span style="flex-basis:24%;background:var(--cstop-2a)"></span>
+                  <span style="flex-basis:12%;background:var(--cstop-4a)"></span>
+                </div>
+                <div class="pg-legend" data-pg-legend='[["On time","--cstop-1a"],["Late","--cstop-2a"],["Early","--cstop-4a"]]'></div>
+              </section>
+
+              <section class="card span-6 metric pg-cell pg-combo pg-combo-range" data-card>
+                <span class="gloss"></span><span class="sheen"></span><span class="rim"></span>
+                <div class="pg-cell-title">Response time range<span class="pg-cell-type">range + bars</span></div>
+                <div class="pg-kpi-row">
+                  <div class="pg-kpi-main"><div class="pg-kpi-k">Today (min&ndash;max)</div><div class="pg-kpi-v">8&ndash;27<span class="pg-kpi-unit"> h</span></div></div>
+                  <div class="pg-dist-stats"><div><span class="pg-stat-k">7-day baseline</span><span class="pg-stat-v">14 h</span></div><div><span class="pg-stat-k">SLA</span><span class="pg-stat-v">&lt; 24 h</span></div></div>
+                </div>
+                <div class="pg-plot"><div class="chart-wrap" data-chart="groupbars" data-ymax="30" data-unit="h" data-cats='["Mon","Tue","Wed","Thu","Fri"]' data-series='[{"c":"--cstop-1a","name":"Response","vals":[14,18,12,22,16]}]'></div></div>
+              </section>
+
+              <section class="card span-4 metric pg-cell pg-combo pg-combo-cta pg-cta-report" data-card>
+                <span class="gloss"></span><span class="sheen"></span><span class="rim"></span>
+                <div class="pg-cta-media pg-cta-media-chart">
+                  <div class="pg-cta-stat">
+                    <div class="pg-cta-stat-main">
+                      <div class="pg-cta-stat-k">Revenue this week</div>
+                      <div class="pg-cta-stat-v" data-counter data-to="48.2" data-prefix="&euro;" data-suffix="K" data-decimals="1">&euro;0K</div>
+                    </div>
+                    <span class="pg-delta up">&#8593; 8.4%</span>
+                  </div>
+                  <div class="pg-plot"><div class="chart-wrap" data-chart="area" data-key="po"></div></div>
+                </div>
+                <div class="pg-cta-body">
+                  <div class="pg-cta-title">Weekly revenue report</div>
+                  <div class="pg-cta-desc">Summarise this week&rsquo;s revenue and on-time trends into a shareable report.</div>
+                </div>
+                <div class="pg-cta-actions">
+                  <button type="button" class="btn-validate" data-card-ignore>Generate report</button>
+                  <button type="button" class="pg-focus-btn" data-card-ignore>Preview</button>
+                </div>
+              </section>
+
+              <section class="card span-4 metric pg-cell pg-combo pg-combo-cta pg-cta-connect" data-card>
+                <span class="gloss"></span><span class="sheen"></span><span class="rim"></span>
+                <div class="pg-cta-media pg-cta-media-art">
+                  <svg class="pg-cta-art" viewBox="0 0 396 138" preserveAspectRatio="xMidYMid meet" fill="none" aria-hidden="true">
+                    <defs>
+                      <radialGradient id="ctaGlow" cx="50%" cy="50%" r="50%">
+                        <stop offset="0%" stop-color="var(--accent)" stop-opacity="0.5"></stop>
+                        <stop offset="100%" stop-color="var(--accent)" stop-opacity="0"></stop>
+                      </radialGradient>
+                      <linearGradient id="ctaHub" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="var(--accent)"></stop>
+                        <stop offset="100%" stop-color="var(--accent)" stop-opacity="0.72"></stop>
+                      </linearGradient>
+                      <filter id="ctaShadow" x="-50%" y="-50%" width="200%" height="200%">
+                        <feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#000" flood-opacity="0.3"></feDropShadow>
+                      </filter>
+                    </defs>
+                    <ellipse cx="198" cy="69" rx="118" ry="66" fill="url(#ctaGlow)"></ellipse>
+                    <g stroke="var(--accent)" stroke-width="1.6" stroke-dasharray="3 5" stroke-linecap="round" opacity="0.6">
+                      <path d="M94 43 C 142 43, 150 58, 174 60"></path>
+                      <path d="M94 105 C 142 105, 150 82, 174 80"></path>
+                      <path d="M302 43 C 254 43, 246 58, 222 60"></path>
+                      <path d="M302 105 C 254 105, 246 82, 222 80"></path>
+                    </g>
+                    <g fill="var(--accent)">
+                      <circle cx="143" cy="51" r="2.6"></circle>
+                      <circle cx="143" cy="93" r="2.6"></circle>
+                      <circle cx="253" cy="51" r="2.6"></circle>
+                      <circle cx="253" cy="93" r="2.6"></circle>
+                    </g>
+                    <g>
+                      <rect x="36" y="26" width="58" height="34" rx="10" fill="var(--card)" stroke="var(--border-strong)"></rect>
+                      <circle cx="51" cy="43" r="5" fill="var(--accent)"></circle>
+                      <rect x="62" y="37" width="22" height="3.6" rx="1.8" fill="var(--text)" opacity="0.5"></rect>
+                      <rect x="62" y="45" width="14" height="3.6" rx="1.8" fill="var(--text)" opacity="0.28"></rect>
+                      <rect x="36" y="88" width="58" height="34" rx="10" fill="var(--card)" stroke="var(--border-strong)"></rect>
+                      <circle cx="51" cy="105" r="5" fill="var(--accent)"></circle>
+                      <rect x="62" y="99" width="22" height="3.6" rx="1.8" fill="var(--text)" opacity="0.5"></rect>
+                      <rect x="62" y="107" width="14" height="3.6" rx="1.8" fill="var(--text)" opacity="0.28"></rect>
+                      <rect x="302" y="26" width="58" height="34" rx="10" fill="var(--card)" stroke="var(--border-strong)"></rect>
+                      <circle cx="317" cy="43" r="5" fill="var(--accent)"></circle>
+                      <rect x="328" y="37" width="22" height="3.6" rx="1.8" fill="var(--text)" opacity="0.5"></rect>
+                      <rect x="328" y="45" width="14" height="3.6" rx="1.8" fill="var(--text)" opacity="0.28"></rect>
+                      <rect x="302" y="88" width="58" height="34" rx="10" fill="var(--card)" stroke="var(--border-strong)"></rect>
+                      <circle cx="317" cy="105" r="5" fill="var(--accent)"></circle>
+                      <rect x="328" y="99" width="22" height="3.6" rx="1.8" fill="var(--text)" opacity="0.5"></rect>
+                      <rect x="328" y="107" width="14" height="3.6" rx="1.8" fill="var(--text)" opacity="0.28"></rect>
+                    </g>
+                    <g filter="url(#ctaShadow)">
+                      <rect x="172" y="43" width="52" height="52" rx="16" fill="url(#ctaHub)"></rect>
+                    </g>
+                    <g transform="translate(186 57)" stroke="var(--accent-text,#fff)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                      <circle cx="18" cy="5" r="3"></circle>
+                      <circle cx="6" cy="12" r="3"></circle>
+                      <circle cx="18" cy="19" r="3"></circle>
+                      <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+                      <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+                    </g>
+                  </svg>
+                </div>
+                <div class="pg-cta-body">
+                  <div class="pg-cta-title">Connect a data source</div>
+                  <div class="pg-cta-desc">Link your order system to stream live delivery and quality metrics.</div>
+                </div>
+                <div class="pg-cta-actions">
+                  <button type="button" class="btn-validate" data-card-ignore>Connect</button>
+                  <button type="button" class="pg-focus-btn" data-card-ignore>Learn more</button>
+                </div>
+              </section>
+
+              <section class="card span-4 metric pg-cell pg-combo pg-combo-cta pg-cta-goal" data-card>
+                <span class="gloss"></span><span class="sheen"></span><span class="rim"></span>
+                <div class="pg-cta-media pg-cta-media-chart pg-cta-media-gauge"><div class="pg-plot pg-plot-radial"><div class="chart-wrap" data-chart="gauge" data-value="82" data-max="100" data-target="90" data-bands='[60,85]' data-unit="%"></div><div class="pg-cta-gauge-center"><b data-counter data-to="82" data-suffix="%">0%</b><span>of 90% goal</span></div></div></div>
+                <div class="pg-cta-body">
+                  <div class="pg-cta-title">Set an on-time target</div>
+                  <div class="pg-cta-desc">Pick a delivery goal and we&rsquo;ll track progress against it each week.</div>
+                </div>
+                <div class="pg-cta-actions">
+                  <button type="button" class="btn-validate" data-card-ignore>Set target</button>
+                  <button type="button" class="pg-focus-btn" data-card-ignore>Skip</button>
+                </div>
               </section>
             </div>
           </section>
@@ -4328,6 +4584,7 @@
           <div class="preset-export-menu" id="preset-export-menu" role="menu" hidden>
             <button class="pe-item" id="preset-export-figma" type="button" role="menuitem" title="Export all screens for this theme to a local Figma import package">Figma package</button>
             <button class="pe-item" id="preset-export-shots" type="button" role="menuitem" title="Capture every screen as PNG images in one ZIP">Screenshots (all screens)</button>
+            <button class="pe-item" id="preset-export-report" type="button" role="menuitem" title="Download a human-readable JSON report of every control and the option picked">Settings report (JSON)</button>
           </div>
         </div>
         <button id="preset-del" title="Delete the selected preset">Delete</button>
@@ -4383,7 +4640,14 @@
 
     <div class="proto-sec">Content &amp; layout</div>
     <div class="grp"><div class="label">Composition</div><div class="toggle"><button id="comp-uniform">Uniform</button><button id="comp-bento" class="on">Bento</button><button id="comp-hero">Hero</button></div></div>
-    <div class="grp"><div class="label">Density <span class="hint-i">spacing</span></div><div class="toggle"><button id="density-spacious" class="on">Spacious</button><button id="density-compact">Compact</button><button id="density-dense">Dense</button></div></div>
+    <div class="grp gg-grp dens-grp" id="dens-grp">
+      <div class="label">Density <span class="hint-i">spacing</span><span class="val" id="dens-val">16 &middot; 12px</span><button type="button" id="density-adv" class="gg-adv" aria-pressed="false" title="Decouple inner padding from outer gap">Advanced</button></div>
+      <div class="gg-simple" id="dens-simple"><div class="toggle"><button id="density-spacious" class="on">Spacious</button><button id="density-compact">Compact</button><button id="density-dense">Dense</button></div></div>
+      <div class="gg-split" id="dens-split" hidden>
+        <div class="gg-sub"><div class="label">Inner padding <span class="hint-i">card</span> <span class="val" id="dens-pad-val">16px</span></div><input type="range" id="r-pad" class="slider" min="0" max="40" value="16"></div>
+        <div class="gg-sub"><div class="label">Outer gap <span class="hint-i">grid</span> <span class="val" id="dens-gap-val">12px</span></div><input type="range" id="r-gap" class="slider" min="0" max="32" value="12"></div>
+      </div>
+    </div>
     <div class="grp"><div class="label">Tables <span class="hint-i">row treatment</span></div><div class="toggle"><button id="tbl-comfortable" class="on">Plain</button><button id="tbl-lined">Lined</button></div></div>
 
     <div class="proto-sec proto-sec-row"><span>Typography</span><button type="button" id="typo-adv" class="gg-adv" aria-pressed="false" title="Show advanced Inter OpenType features">Advanced</button></div>
@@ -4404,6 +4668,7 @@
     <div class="grp"><div class="label">3D charts</div><div class="toggle"><button id="c3d-default" class="on">Flat</button><button id="c3d-iso">Isometric</button><button id="c3d-glass">Glass</button><button id="c3d-webgl">WebGL</button></div></div>
     <div class="grp" id="chartfill-grp"><div class="label">Fill style <span class="hint-i">flat</span></div><div class="toggle"><button id="cfill-classic" class="on">Classic</button><button id="cfill-pattern">Patterns</button></div></div>
     <div class="grp"><div class="label">Applies to</div><div class="toggle is-disabled" id="d3-extent-grp"><button id="d3-accent" class="on">Hero only</button><button id="d3-full">All charts</button></div></div>
+    <div class="grp"><div class="label">Corner radius <span class="hint-i">bars &amp; cells</span></div><div class="toggle"><button id="radius-sharp">Sharp</button><button id="radius-soft" class="on">Soft</button><button id="radius-round">Round</button></div></div>
     <div class="proto-hint">Right-click a chart to set its own style · right-click a card to invert it.</div>
   </div>
 <script type="module" src="/src/scripts/main.js"></script>

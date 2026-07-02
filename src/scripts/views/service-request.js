@@ -113,7 +113,7 @@ const dashboard =
 
 registerView({
   id: 'service-request',
-  label: 'Service Request Fulfillment',
+  label: 'Apollo views 2 - stock',
   icon,
-  html: buildAssetHeader({ title: 'Service Request Fulfillment' }) + dashboard,
+  html: buildAssetHeader({ title: 'Apollo views 2 - stock' }) + dashboard,
 });

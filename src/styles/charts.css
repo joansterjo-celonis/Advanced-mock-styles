@@ -5,6 +5,16 @@
           --rq-link:#3b6fe0; --rq-sel: rgba(80,120,240,0.14); }
   [data-mode="light"] :root, [data-mode="light"]{ --map-land: rgba(0,0,0,0.10); --map-stroke: rgba(0,0,0,0.18); --rq-sel: rgba(59,111,224,0.12); }
 
+  /* ===== Global chart corner radius (proto → Data visualization → Corner radius) =====
+     CSS rx/ry override the rx each renderer bakes into its bar/cell <rect>s. Soft is the default and
+     sets NO attribute, so every chart keeps its own baked rounding and the playground's local knob
+     stays live; Sharp / Round set data-chartradius on <html> and apply app-wide. The html[] prefix
+     lifts specificity above the playground's `.pg-build .chart-wrap svg rect` rule so the global knob
+     wins inside the gallery too — i.e. all charts abide by the knob. Circles/paths (donut, area, line,
+     waffle, gauge) have no rect and are untouched. */
+  html[data-chartradius="sharp"] .chart-wrap svg rect { rx:0; ry:0; }
+  html[data-chartradius="round"] .chart-wrap svg rect { rx:6px; ry:6px; }
+
   .rq-bar-label { font-size:11px; fill:var(--text-dim); }
   .rq-bar-val { font-size:11px; font-weight:600; }
   .rq-axis { font-size:10.5px; fill:var(--text-faint); }
@@ -147,6 +157,9 @@
   .gg-sub:first-child { margin-top:6px; }
   .gg-sub .label { display:flex; align-items:center; font-size:11px; margin-bottom:7px; }
   .gg-sub .label .val { margin-left:auto; color:var(--chrome-faint); font-variant-numeric:tabular-nums; font-weight:400; }
+  /* Density → Advanced: while tuning the decoupled inner-pad / outer-gap sliders, drop the
+     density transition so cards track the slider 1:1 (crisp, precise granular control). */
+  :root.dens-live { --transition-density: 0s; }
   [data-mode="light"] .gg-adv { background:rgba(0,0,0,0.05); border-color:rgba(0,0,0,0.10); color:var(--chrome-dim); }
   [data-mode="light"] .gg-adv:hover { background:rgba(0,0,0,0.07); color:var(--chrome-text); }
   [data-mode="light"] .gg-adv[aria-pressed="true"] { background:rgba(0,0,0,0.09); border-color:rgba(0,0,0,0.2); color:var(--chrome-text); }

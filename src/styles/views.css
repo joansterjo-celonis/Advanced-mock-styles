@@ -296,8 +296,11 @@
   .ocpm2-chart-sm { min-height:96px; }
 
   /* ===== OCPM adoption view — Summary_h "maturity funnel - history view" ===== */
+  /* row-1 cards (title banner + last load) are short: drop the default card min-height
+     and tighten vertical padding so they hug their content instead of wasting space */
+  .ocpm3-content .card.ocpm3-toprow { min-height:0; padding-top:10px; padding-bottom:10px; }
   /* big centered title banner */
-  .ocpm3-banner { display:flex; align-items:center; justify-content:center; min-height:30px; }
+  .ocpm3-banner { display:flex; align-items:center; justify-content:center; min-height:24px; }
   .ocpm3-banner h2 { margin:0; font-size:17px; font-weight:600; color:var(--text); text-align:center; }
   /* "last load date" info card */
   .ocpm3-loadinfo { display:flex; flex-direction:column; align-items:flex-end; justify-content:center; height:100%; gap:1px; font-size:12px; color:var(--text-dim); }
@@ -421,4 +424,133 @@
   .dash-legend.center { justify-content:center; }
   .dash-legitem { display:inline-flex; align-items:center; gap:6px; }
   .dash-swatch { width:10px; height:10px; border-radius:2px; flex:none; }
+
+  /* ===== P2P Analytics view (KPI Overview / Cycle Time / Approval Workflow sub-tabs) ===== */
+  .p2p-view .dash-head h1 { font-size:18px; }
+  /* shared info bubble — the design system only styles .i inside .tr-view/.ocpm-view */
+  .p2p-view .i { width:14px; height:14px; border-radius:50%; border:1px solid var(--text-faint); color:var(--text-faint);
+    display:inline-grid; place-items:center; font-size:9px; vertical-align:1px; cursor:default; font-weight:400; flex:none; }
+
+  /* filter pill row (reuses .hpill; spans the full bento width) */
+  .p2p-filters { grid-column:1 / -1; display:flex; flex-wrap:wrap; gap:10px; }
+
+  /* status badges (semantic; warn has no token so a fixed amber is used) */
+  .p2p-badge { display:inline-flex; align-items:center; height:22px; padding:0 10px; border-radius:999px;
+    font-size:11px; font-weight:600; letter-spacing:.02em; white-space:nowrap; }
+  .p2p-badge.ok { background:color-mix(in srgb, var(--success) 16%, transparent); color:var(--success); }
+  .p2p-badge.warn { background:color-mix(in srgb, #f59e0b 20%, transparent); color:#f59e0b; }
+  .p2p-badge.crit { background:color-mix(in srgb, var(--danger) 16%, transparent); color:var(--danger); }
+
+  /* kpi-strip delta = plain coloured subtext */
+  .p2p-delta { display:block; font-size:11.5px; margin-top:8px; }
+  .p2p-delta.up { color:var(--danger); }
+  .p2p-delta.down { color:var(--success); }
+  .p2p-delta.flat { color:var(--text-dim); }
+  /* KPI-card delta = a status pill (same treatment as the playground .pg-delta):
+     tinted rounded chip; P2P polarity keeps up = danger, down = success */
+  .p2p-kdelta { font-weight:600; white-space:nowrap; font-size:11px; padding:3px 8px; border-radius:999px; }
+  .p2p-kdelta.up { color:var(--danger); background:color-mix(in srgb, var(--danger) 15%, transparent); }
+  .p2p-kdelta.down { color:var(--success); background:color-mix(in srgb, var(--success) 15%, transparent); }
+  .p2p-kdelta.flat { color:var(--text-dim); background:color-mix(in srgb, var(--text-dim) 14%, transparent); }
+
+  /* rich KPI card row (5 across; internal grid so .card's default span-4 must be reset) */
+  .p2p-kpirow { grid-column:1 / -1; display:grid; grid-template-columns:repeat(5,1fr); gap:var(--gap); }
+  @media (max-width:1180px){ .p2p-kpirow { grid-template-columns:repeat(3,1fr); } }
+  @media (max-width:680px){ .p2p-kpirow { grid-template-columns:repeat(2,1fr); } }
+  .p2p-kcard { display:flex; flex-direction:column; }
+  /* inside the compact 5-col row, reset .card's default 12-col span; a standalone
+     KPI card in the main bento keeps its own span-* (e.g. the span-4 goal card) */
+  .p2p-kpirow .p2p-kcard { grid-column:auto; }
+  /* metric sublabel — same hierarchy as .metric-sub / .kpi .k across the app:
+     regular weight + dim, so the big value stays the emphasis (not the label) */
+  .p2p-klabel { font-size:12.5px; font-weight:400; color:var(--text-dim); display:flex; align-items:center; gap:6px; }
+  .p2p-kval { font-size:30px; font-weight:700; letter-spacing:-0.02em; color:var(--text); margin-top:6px; line-height:1; font-variant-numeric:tabular-nums; }
+  /* target/delta stay on one line (delta nowrap + target ellipsis) so the row never
+     wraps to a second line and inflates the card height */
+  .p2p-ktarget { display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:nowrap; font-size:11px; color:var(--text-dim); margin-top:8px; }
+  .p2p-ktarget > span:first-child { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  /* 46px = the playground bullet's inner chart area (20px) + its top/bottom pads
+     (8 + 18), so this label-less card bullet renders with the exact same track / bar
+     thickness and axis spacing as the gallery's labelled bullet */
+  .p2p-kbullet { height:46px; margin-top:8px; }
+  /* waffle slot — its own height so it clears the dotgrid's 50px min viewBox (no
+     letterboxing/side gaps) and the dots fill the full card width */
+  .p2p-kwaffle { height:52px; margin-top:8px; }
+  /* donut ring mini-viz slot — centred; sized to sit level with the bullet cards so
+     the whole row stays compact instead of stretching to the ring's height */
+  .p2p-kring { height:52px; margin-top:8px; display:grid; place-items:center; }
+  /* mini-viz wraps are .chart-wrap (flex:1 by default) — pin them so they keep a
+     fixed height and the bar never stretches when the row grows to the tallest card */
+  .p2p-view .p2p-kbullet, .p2p-view .p2p-kring, .p2p-view .p2p-kwaffle { flex:none; }
+  .p2p-kfoot { margin-top:auto; padding-top:8px; }
+
+  /* summary statistics list (label + value rows in a 3-column grid) */
+  .p2p-statlist { display:grid; grid-template-columns:repeat(3,1fr); gap:0 36px; margin-top:8px; }
+  .p2p-statrow { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:11px 0; border-bottom:1px solid var(--border); }
+  .p2p-statrow .l { font-size:12.5px; color:var(--text-dim); }
+  .p2p-statrow .v { font-size:16px; font-weight:600; color:var(--text); font-variant-numeric:tabular-nums; }
+  @media (max-width:760px){ .p2p-statlist { grid-template-columns:1fr; } }
+
+  /* approval activity combo (calendar + trend + KPI) — design-system rebuild of
+     the playground "Activity trend" widget, tokens only (no pg-* styles copied) */
+  .p2p-act { display:flex; flex-direction:column; gap:10px; flex:1; min-height:0; margin-top:6px; }
+  .p2p-act .chart-wrap { margin-top:0; }
+  .p2p-act-head { display:flex; align-items:center; gap:18px; padding-bottom:10px; border-bottom:1px solid var(--border); }
+  .p2p-act-kpi { flex:0 0 auto; }
+  .p2p-act-k { font-size:12px; font-weight:600; color:var(--text-dim); }
+  .p2p-act-vrow { display:flex; align-items:baseline; gap:8px; margin-top:3px; }
+  .p2p-act-v { font-size:26px; font-weight:700; letter-spacing:-0.02em; line-height:1; color:var(--text); font-variant-numeric:tabular-nums; }
+  .p2p-spark { flex:1; min-width:0; height:46px; display:flex; }
+  /* sparkline: drop axis text + gridlines + point dots, keep the trend path */
+  .p2p-spark .chart-wrap svg text, .p2p-spark .chart-wrap svg line, .p2p-spark .chart-wrap svg circle { display:none; }
+  .p2p-act-sub { font-size:11.5px; color:var(--text-dim); }
+  .p2p-cal { flex:1; min-height:150px; }
+  .p2p-calscale { display:flex; align-items:center; gap:4px; font-size:11px; color:var(--text-dim); }
+  .p2p-calscale span:first-child { margin-right:2px; }
+  .p2p-calscale span:last-child { margin-left:2px; }
+  .p2p-calsw { width:12px; height:12px; border-radius:3px; flex:0 0 auto; }
+  .p2p-calsw.l0 { background:rgba(128,128,128,0.16); }
+  .p2p-calsw.l1 { background:var(--cstop-1b); }
+  .p2p-calsw.l2 { background:var(--cstop-1a); }
+  .p2p-calsw.l3 { background:var(--cstop-2a); }
+  .p2p-calsw.l4 { background:var(--cstop-4a); }
+
+  /* refresh-info footer line */
+  .p2p-refresh { font-size:11.5px; color:var(--text-dim); text-align:center; padding:6px 4px; }
+
+  /* tables: trailing kebab column + first-column truncation (match the other views) */
+  .p2p-view .ptable th.tr-kebab, .p2p-view .ptable td.tr-kebab { width:24px; text-align:center; color:var(--text-faint); }
+
+  /* ===== Showcase views 2.0 — High density: KPI + micro-chart tiles =====
+     Rebuilt from the app's own primitives (.card / .metric / .chart-wrap); the
+     playground's pg-combo-kpi styling is scoped to .pg-build and can't be reused here.
+     Each tile pairs a metric headline + delta pill with a DISTINCT micro-chart
+     (area trend / bullet vs-target / waffle rate / dot scatter) so the row reads as a
+     varied dashboard rather than four identical sparks. */
+  .card.ins-kpi { min-height:210px; }
+  .ins-kpi-k { font-size:12.5px; color:var(--text-dim); }
+  .ins-kpi-row { display:flex; align-items:baseline; gap:10px; margin-top:6px; }
+  .ins-kpi-v { font-size:30px; font-weight:600; letter-spacing:-0.025em; color:var(--text); }
+  /* delta pill — arrows (per consistent-iconography) + tinted chip. Polarity is NORMAL
+     here (good = green), unlike the inverted p2p cost deltas, so it uses explicit
+     .pos / .neg instead of .up / .down. */
+  .ins-delta { font-weight:600; font-size:11px; padding:3px 8px; border-radius:999px; white-space:nowrap; }
+  .ins-delta.pos { color:var(--success); background:color-mix(in srgb, var(--success) 15%, transparent); }
+  .ins-delta.neg { color:var(--danger);  background:color-mix(in srgb, var(--danger) 15%, transparent); }
+  /* neutral status chip (e.g. "on track") — no polarity, just a dim tinted pill */
+  .ins-delta.flat { color:var(--text-dim); background:color-mix(in srgb, var(--text-dim) 14%, transparent); }
+  /* micro-chart pinned to the card bottom; hide only axis tick TEXT (keep the faint
+     grid and the bullet's target line, which is an <svg> line). */
+  .ins-spark { flex:0 0 auto; margin-top:auto; }
+  .ins-spark svg text { display:none; }
+
+  /* ===== Showcase views 2.0 — Low density: KPI+chart hero row, KPI strip, 2 charts =====
+     Reuses the .ins-kpi tile, the shared .kpi-strip and the vanilla chart builders. */
+  /* taller variant of the KPI tile: value/delta headline + a full-size chart that fills
+     (labels kept — it's a hero chart, not a spark) */
+  .card.ins-kpi.ins-kpi-lg { min-height:280px; }
+  .ins-kpi-lg .metric-sub { margin-top:4px; }
+  /* KPI-strip cell trimmings: the delta pill + a dim caption line under the value */
+  .kpi .ins-kpi-meta { margin-top:10px; }
+  .kpi .ins-kpi-sub { font-size:11.5px; color:var(--text-dim); margin-top:6px; }
 

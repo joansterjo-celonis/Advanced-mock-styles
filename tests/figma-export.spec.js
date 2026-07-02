@@ -36,8 +36,8 @@ async function openExportMenu(page) {
 
 test('export package contains primary screens and restores prototype state', async ({ page }) => {
   await bootEditor(page);
-  await page.locator('#main .tabs .ia-tab[data-view="purchase-order"]').click();
-  await expect(page.locator('#content .view[data-view="purchase-order"].active')).toBeVisible();
+  await page.locator('#main .tabs .ia-tab[data-view="rework-quality"]').click();
+  await expect(page.locator('#content .view[data-view="rework-quality"].active')).toBeVisible();
 
   const result = await page.evaluate(async () => {
     const before = {
@@ -66,7 +66,7 @@ test('export package contains primary screens and restores prototype state', asy
 
   expect(result.schema).toBe('ams-figma-export-v1');
   expect(result.screenIds).toContain('order-management');
-  expect(result.screenIds).toContain('purchase-order');
+  expect(result.screenIds).toContain('rework-quality');
   expect(result.screenIds).toContain('inventory-cockpit');
   expect(result.screenIds).not.toContain('incident-details');
   expect(Math.min(...result.editableLayerCounts)).toBeGreaterThan(10);
@@ -130,8 +130,8 @@ test('screenshot export captures home, packages, editor views, and modals', asyn
   test.setTimeout(60_000);
   await bootEditor(page);
   await openExportMenu(page);
-  await page.locator('#main .tabs .ia-tab[data-view="purchase-order"]').click();
-  await expect(page.locator('#content .view[data-view="purchase-order"].active')).toBeVisible();
+  await page.locator('#main .tabs .ia-tab[data-view="rework-quality"]').click();
+  await expect(page.locator('#content .view[data-view="rework-quality"].active')).toBeVisible();
 
   const result = await page.evaluate(async () => {
     const before = {

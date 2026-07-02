@@ -64,11 +64,11 @@ const ttSeries = [
 const dashboard = '<div class="bento ocpm3-content" data-shpanel="hist" data-fixed>' +
 
   /* row 1 — title banner + last load */
-  '<section class="card span-9" data-card>' +
+  '<section class="card span-9 ocpm3-toprow" data-card>' +
     '<span class="gloss"></span><span class="rim"></span>' +
     '<div class="ocpm3-banner"><h2>direct customer maturity funnel - history view</h2></div>' +
   '</section>' +
-  '<section class="card span-3" data-card>' +
+  '<section class="card span-3 ocpm3-toprow" data-card>' +
     '<span class="gloss"></span><span class="rim"></span>' +
     '<div class="ocpm3-loadinfo"><span>Last load date: 2026-06-12</span><a href="#" onclick="return false">maturity state definitions</a></div>' +
   '</section>' +

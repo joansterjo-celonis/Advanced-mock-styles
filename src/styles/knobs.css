@@ -110,7 +110,7 @@
 
   /* ---- D · Composition ---- (scoped to .bento so custom-grid views stay intact)
      .bento[data-fixed] OPTS OUT: bespoke, pixel-faithful views keep their hand-designed grid.
-     The knob only re-composes the generic dashboards (order-management / purchase-order /
+     The knob only re-composes the generic dashboards (order-management /
      rework-quality / insights). */
   [data-composition="uniform"] .view.active .bento:not([data-fixed]) > .card:not(.kpi-strip):not(.span-12) { grid-column: span 6; }
   [data-composition="hero"] .view.active .bento:not([data-fixed]) > .card[data-hero] { grid-column: span 8; }
@@ -130,7 +130,11 @@
   :root { --kpi-weight:600; --kpi-font:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; }
   .metric-val, .kpi .v, [data-counter],
   .tr-bignum, .ocpm-kpi .v, .ocpm3-bigpct, .ocpm2-bignum, .ocpm2-days, .ocpm2-subm b, .inv-kpi .v, .inv-kpi .d,
-  .pg-watch-v, .pg-yoy-center b, .pg-stat-v {
+  .pg-watch-v, .pg-yoy-center b, .pg-stat-v,
+  /* Headline + leaderboard numerals that can't use [data-counter] because they're
+     ranges/static (e.g. "8–27 h", "4,820") still need the weight/font knob to reach them.
+     .pg-streak-v also carries an inline unit ("Days") that must track the numeral. */
+  .pg-kpi-v, .pg-rank-v, .pg-streak-v {
     font-weight:var(--kpi-weight) !important;
     font-family:var(--kpi-font);
     letter-spacing:-0.02em; font-variant-numeric:tabular-nums;
