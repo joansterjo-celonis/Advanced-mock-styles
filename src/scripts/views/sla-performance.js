@@ -162,7 +162,7 @@ const dashboard =
 
 registerView({
   id: 'sla-performance',
-  label: 'SLA Performance',
+  label: 'Apollo views 3 - stock',
   icon,
-  html: buildAssetHeader({ title: 'SLA Performance' }) + dashboard,
+  html: buildAssetHeader({ title: 'Apollo views 3 - stock' }) + dashboard,
 });
