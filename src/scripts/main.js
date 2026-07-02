@@ -22,6 +22,8 @@ import '../styles/slide-over.css';
 import '../styles/theme-creator.css';
 // Feedback feature is a separate layer on top of the proto (does not touch its logic).
 import '../styles/feedback.css';
+// Chart Playground — isolated, removable sandbox layer (Build-a-chart sub-tab).
+import '../styles/chart-playground.css';
 // Access gate is a separate layer on top of the proto (does not touch its logic).
 import '../styles/auth-gate.css';
 import { initAuthGate } from './auth-gate.js';
@@ -48,3 +50,8 @@ initThemeCreator();
 
 import { initFeedback } from './feedback.js';
 initFeedback();
+
+// Chart Playground sandbox: wires the "Build a chart" sub-tab's live controls
+// (loaded after engine/views so window.IA + the view's edit panel already exist).
+import { initChartPlayground } from './chart-playground.js';
+initChartPlayground();
