@@ -296,8 +296,11 @@
   .ocpm2-chart-sm { min-height:96px; }
 
   /* ===== OCPM adoption view — Summary_h "maturity funnel - history view" ===== */
+  /* row-1 cards (title banner + last load) are short: drop the default card min-height
+     and tighten vertical padding so they hug their content instead of wasting space */
+  .ocpm3-content .card.ocpm3-toprow { min-height:0; padding-top:10px; padding-bottom:10px; }
   /* big centered title banner */
-  .ocpm3-banner { display:flex; align-items:center; justify-content:center; min-height:30px; }
+  .ocpm3-banner { display:flex; align-items:center; justify-content:center; min-height:24px; }
   .ocpm3-banner h2 { margin:0; font-size:17px; font-weight:600; color:var(--text); text-align:center; }
   /* "last load date" info card */
   .ocpm3-loadinfo { display:flex; flex-direction:column; align-items:flex-end; justify-content:center; height:100%; gap:1px; font-size:12px; color:var(--text-dim); }

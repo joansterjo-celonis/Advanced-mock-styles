@@ -4226,6 +4226,81 @@
                 </div>
                 <div class="pg-plot"><div class="chart-wrap" data-chart="histogram" data-bins="14" data-xmin="0" data-xmax="48" data-unit="h" data-values='[2,3,3,4,4,5,5,6,6,7,7,8,8,9,10,10,11,12,13,14,15,16,17,18,20,22,24,26,3,4,5,6,7,8,9,10,12,14,28,32]'></div></div>
               </section>
+
+              <!-- ===== Bespoke compositions: fancy, purpose-built widgets for bespoke use cases ===== -->
+              <div class="pg-combo-head span-12">
+                <span class="pg-combo-head-t">Bespoke compositions</span>
+                <span class="pg-combo-head-s">Purpose-built widgets &mdash; activity calendars, streaks, gauges, timelines and rankings &mdash; that still follow the live controls.</span>
+              </div>
+
+              <section class="card span-8 metric pg-cell pg-combo pg-combo-activity" data-card>
+                <span class="gloss"></span><span class="sheen"></span><span class="rim"></span>
+                <div class="pg-cell-title">Engagement overview<span class="pg-cell-type">calendar + trend + pie</span></div>
+                <div class="pg-activity-body">
+                  <div class="pg-activity-cal">
+                    <div class="pg-sub-k">Daily activity &middot; last 6 months</div>
+                    <div class="pg-plot pg-cal-plot"><div class="chart-wrap" data-chart="calheat" data-rows="7" data-months='["Nov","Dec","Jan","Feb","Mar","Apr"]'></div></div>
+                    <div class="pg-cal-scale"><span>Less</span><i class="pg-cal-sw l0"></i><i class="pg-cal-sw l1"></i><i class="pg-cal-sw l2"></i><i class="pg-cal-sw l3"></i><i class="pg-cal-sw l4"></i><span>More</span></div>
+                  </div>
+                  <div class="pg-activity-side">
+                    <div class="pg-activity-top">
+                      <div class="pg-kpi-row">
+                        <div class="pg-kpi-main"><div class="pg-kpi-k">Goal completion</div><div class="pg-kpi-v" data-counter data-to="98" data-suffix="%">0%</div></div>
+                        <span class="pg-delta up">&#9650; 98%</span>
+                      </div>
+                      <div class="pg-plot pg-spark-inline pg-activity-spark"><div class="chart-wrap" data-chart="area" data-key="po"></div></div>
+                    </div>
+                    <div class="pg-plot pg-plot-radial pg-activity-pie"><div class="chart-wrap" data-chart="pie" data-segs='[["Active",58,"--cstop-1a"],["Idle",26,"--cstop-2a"],["New",16,"--legend-3"]]'></div><div class="donut-legend pg-native-legend" aria-hidden="true"></div></div>
+                  </div>
+                </div>
+              </section>
+
+              <section class="card span-4 metric pg-cell pg-combo pg-combo-streak" data-card>
+                <span class="gloss"></span><span class="sheen"></span><span class="rim"></span>
+                <div class="pg-cell-title">Active streak<span class="pg-cell-type">stat + dot grid</span></div>
+                <div class="pg-streak-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7.5V12l3 1.8"></path></svg>
+                </div>
+                <div class="pg-streak-main">
+                  <div class="pg-streak-v"><span data-counter data-to="13">0</span> Days</div>
+                  <div class="pg-sub-k">109 hours, 23 minutes</div>
+                </div>
+                <div class="pg-plot pg-streak-grid"><div class="chart-wrap" data-chart="dotgrid" data-total="30" data-filled="13" data-cols="10" data-gap="7"></div></div>
+              </section>
+
+              <section class="card span-4 metric pg-cell pg-combo pg-combo-gauge" data-card>
+                <span class="gloss"></span><span class="sheen"></span><span class="rim"></span>
+                <div class="pg-cell-title">Service health<span class="pg-cell-type">radial gauge</span></div>
+                <div class="pg-plot pg-plot-radial pg-gauge-plot">
+                  <div class="chart-wrap" data-chart="gauge" data-value="86" data-max="100" data-target="90" data-bands='[60,85]' data-unit="%"></div>
+                  <div class="pg-gauge-center"><b data-counter data-to="86" data-suffix="%">0%</b><span>uptime this quarter</span></div>
+                </div>
+                <div class="pg-legend" data-pg-legend='[["At risk","--cstop-1b"],["Fair","--cstop-2a"],["Healthy","--cstop-4a"]]'></div>
+              </section>
+
+              <section class="card span-8 metric pg-cell pg-combo pg-combo-timeline" data-card>
+                <span class="gloss"></span><span class="sheen"></span><span class="rim"></span>
+                <div class="pg-cell-title">Delivery milestones<span class="pg-cell-type">timeline rail</span></div>
+                <div class="pg-timeline">
+                  <div class="pg-tl-step done"><span class="pg-tl-node"></span><div class="pg-tl-label">Kickoff</div><div class="pg-tl-date">Nov 2</div></div>
+                  <div class="pg-tl-step done"><span class="pg-tl-node"></span><div class="pg-tl-label">Design</div><div class="pg-tl-date">Dec 8</div></div>
+                  <div class="pg-tl-step active"><span class="pg-tl-node"></span><div class="pg-tl-label">Build</div><div class="pg-tl-date">In progress</div></div>
+                  <div class="pg-tl-step"><span class="pg-tl-node"></span><div class="pg-tl-label">QA</div><div class="pg-tl-date">Mar 14</div></div>
+                  <div class="pg-tl-step"><span class="pg-tl-node"></span><div class="pg-tl-label">Launch</div><div class="pg-tl-date">Apr 1</div></div>
+                </div>
+              </section>
+
+              <section class="card span-12 metric pg-cell pg-combo pg-combo-rank" data-card>
+                <span class="gloss"></span><span class="sheen"></span><span class="rim"></span>
+                <div class="pg-cell-title">Top performers<span class="pg-cell-type">ranked leaderboard</span></div>
+                <div class="pg-rank">
+                  <div class="pg-rank-row"><span class="pg-rank-pos p1">1</span><span class="pg-rank-name">Barcelona hub</span><span class="pg-rank-bar"><i style="width:100%"></i></span><span class="pg-rank-v">4,820</span><span class="pg-delta up">&#9650; 12%</span></div>
+                  <div class="pg-rank-row"><span class="pg-rank-pos p2">2</span><span class="pg-rank-name">Mobile Inc.</span><span class="pg-rank-bar"><i style="width:87%"></i></span><span class="pg-rank-v">4,210</span><span class="pg-delta up">&#9650; 6%</span></div>
+                  <div class="pg-rank-row"><span class="pg-rank-pos p3">3</span><span class="pg-rank-name">SCT Inc.</span><span class="pg-rank-bar"><i style="width:83%"></i></span><span class="pg-rank-v">3,980</span><span class="pg-delta down">&#9660; 3%</span></div>
+                  <div class="pg-rank-row"><span class="pg-rank-pos">4</span><span class="pg-rank-name">PAQ Deutschland</span><span class="pg-rank-bar"><i style="width:73%"></i></span><span class="pg-rank-v">3,540</span><span class="pg-delta up">&#9650; 2%</span></div>
+                  <div class="pg-rank-row"><span class="pg-rank-pos">5</span><span class="pg-rank-name">Unisono AG</span><span class="pg-rank-bar"><i style="width:60%"></i></span><span class="pg-rank-v">2,910</span><span class="pg-delta up">&#9650; 9%</span></div>
+                </div>
+              </section>
             </div>
           </section>
 

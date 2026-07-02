@@ -285,3 +285,92 @@
 .pg-stat-k { font-size: 10.5px; color: var(--text-faint); }
 .pg-stat-v { font-size: 15px; font-weight: 600; color: var(--text); font-variant-numeric: tabular-nums; }
 .pg-combo-dist .pg-plot { flex: 1; min-height: 130px; }
+
+/* ============================================================
+   Bespoke compositions — fancy, purpose-built widgets. Each is a
+   .pg-cell.pg-combo (so it inherits frost / sheen / corners and its
+   charts follow the Material / Fill controls), with a bespoke layout.
+   ============================================================ */
+.pg-sub-k { font-size: 11.5px; color: var(--text-dim); }
+
+/* 1) Activity overview — calendar heatmap + trend spark + share pie.
+   A wide two-column split: the calendar (a wide, time-dense object) needs the
+   larger column; the trend + pie stack in the narrower side rail. */
+.pg-build .pg-cell.pg-combo-activity { min-height: 320px; }
+.pg-activity-body { display: grid; grid-template-columns: 1.7fr 1fr; gap: 18px; flex: 1; min-height: 0; }
+.pg-activity-cal { display: flex; flex-direction: column; min-width: 0; gap: 8px; }
+.pg-cal-plot { flex: 1; min-height: 140px; }
+.pg-cal-scale { display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--text-dim); }
+.pg-cal-scale span:first-child { margin-right: 2px; }
+.pg-cal-scale span:last-child { margin-left: 2px; }
+.pg-cal-sw { width: 12px; height: 12px; border-radius: 3px; flex: 0 0 auto; }
+.pg-cal-sw.l0 { background: rgba(128,128,128,0.16); }
+.pg-cal-sw.l1 { background: var(--cstop-1b); }
+.pg-cal-sw.l2 { background: var(--cstop-1a); }
+.pg-cal-sw.l3 { background: var(--cstop-2a); }
+.pg-cal-sw.l4 { background: var(--cstop-4a); }
+.pg-activity-side { display: flex; flex-direction: column; min-width: 0; gap: 12px; }
+.pg-activity-top { display: flex; flex-direction: column; gap: 4px; }
+.pg-activity-spark { flex: 0 0 auto; min-height: 46px; }
+.pg-activity-pie { flex: 1; min-height: 130px; }
+
+/* 2) Active streak — icon chip + big duration + dot-grid accumulation.
+   Vertical stack: category icon, the headline number, then the grid growing to
+   fill so the "how many so far" reads as a tangible, countable object. */
+.pg-build .pg-cell.pg-combo-streak { min-height: 320px; }
+.pg-streak-icon {
+  width: 46px; height: 46px; border-radius: 14px; flex: 0 0 auto;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--card-strong); border: 1px solid var(--border); color: var(--text);
+}
+.pg-streak-icon svg { width: 22px; height: 22px; }
+.pg-streak-main { display: flex; flex-direction: column; gap: 2px; }
+.pg-streak-v { font-size: 32px; font-weight: 600; letter-spacing: -0.025em; line-height: 1.05; color: var(--text); font-variant-numeric: tabular-nums; }
+.pg-streak-grid { flex: 1; min-height: 90px; align-items: flex-end; }
+
+/* 3) Radial gauge — bounded metric as an arc sweeping toward its ceiling, with
+   the KPI seated in the opening and qualitative bands behind the value arc. */
+.pg-build .pg-cell.pg-combo-gauge { min-height: 320px; }
+.pg-gauge-plot { flex: 1; min-height: 150px; }
+.pg-gauge-center { position: absolute; left: 0; right: 0; bottom: 16%; display: flex; flex-direction: column; align-items: center; pointer-events: none; text-align: center; }
+.pg-gauge-center b { font-size: 30px; font-weight: 600; letter-spacing: -0.025em; line-height: 1.05; color: var(--text); font-variant-numeric: tabular-nums; }
+.pg-gauge-center span { font-size: 11.5px; color: var(--text-dim); margin-top: 3px; }
+
+/* 4) Milestone timeline — a left-to-right rail with done / active / upcoming
+   nodes. Fixed label height keeps every node on one horizontal line so the
+   connector reads as continuous progress with a clear "you are here". */
+.pg-build .pg-cell.pg-combo-timeline { min-height: 200px; }
+.pg-timeline { display: flex; flex: 1; align-items: center; padding: 6px 4px; }
+.pg-tl-step { position: relative; flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px; min-width: 0; }
+.pg-tl-step::after {
+  content: ""; position: absolute; top: 31px; left: 50%; width: 100%; height: 2px;
+  background: var(--border); transform: translateY(-1px); z-index: 0;
+}
+.pg-tl-step:last-child::after { display: none; }
+.pg-tl-step.done::after { background: var(--cstop-1a); }
+.pg-tl-label { order: 1; height: 16px; line-height: 16px; font-size: 11.5px; font-weight: 600; color: var(--text); white-space: nowrap; }
+.pg-tl-node {
+  order: 2; position: relative; z-index: 1; width: 14px; height: 14px; border-radius: 50%;
+  background: var(--card-strong); box-shadow: inset 0 0 0 2px var(--border);
+}
+.pg-tl-step.done .pg-tl-node { background: var(--cstop-1a); box-shadow: none; }
+.pg-tl-step.active .pg-tl-node { background: var(--card); box-shadow: inset 0 0 0 3px var(--cstop-1a), 0 0 0 4px color-mix(in srgb, var(--cstop-1a) 22%, transparent); }
+.pg-tl-date { order: 3; font-size: 10.5px; color: var(--text-dim); white-space: nowrap; }
+.pg-tl-step.active .pg-tl-date { color: var(--cstop-1a); font-weight: 600; }
+
+/* 5) Leaderboard — ranking is ordinal, so a ranked list with position chips +
+   proportion bars conveys order AND magnitude at once. */
+.pg-build .pg-cell.pg-combo-rank { min-height: 260px; }
+.pg-rank { display: flex; flex-direction: column; flex: 1; justify-content: center; gap: 10px; }
+.pg-rank-row { display: grid; grid-template-columns: 22px minmax(90px, 170px) 1fr auto auto; align-items: center; gap: 14px; }
+.pg-rank-pos {
+  width: 22px; height: 22px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; background: rgba(128,128,128,0.14); color: var(--text-dim); font-variant-numeric: tabular-nums;
+}
+.pg-rank-pos.p1 { background: var(--cstop-4a); color: #fff; }
+.pg-rank-pos.p2 { background: var(--cstop-2a); color: #fff; }
+.pg-rank-pos.p3 { background: var(--cstop-1a); color: #fff; }
+.pg-rank-name { font-size: 12.5px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pg-rank-bar { height: 8px; border-radius: 999px; background: rgba(128,128,128,0.16); overflow: hidden; }
+.pg-rank-bar i { display: block; height: 100%; border-radius: 999px; background: var(--cstop-1a); }
+.pg-rank-v { font-size: 13px; font-weight: 600; color: var(--text); font-variant-numeric: tabular-nums; }

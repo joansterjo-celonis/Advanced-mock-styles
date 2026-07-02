@@ -879,6 +879,98 @@ import { getThemes, syncThemes, getAuthor, ensureAuthor, isCloudEnabled } from '
         hitRect(svg,padL,padT,innerW,innerH,label||'Bullet',[['Value',fmt(value)+(unit?' '+unit:'')],['Target',isNaN(target)?'-':fmt(target)+(unit?' '+unit:'')]]);
         wrap.appendChild(svg);
       }
+      /* ---- Calendar / activity heatmap (GitHub-style). Rows = weekdays, columns =
+         weeks. data-rows (default 7), data-weeks (fixed column count; else auto to fill
+         width), data-months='["Nov",…]' spread across the top, data-values (flat JSON of
+         bucket levels 0-4; else a deterministic fill). Empty cells read faint; filled
+         cells step through the theme accent ramp so Hue/Palette restyle it live, and the
+         Material knob adds iso depth / glass sheen and Fill adds pattern texture. ---- */
+      function calheat(wrap){
+        const rows=Math.max(1, parseInt(wrap.dataset.rows,10)||7);
+        let months=[]; try{ months=JSON.parse(wrap.dataset.months||'[]'); }catch(e){ months=[]; }
+        let vals=null; try{ vals=JSON.parse(wrap.dataset.values||'null'); }catch(e){ vals=null; }
+        const W=Math.max(Math.round(wrap.clientWidth),200), H=Math.max(Math.round(wrap.clientHeight),120);
+        const padT=months.length?18:2, padB=2, padL=2, padR=2, gap=3;
+        const innerH=H-padT-padB, innerW=W-padL-padR;
+        let cell=Math.max(6, Math.floor((innerH-gap*(rows-1))/rows));
+        let cols=parseInt(wrap.dataset.weeks,10) || Math.max(1, Math.floor((innerW+gap)/(cell+gap)));
+        if(wrap.dataset.weeks) cell=Math.max(5, Math.min(cell, Math.floor((innerW-gap*(cols-1))/cols)));
+        const gridW=cols*cell+(cols-1)*gap, ox=padL+Math.max(0,(innerW-gridW)/2), oy=padT;
+        const r=rng(9);
+        const level=(c,rr)=>{ if(vals){ const v=vals[c*rows+rr]; return v!=null?v:0; } const x=r(); return x<0.55?0:x<0.72?1:x<0.85?2:x<0.94?3:4; };
+        const ramp=['--cstop-1b','--cstop-1a','--cstop-2a','--cstop-4a'].map(v=>cssVar(v,wrap)).filter(Boolean);
+        const stops=ramp.length?ramp:['#6366f1'];
+        const colOf=l=> l<=0?'rgba(128,128,128,0.16)':(stops[Math.min(stops.length-1,l-1)]||stops[stops.length-1]);
+        const m3=chartMode(wrap), pat=usePattern(wrap), rx=Math.max(2,cell*0.22);
+        const svg=E('svg',{viewBox:`0 0 ${W} ${H}`,preserveAspectRatio:'none'});
+        if(months.length){ const cpm=cols/months.length; months.forEach((mo,i)=>{ const x=ox+i*cpm*(cell+gap); const t=svgText(E,x,padT-7,String(mo),'start'); t.setAttribute('font-size','10.5'); t.setAttribute('font-weight','600'); t.setAttribute('fill','var(--text)'); svg.appendChild(t); }); }
+        for(let c=0;c<cols;c++){ for(let rr=0;rr<rows;rr++){ const l=level(c,rr), x=ox+c*(cell+gap), y=oy+rr*(cell+gap), col=colOf(l);
+          let el;
+          if(l>0 && m3==='iso'){ const dep=Math.max(1.5,cell*0.14), fw=cell-dep, fh=cell-dep;
+            svg.appendChild(E('path',{d:`M${(x+fw).toFixed(1)},${y.toFixed(1)} L${(x+fw+dep).toFixed(1)},${(y+dep).toFixed(1)} L${(x+fw+dep).toFixed(1)},${(y+fh+dep).toFixed(1)} L${(x+fw).toFixed(1)},${(y+fh).toFixed(1)} Z`,fill:shadeC(col,-0.30)}));
+            svg.appendChild(E('path',{d:`M${x.toFixed(1)},${(y+fh).toFixed(1)} L${(x+fw).toFixed(1)},${(y+fh).toFixed(1)} L${(x+fw+dep).toFixed(1)},${(y+fh+dep).toFixed(1)} L${(x+dep).toFixed(1)},${(y+fh+dep).toFixed(1)} Z`,fill:shadeC(col,-0.18)}));
+            el=E('rect',{x:x.toFixed(1),y:y.toFixed(1),width:fw.toFixed(1),height:fh.toFixed(1),rx:rx}); el.style.fill=col; svg.appendChild(el);
+          } else {
+            el=E('rect',{x:x.toFixed(1),y:y.toFixed(1),width:cell.toFixed(1),height:cell.toFixed(1),rx:rx}); el.style.fill=col; svg.appendChild(el);
+            if(l>0 && m3==='glass'){ el.style.stroke='rgba(255,255,255,0.30)'; el.style.strokeWidth='0.7'; svg.appendChild(E('rect',{x:x.toFixed(1),y:y.toFixed(1),width:cell.toFixed(1),height:(cell*0.5).toFixed(1),rx:rx,fill:`url(#${sheenGrad(svg,false)})`,'pointer-events':'none'})); }
+            if(l>0 && pat) overlayRect(svg, x, y, cell, cell, Math.min(4,l+1), wrap, rx);
+          }
+          setTip(el,'Activity',[['Level',String(l)+' / 4']]); } }
+        wrap.appendChild(svg);
+      }
+      /* ---- Dot grid / waffle. data-total (cell count), data-filled (count) OR
+         data-percent (fills round(pct% of total)), data-cols (default 10), data-gap.
+         Filled dots use the accent, empties a faint neutral; the Material knob turns
+         filled dots into glossy spheres. Ideal for streaks and completion widgets. ---- */
+      function dotgrid(wrap){
+        const pct=wrap.dataset.percent!=null?Math.max(0,Math.min(100,parseFloat(wrap.dataset.percent))):null;
+        const total=parseInt(wrap.dataset.total,10)||(pct!=null?100:30);
+        const filled=pct!=null?Math.round(pct/100*total):(parseInt(wrap.dataset.filled,10)||0);
+        const cols=Math.max(1, parseInt(wrap.dataset.cols,10)||10), rows=Math.ceil(total/cols);
+        const W=Math.max(Math.round(wrap.clientWidth),120), H=Math.max(Math.round(wrap.clientHeight),50);
+        const gap=parseFloat(wrap.dataset.gap)||6;
+        const d=Math.max(4, Math.min((W-gap*(cols-1))/cols, (H-gap*(rows-1))/rows)), rad=d/2;
+        const gridW=cols*d+(cols-1)*gap, gridH=rows*d+(rows-1)*gap, ox=(W-gridW)/2, oy=(H-gridH)/2;
+        const m3=chartMode(wrap), accent=cssVar('--cstop-1a',wrap)||'#6366f1', empty='rgba(128,128,128,0.20)';
+        const svg=E('svg',{viewBox:`0 0 ${W} ${H}`,preserveAspectRatio:'xMidYMid meet'});
+        for(let i=0;i<total;i++){ const c=i%cols, rr=Math.floor(i/cols), cx=+(ox+c*(d+gap)+rad).toFixed(1), cy=+(oy+rr*(d+gap)+rad).toFixed(1), on=i<filled;
+          if(on && m3){ sphere(svg,cx,cy,rad,accent); }
+          else { const el=E('circle',{cx:cx,cy:cy,r:rad.toFixed(1)}); el.style.fill=on?accent:empty; svg.appendChild(el); } }
+        wrap.appendChild(svg);
+      }
+      /* ---- Semicircular gauge. data-value, data-max (100), data-min (0), data-target
+         (optional reference tick), data-bands='[t1,t2,…]' (qualitative zone edges),
+         data-unit. The centre KPI is supplied by the composition as an absolute overlay.
+         Track uses the accent ramp; the Material knob adds an iso shadow / glass sheen. ---- */
+      function gauge(wrap){
+        const min=parseFloat(wrap.dataset.min)||0, max=parseFloat(wrap.dataset.max)||100;
+        const value=Math.max(min,Math.min(max,parseFloat(wrap.dataset.value)||0));
+        const target=wrap.dataset.target!=null?parseFloat(wrap.dataset.target):null, unit=wrap.dataset.unit||'';
+        let bands=[]; try{ bands=JSON.parse(wrap.dataset.bands||'[]'); }catch(e){ bands=[]; }
+        const W=Math.max(Math.round(wrap.clientWidth),160), H=Math.max(Math.round(wrap.clientHeight),100);
+        const sw=Math.max(9, Math.min(W,H*1.8)*0.075);
+        const r=Math.min(W/2, H)*0.92-sw/2-6, cx=W/2, cy=Math.min(H-16, r+sw/2+4);
+        const frac=v=>(Math.max(min,Math.min(max,v))-min)/((max-min)||1);
+        const pt=f=>{ const a=Math.PI*(1-f); return [cx+r*Math.cos(a), cy-r*Math.sin(a)]; };
+        const arcPath=(f0,f1)=>{ const [x0,y0]=pt(f0), [x1,y1]=pt(f1); return `M${x0.toFixed(1)},${y0.toFixed(1)} A${r.toFixed(1)},${r.toFixed(1)} 0 0 1 ${x1.toFixed(1)},${y1.toFixed(1)}`; };
+        const m3=chartMode(wrap), accent=cssVar('--cstop-1a',wrap)||'#6366f1';
+        const svg=E('svg',{viewBox:`0 0 ${W} ${H}`});
+        if(bands.length){ const ramp=['--cstop-1b','--cstop-2a','--cstop-4a'].map(v=>cssVar(v,wrap)); const edges=[min,...bands,max];
+          for(let i=0;i<edges.length-1;i++){ const p=E('path',{d:arcPath(frac(edges[i]),frac(edges[i+1])),fill:'none','stroke-width':sw,'stroke-linecap':'butt'}); p.style.stroke=ramp[Math.min(ramp.length-1,i)]||accent; p.style.strokeOpacity='0.28'; svg.appendChild(p); } }
+        else { svg.appendChild(E('path',{d:arcPath(0,1),fill:'none','stroke-width':sw,'stroke-linecap':'round',stroke:'rgba(128,128,128,0.20)'})); }
+        const fv=frac(value);
+        if(fv>0){
+          if(m3==='iso'){ const s=E('path',{d:arcPath(0,fv),fill:'none','stroke-width':sw,'stroke-linecap':'round',transform:'translate(0 3)'}); s.style.stroke=shadeC(accent,-0.32); svg.appendChild(s); }
+          const va=E('path',{d:arcPath(0,fv),fill:'none','stroke-width':sw,'stroke-linecap':'round'}); va.style.stroke=accent; svg.appendChild(va);
+          if(m3==='glass'){ const g=E('path',{d:arcPath(0,fv),fill:'none','stroke-width':(sw*0.4).toFixed(1),'stroke-linecap':'round',transform:`translate(0 ${(-sw*0.22).toFixed(1)})`}); g.style.stroke='rgba(255,255,255,0.55)'; svg.appendChild(g); }
+          setTip(va,'Gauge',[['Value',fmt(value)+(unit?' '+unit:'')],['Target',target!=null?fmt(target)+(unit?' '+unit:''):'\u2013']]);
+        }
+        if(target!=null){ const ft=frac(target), a=Math.PI*(1-ft); const inx=cx+(r-sw/2-2)*Math.cos(a), iny=cy-(r-sw/2-2)*Math.sin(a), outx=cx+(r+sw/2+2)*Math.cos(a), outy=cy-(r+sw/2+2)*Math.sin(a); svg.appendChild(E('line',{x1:inx.toFixed(1),y1:iny.toFixed(1),x2:outx.toFixed(1),y2:outy.toFixed(1),stroke:'var(--text)','stroke-width':2.2,'stroke-linecap':'round'})); }
+        const [lx,ly]=pt(0), [ex,ey]=pt(1);
+        svg.appendChild(svgText(E,lx,ly+14,fmt(min)+unit,'middle'));
+        svg.appendChild(svgText(E,ex,ey+14,fmt(max)+unit,'middle'));
+        wrap.appendChild(svg);
+      }
       let _rzt; window.addEventListener('resize',()=>{ clearTimeout(_rzt); _rzt=setTimeout(()=>renderChartsIn(document.querySelector('.view.active')),160); });
       function buildChart(w){ const t=w.dataset.chart; w.innerHTML='';
         if(t==='combo')combo(w); else if(t==='donut')donut(w); else if(t==='area')area(w); else if(t==='dots')dots(w);
@@ -889,7 +981,8 @@ import { getThemes, syncThemes, getAuthor, ensureAuthor, isCloudEnabled } from '
         else if(t==='barcat')barcat(w); else if(t==='groupbars')groupbars(w); else if(t==='dotplot')dotplot(w);
         else if(t==='scatter')scatter(w); else if(t==='bubble')bubble(w); else if(t==='boxplot')boxplot(w);
         else if(t==='violin')violin(w); else if(t==='density')density(w); else if(t==='histogram')histogram(w);
-        else if(t==='heatmap')heatmap(w); else if(t==='funnel')funnel(w); else if(t==='bullet')bullet(w); }
+        else if(t==='heatmap')heatmap(w); else if(t==='funnel')funnel(w); else if(t==='bullet')bullet(w);
+        else if(t==='calheat')calheat(w); else if(t==='dotgrid')dotgrid(w); else if(t==='gauge')gauge(w); }
       function renderChartsIn(view){ if(!view)return; view.querySelectorAll('[data-chart]').forEach(buildChart); renderProcessGraphsIn(view); }
       // The Process Explorer graph (.pgraph) is not a data-chart wrap; it's an SVG/HTML
       // board. When Charts-look = WebGL it gets a cinematic 3D version (lazy-loaded,
