@@ -1,0 +1,287 @@
+/* ============================================================
+   Chart Playground — interactive sandbox (isolated, removable layer)
+   Scoped entirely to the "Build a chart" gallery (.pg-build) and the
+   playground control panel (.pg-panel) inside this view's edit rail.
+   Nothing here leaks to other views: every rule is prefixed by .pg-build
+   or the [data-view="rework-quality"][data-pgsub="build"] guard.
+   ============================================================ */
+
+/* ---- Disclaimer banner: makes the "not a real view" framing explicit ---- */
+.pg-disclaimer {
+  grid-column: span 12;
+  display: flex; gap: 10px; align-items: flex-start;
+  padding: 12px 14px;
+  border: 1px dashed var(--border-strong, var(--border));
+  border-radius: var(--r-surface, 12px);
+  background: color-mix(in srgb, var(--text) 4%, transparent);
+  color: var(--text-dim);
+  font-size: 12.5px; line-height: 1.45;
+}
+.pg-dis-ic { width: 20px; height: 20px; flex: none; color: var(--text-dim); margin-top: 1px; }
+.pg-dis-txt b { color: var(--text); }
+
+/* ---- Focus mode: hide the app shell so only the charts remain ---- */
+/* Toggle button lives in the disclaimer, pinned to the right. */
+.pg-focus-btn {
+  margin-left: auto; align-self: center; flex: none;
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 11px;
+  font-family: inherit; font-size: 12px; font-weight: 600; line-height: 1;
+  color: var(--text); cursor: pointer;
+  background: var(--card-strong); color: var(--text);
+  border: 1px solid var(--border-strong, var(--border));
+  border-radius: var(--r-control, 8px);
+  transition: background .15s ease, border-color .15s ease, color .15s ease;
+}
+.pg-focus-btn:hover { border-color: var(--accent); }
+.pg-focus-btn svg { width: 15px; height: 15px; flex: none; }
+
+/* Floating exit affordance, revealed only while focus mode is active. */
+.pg-focus-exit {
+  position: fixed; top: 14px; right: 16px; z-index: 2147483000;
+  display: none; align-items: center; gap: 7px;
+  padding: 8px 14px;
+  font-family: inherit; font-size: 12.5px; font-weight: 600; line-height: 1;
+  color: var(--text); cursor: pointer;
+  background: var(--bg-1, #0c0c0e);
+  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+  border: 1px solid var(--border-strong, var(--border));
+  border-radius: 999px;
+  box-shadow: 0 8px 26px -8px rgba(0, 0, 0, .5);
+  transition: border-color .15s ease;
+}
+.pg-focus-exit:hover { border-color: var(--accent); }
+.pg-focus-exit svg { width: 15px; height: 15px; flex: none; }
+[data-pgfocus="on"] .pg-focus-exit { display: inline-flex; }
+
+/* Collapse the surrounding shell chrome; the open view expands to fill. */
+[data-pgfocus="on"] #l0,
+[data-pgfocus="on"] .l0-spacer,
+[data-pgfocus="on"] #l1,
+[data-pgfocus="on"] #main > .tabbar,
+[data-pgfocus="on"] .statusbar { display: none !important; }
+
+/* ---- Gallery cell: title · legend · plot (axis-y + chart) · axis-x ---- */
+/* Strict ordering applies to the single-chart cells only; compositions (.pg-combo)
+   keep their natural DOM order so their bespoke KPI+chart layouts aren't reshuffled. */
+.pg-build .pg-cell { min-height: 300px; gap: 6px; }
+.pg-build .pg-cell:not(.pg-combo) > .pg-cell-title { order: 1; }
+.pg-build .pg-cell:not(.pg-combo) > .pg-legend    { order: 2; }
+.pg-build .pg-cell:not(.pg-combo) > .pg-body,
+.pg-build .pg-cell:not(.pg-combo) > .pg-bullets    { order: 3; }
+.pg-build .pg-cell:not(.pg-combo) > .pg-axis-x    { order: 4; }
+
+.pg-cell-title { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 650; color: var(--text); }
+.pg-cell-type {
+  margin-left: auto; font-size: 10px; font-weight: 500; color: var(--text-faint);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  padding: 1px 6px; border: 1px solid var(--border); border-radius: 5px;
+}
+
+.pg-body { display: flex; flex: 1; min-height: 0; min-width: 0; gap: 6px; }
+.pg-plot { position: relative; display: flex; flex: 1; min-height: 0; min-width: 0; }
+/* The gallery SVG is absolutely positioned (.rq-gallery .chart-wrap > svg), so the
+   wrap has no intrinsic height — it MUST stretch to fill the plot, otherwise the
+   chart renders into a zero-height box. Keep align-self:stretch on every plot. */
+.pg-plot .chart-wrap { margin-top: 0; align-self: stretch; height: 100%; }
+.pg-plot-radial { justify-content: center; }
+
+/* Cohesive chart typography: renderers set their own SVG text size (7.5–10.5px),
+   which reads as inconsistent side-by-side. One CSS rule normalizes every chart's
+   tick / axis / label text to a single size — CSS beats the SVG font-size
+   presentation attribute, so this unifies them without editing engine.js.
+   (In-bar labels keep their own weight/fill; only the SIZE is normalized.) */
+.pg-build { --pg-chart-font: 9px; }
+.pg-build .chart-wrap svg text { font-size: var(--pg-chart-font); }
+/* Corner radius: renderers bake a fixed rx (1–3px) into each bar/cell rect. This
+   overrides that with one panel-controlled value so every chart with corners shares
+   the same rounding (CSS geometry props beat SVG presentation attributes). Applies to
+   flat bars/columns/cells; 3D (isometric/glass) bars are drawn as paths, not rects. */
+.pg-build { --pg-bar-rx: 3px; }
+.pg-build .chart-wrap svg rect { rx: var(--pg-bar-rx); ry: var(--pg-bar-rx); }
+/* Pie/donut draw in-SVG leader labels ("arrows") only when they have no side legend
+   to write into. We hand the renderer a hidden native legend so those labels are
+   suppressed (and the disc centres); the visible, controllable legend is .pg-legend. */
+.pg-build .pg-native-legend { display: none !important; }
+
+.pg-axis-y {
+  writing-mode: vertical-rl; transform: rotate(180deg);
+  align-self: center; white-space: nowrap;
+  font-size: 10px; color: var(--text-dim); flex: none;
+}
+.pg-axis-x { text-align: center; font-size: 10px; color: var(--text-dim); }
+
+/* ---- Bullet cell (stacked fixed-height rows, no cartesian axes) ---- */
+.pg-bullets { display: flex; flex-direction: column; flex: 1; justify-content: center; gap: 12px; }
+.pg-bullet { flex: 0 0 56px; height: 56px; margin-top: 0; }
+
+/* ---- Playground-owned legend ---- */
+.pg-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 5px 14px; }
+.pg-li { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-dim); }
+.pg-li-lbl { white-space: nowrap; }
+.pg-sw { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+
+/* swatch shape (container class) */
+.pg-build.pg-sw-square .pg-sw { border-radius: 2px; }
+.pg-build.pg-sw-line   .pg-sw { width: 15px; height: 3px; border-radius: 2px; }
+.pg-build.pg-sw-pill   .pg-sw { width: 16px; height: 9px; border-radius: 6px; }
+
+/* legend orientation */
+.pg-build.pg-leg-col .pg-legend { flex-direction: column; align-items: flex-start; gap: 5px; }
+
+/* legend position: top (default order 2) · bottom (after axis-x) · right (beside plot).
+   Position controls act on the single-chart cells; compositions keep their own layout. */
+.pg-build.pg-leg-bottom .pg-cell:not(.pg-combo) > .pg-legend { order: 5; }
+.pg-build.pg-leg-right .pg-cell:not(.pg-combo) { flex-direction: row; flex-wrap: wrap; align-items: stretch; }
+.pg-build.pg-leg-right .pg-cell:not(.pg-combo) > .pg-cell-title { flex: 1 1 100%; }
+.pg-build.pg-leg-right .pg-cell:not(.pg-combo) > .pg-body,
+.pg-build.pg-leg-right .pg-cell:not(.pg-combo) > .pg-bullets   { flex: 1 1 auto; min-width: 0; }
+.pg-build.pg-leg-right .pg-cell:not(.pg-combo) > .pg-legend {
+  flex: 0 0 auto; order: 3; align-self: center; margin-left: 10px;
+  flex-direction: column; align-items: flex-start; gap: 6px; max-width: 132px;
+}
+.pg-build.pg-leg-right .pg-cell:not(.pg-combo) > .pg-axis-x { flex: 1 1 100%; }
+
+/* legend / axis visibility */
+.pg-build.pg-no-legend .pg-legend { display: none; }
+.pg-build.pg-no-axis .pg-axis-x,
+.pg-build.pg-no-axis .pg-axis-y { display: none; }
+
+/* ============================================================
+   Control panel — injected into this view's edit rail, revealed
+   only while the "Build a chart" sub-tab is active.
+   ============================================================ */
+.edit-panel .pg-panel { display: none; }
+.view[data-view="rework-quality"][data-pgsub="build"] .edit-panel > .ep-head,
+.view[data-view="rework-quality"][data-pgsub="build"] .edit-panel > .ep-search,
+.view[data-view="rework-quality"][data-pgsub="build"] .edit-panel > .ep-sec,
+.view[data-view="rework-quality"][data-pgsub="build"] .edit-panel > .ep-grid { display: none; }
+.view[data-view="rework-quality"][data-pgsub="build"] .edit-panel .pg-panel {
+  display: block; animation: epIn .4s cubic-bezier(.22,.61,.36,1) both;
+}
+/* When the playground panel is "docked" (JS pins the edit rail with position:fixed so
+   it stays put while the long gallery scrolls — see dockPanel() in chart-playground.js),
+   the rail keeps its own internal scroll for very tall control lists. */
+.view[data-view="rework-quality"] .edit-panel.pg-docked { overflow-y: auto; overscroll-behavior: contain; }
+
+.pg-panel { color: var(--text); }
+.pg-panel-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+.pg-panel-title { font-size: 14px; font-weight: 700; }
+.pg-panel-act { display: flex; align-items: center; gap: 6px; }
+.pg-reset {
+  appearance: none; border: 1px solid var(--border); background: transparent;
+  color: var(--text-dim); font: inherit; font-size: 11.5px; font-weight: 500;
+  padding: 4px 9px; border-radius: 7px; cursor: pointer; transition: color .15s, border-color .15s;
+}
+.pg-reset:hover { color: var(--text); border-color: var(--border-strong); }
+.pg-close { width: 26px; height: 26px; border: 0; background: transparent; color: var(--text-dim); border-radius: 7px; display: grid; place-items: center; cursor: pointer; }
+.pg-close:hover { background: var(--card-strong); color: var(--text); }
+.pg-panel-note { font-size: 11px; color: var(--text-faint); line-height: 1.45; margin-bottom: 12px; }
+
+.pg-sec { font-size: 11px; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; color: var(--text-faint); margin: 16px 0 8px; }
+.pg-grp { margin-bottom: 10px; }
+.pg-grp-hidden { display: none; }
+.pg-lbl { font-size: 11.5px; color: var(--text-dim); margin-bottom: 5px; }
+
+.pg-seg { display: flex; gap: 3px; padding: 3px; background: var(--bg-1); border: 1px solid var(--border); border-radius: 9px; }
+[data-mode="light"] .pg-seg { background: #fff; }
+.pg-seg button {
+  flex: 1; appearance: none; border: 0; background: transparent; color: var(--text-dim);
+  font: inherit; font-size: 11.5px; font-weight: 500; padding: 6px 4px; border-radius: 6px;
+  cursor: pointer; white-space: nowrap; transition: color .15s, background .15s;
+}
+.pg-seg button:hover { color: var(--text); }
+.pg-seg button.on { color: var(--text); background: var(--card-strong); box-shadow: inset 0 0 0 1px var(--border); }
+
+/* ============================================================
+   Creative compositions — chart + KPI and other combinations.
+   Each is a .pg-cell (so it inherits frost / sheen / corners and its
+   charts follow the material control), but with a bespoke inner layout.
+   ============================================================ */
+.pg-combo-head {
+  grid-column: span 12; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px;
+  margin-top: 10px; padding-top: 12px; border-top: 1px solid var(--border);
+}
+.pg-combo-head-t { font-size: 13px; font-weight: 700; color: var(--text); }
+.pg-combo-head-s { font-size: 11.5px; color: var(--text-faint); }
+
+.pg-build .pg-cell.pg-combo { gap: 10px; }
+
+/* headline KPI + delta pill */
+.pg-kpi-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; }
+.pg-kpi-main { min-width: 0; }
+.pg-kpi-k { font-size: 11.5px; color: var(--text-dim); }
+.pg-kpi-v {
+  font-size: 30px; font-weight: 600; letter-spacing: -0.025em; line-height: 1.05;
+  color: var(--text); margin-top: 2px; font-variant-numeric: tabular-nums;
+}
+.pg-delta { font-size: 11.5px; font-weight: 600; padding: 3px 8px; border-radius: 999px; white-space: nowrap; }
+.pg-delta.up   { color: var(--pos, #16a34a); background: color-mix(in srgb, var(--pos, #16a34a) 15%, transparent); }
+.pg-delta.down { color: var(--neg, #dc2626); background: color-mix(in srgb, var(--neg, #dc2626) 15%, transparent); }
+
+/* KPI + trend area (spark) */
+.pg-plot-spark { flex: 1; min-height: 96px; }
+
+/* donut + KPI + side legend.
+   align-items:stretch (not center) is REQUIRED so the chart column gets a definite
+   height for its wrap's height:100% to resolve against — otherwise the donut collapses. */
+.pg-ring-body { display: flex; flex: 1; min-height: 160px; gap: 12px; align-items: stretch; }
+.pg-ring-chart { flex: 1 1 52%; min-width: 0; }
+.pg-ring-side { flex: 1 1 48%; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 8px; }
+.pg-ring-side .pg-kpi-v { font-size: 34px; }
+
+/* KPI strip + chart */
+.pg-mini-kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.pg-mini { padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--r-surface, 10px); }
+.pg-mini-v { font-size: 20px; font-weight: 600; letter-spacing: -0.02em; color: var(--text); margin-top: 2px; font-variant-numeric: tabular-nums; }
+.pg-combo-dash .pg-plot { flex: 1; min-height: 130px; }
+
+/* KPI + bullet */
+.pg-combo-goal .pg-combo-bullets { flex: 0 0 auto; gap: 14px; }
+
+/* Clean mini "sparkline" trends: drop the axis labels + gridlines so the small
+   area/dots charts read as trends rather than shrunken full charts. */
+.pg-build .pg-plot-mini .chart-wrap svg text,
+.pg-build .pg-spark-inline .chart-wrap svg text,
+.pg-build .pg-plot-mini .chart-wrap svg line,
+.pg-build .pg-spark-inline .chart-wrap svg line { display: none; }
+
+/* Metrics wall — 2×2 KPI tiles each with a sparkline */
+.pg-build .pg-cell.pg-combo-wall { min-height: 340px; }
+.pg-combo-wall .pg-wall { display: grid; grid-template-columns: repeat(2, 1fr); grid-auto-rows: 1fr; gap: 8px; flex: 1; min-height: 0; }
+.pg-wall-tile { display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; min-height: 0; border: 1px solid var(--border); border-radius: var(--r-surface, 10px); overflow: hidden; }
+.pg-wall-head { display: flex; align-items: baseline; justify-content: space-between; gap: 6px; }
+.pg-wall-v { font-size: 18px; font-weight: 600; letter-spacing: -0.02em; color: var(--text); font-variant-numeric: tabular-nums; }
+.pg-plot-mini { flex: 1; min-height: 64px; }
+
+/* Trend watchlist — stat + inline sparkline rows */
+.pg-build .pg-cell.pg-combo-watch { min-height: 340px; }
+.pg-watch { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+.pg-watch-row { display: flex; align-items: stretch; gap: 12px; flex: 1; min-height: 96px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+.pg-watch-row:last-child { border-bottom: 0; }
+.pg-watch-info { flex: 0 0 42%; min-width: 0; align-self: center; }
+.pg-watch-head { display: flex; align-items: baseline; justify-content: space-between; gap: 6px; }
+/* Match the headline KPI value typography (.pg-kpi-v) exactly. */
+.pg-watch-v { font-size: 30px; font-weight: 600; letter-spacing: -0.025em; line-height: 1.05; color: var(--text); font-variant-numeric: tabular-nums; margin-top: 2px; }
+.pg-spark-inline { flex: 1; min-width: 0; }
+
+/* Year-over-year donut comparison */
+.pg-yoy { display: flex; flex: 1; align-items: stretch; gap: 8px; min-height: 150px; }
+.pg-yoy-item { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.pg-yoy-chart { flex: 1; min-height: 110px; }
+/* Center KPI in the donut hole — the donut is centred in .pg-plot (relative), so an
+   inset:0 flex-centred overlay lands exactly on the ring's middle. */
+.pg-yoy-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; text-align: center; }
+/* Center number follows the headline KPI typography (.pg-kpi-v / .pg-kpi-k). */
+.pg-yoy-center b { font-size: 30px; font-weight: 600; letter-spacing: -0.025em; line-height: 1.05; color: var(--text); font-variant-numeric: tabular-nums; }
+.pg-yoy-center span { font-size: 11.5px; color: var(--text-dim); margin-top: 3px; }
+.pg-yoy-cap { text-align: center; font-size: 11.5px; color: var(--text-dim); }
+.pg-yoy-cap b { color: var(--text); }
+.pg-yoy-delta { display: flex; align-items: center; align-self: center; }
+
+/* Distribution stat — KPI + secondary stats + histogram */
+.pg-dist-stats { display: flex; gap: 16px; }
+.pg-dist-stats > div { display: flex; flex-direction: column; align-items: flex-end; }
+.pg-stat-k { font-size: 10.5px; color: var(--text-faint); }
+.pg-stat-v { font-size: 15px; font-weight: 600; color: var(--text); font-variant-numeric: tabular-nums; }
+.pg-combo-dist .pg-plot { flex: 1; min-height: 130px; }

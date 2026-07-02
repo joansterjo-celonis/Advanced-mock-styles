@@ -140,8 +140,16 @@ export function bar3dH(svg, x, yTop, len, th, color, mode){
    and line-dash variation, so series read without relying on colour.
    Active only when the global knob data-chartfill='pattern' AND the
    chart is flat (chartMode === null). ============================================================ */
-export function patternFillOn(){ return document.documentElement.getAttribute('data-chartfill')==='pattern'; }
-export function usePattern(wrap){ return patternFillOn() && chartMode(wrap)===null; }
+export function patternFillOn(el){
+  // Nearest-ancestor override (e.g. the Chart Playground sandbox sets data-chartfill on
+  // its own container) wins over the global <html> value, so fill style can be scoped
+  // locally. closest() returns the nearest ancestor with the attr — the container beats
+  // <html>; with no local override it resolves to <html> exactly as before.
+  const host = (el && el.closest) ? el.closest('[data-chartfill]') : null;
+  const v = host ? host.getAttribute('data-chartfill') : document.documentElement.getAttribute('data-chartfill');
+  return v==='pattern';
+}
+export function usePattern(wrap){ return patternFillOn(wrap) && chartMode(wrap)===null; }
 // Texture marks are "cut" to the surface colour behind the chart, so they always
 // contrast with the (already surface-contrasting) coloured fill — in any theme / mode.
 function patternInk(el){ return cssVar('--bg-1', el) || (document.documentElement.getAttribute('data-mode')==='light' ? '#ffffff' : '#16171b'); }

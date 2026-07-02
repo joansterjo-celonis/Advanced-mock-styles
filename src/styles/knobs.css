@@ -129,7 +129,8 @@
      don't animate). When adding a new KPI, prefer [data-counter] over inventing a new class. */
   :root { --kpi-weight:600; --kpi-font:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; }
   .metric-val, .kpi .v, [data-counter],
-  .tr-bignum, .ocpm-kpi .v, .ocpm3-bigpct, .ocpm2-bignum, .ocpm2-days, .ocpm2-subm b, .inv-kpi .v, .inv-kpi .d {
+  .tr-bignum, .ocpm-kpi .v, .ocpm3-bigpct, .ocpm2-bignum, .ocpm2-days, .ocpm2-subm b, .inv-kpi .v, .inv-kpi .d,
+  .pg-watch-v, .pg-yoy-center b, .pg-stat-v {
     font-weight:var(--kpi-weight) !important;
     font-family:var(--kpi-font);
     letter-spacing:-0.02em; font-variant-numeric:tabular-nums;

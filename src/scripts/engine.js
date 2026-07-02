@@ -22,12 +22,13 @@ import { getThemes, syncThemes, getAuthor, ensureAuthor, isCloudEnabled } from '
           { id:'otd', label:'On-Time Delivery' },
         ]}},
         'purchase-order': { title:'Purchase Order' },
-        'rework-quality': { title:'Rework and Quality', subtabs:{ attr:'data-rqsub', items:[
+        'rework-quality': { title:'Chart Playground', subtabs:{ attr:'data-rqsub', items:[
           { id:'charts', label:'Charts', on:true },
           { id:'more', label:'More charts' },
           { id:'even', label:'Even more charts' },
           { id:'evencopy', label:'Even more charts Copy' },
           { id:'play', label:'Playground' },
+          { id:'build', label:'Build a chart' },
         ]}},
       };
       Object.keys(MARKUP_HEADERS).forEach(id=>{
@@ -438,7 +439,7 @@ import { getThemes, syncThemes, getAuthor, ensureAuthor, isCloudEnabled } from '
         const svg=E('svg',{viewBox:`0 0 ${W} ${H}`,preserveAspectRatio:'none'});
         [0,0.5,1].forEach(f=>{ const y=padT+innerH*(1-f); svg.appendChild(E('line',{x1:padL,x2:padL+innerW,y1:y,y2:y,stroke:'rgba(128,128,128,0.16)','stroke-dasharray':'2 4'})); svg.appendChild(svgText(E,padL-4,y+3,pct?Math.round(ymax*f)+'%':fmt(ymax*f),'end')); });
         const m3=chartMode(wrap), pat=usePattern(wrap);            // honor the Charts-look (iso / glass) knob + pattern sub-variant
-        const r=rng(seed), step=innerW/n, bw=step*0.74, last=series.length-1, tops=[];
+        const r=rng(seed), step=innerW/n, bw=step*0.74, last=series.length-1, tops=[], cols=[];
         const isoD=Math.max(2,Math.min(bw*0.5,10)), dvx=isoD*0.82, dvy=-isoD*0.5;
         const _defs=()=>{ let d=svg.querySelector('defs'); if(!d){ d=E('defs',{}); svg.insertBefore(d,svg.firstChild);} return d; };
         const _cc={}, _cv=cv=>(_cc[cv]||(_cc[cv]=cssVar(cv,wrap)));   // cache resolved colours (per series colour var)
@@ -453,7 +454,9 @@ import { getThemes, syncThemes, getAuthor, ensureAuthor, isCloudEnabled } from '
           const shares=series.map((s,si)=>{ if(finalAllLast) return si===last?1:0.0001; let base=(s.w||1)*(0.55+0.9*r()); if(bias&&si===last) base*=(0.1+t*t*4); return base; });
           const sum=shares.reduce((a,b)=>a+b,0);
           let yb=padT+innerH; const x=padL+step*i+(step-bw)/2, x2=x+bw; let topCol=null;
-          series.forEach((s,si)=>{ const h=(shares[si]/sum)*(Math.min(total,ymax)/ymax)*innerH; if(h<=0)return; const y=yb-h, cv=s.c||'--cstop-1a';
+          const stackTotal=Math.min(total,ymax), rows=[];
+          series.forEach((s,si)=>{ const h=(shares[si]/sum)*(stackTotal/ymax)*innerH; if(h<=0)return; const y=yb-h, cv=s.c||'--cstop-1a';
+            rows.push([s.name||('Series '+(si+1)), fmt((shares[si]/sum)*stackTotal)+(pct?'%':'')]);
             if(m3==='iso'){ const col=_cv(cv);
               svg.appendChild(E('path',{d:`M${x2.toFixed(1)},${y.toFixed(1)} L${(x2+dvx).toFixed(1)},${(y+dvy).toFixed(1)} L${(x2+dvx).toFixed(1)},${(yb+dvy).toFixed(1)} L${x2.toFixed(1)},${yb.toFixed(1)} Z`,fill:shadeC(col,-0.26)}));   // right side wall
               svg.appendChild(E('rect',{x:x.toFixed(1),y:y.toFixed(1),width:bw.toFixed(1),height:h.toFixed(1),fill:`url(#${_grad(cv,false)})`}));   // front face
@@ -465,8 +468,10 @@ import { getThemes, syncThemes, getAuthor, ensureAuthor, isCloudEnabled } from '
             yb=y; });
           if(m3==='iso' && topCol!=null){ svg.appendChild(E('path',{d:`M${x.toFixed(1)},${yb.toFixed(1)} L${(x+dvx).toFixed(1)},${(yb+dvy).toFixed(1)} L${(x2+dvx).toFixed(1)},${(yb+dvy).toFixed(1)} L${x2.toFixed(1)},${yb.toFixed(1)} Z`,fill:shadeC(topCol,0.34)})); }  // single top face (lightest)
           else if(m3==='glass'){ const cb=padT+innerH; if(cb-yb>1){ svg.appendChild(E('rect',{x:x.toFixed(1),y:yb.toFixed(1),width:bw.toFixed(1),height:(cb-yb).toFixed(1),fill:`url(#${sheenGrad(svg,true)})`,'pointer-events':'none'})); svg.appendChild(E('rect',{x:x.toFixed(1),y:yb.toFixed(1),width:bw.toFixed(1),height:Math.min(2.2,cb-yb).toFixed(1),rx:1,fill:'rgba(255,255,255,0.55)'})); } }
+          cols.push([padL+step*i, (xl.length===n?xl[i]:('Bar '+(i+1))), rows.reverse()]);   // reversed → top segment first in the tip
           tops.push((x+bw/2).toFixed(1)+','+yb.toFixed(1)); }
         if(line){ svg.appendChild(E('polyline',{points:tops.join(' '),fill:'none',stroke:'var('+line+')','stroke-width':1.6,'stroke-linejoin':'round'})); }
+        cols.forEach(c=> hitRect(svg, c[0], padT, step, innerH, c[1], c[2]));   // per-column hover targets (tooltips)
         if(xl.length){ xl.forEach((lab,idx)=>{ const x=padL+(xl.length===1?innerW/2:innerW*idx/(xl.length-1)); const tx=svgText(E,Math.max(padL+8,Math.min(padL+innerW-8,x)),padT+innerH+12,lab,'middle'); tx.setAttribute('font-size','8'); svg.appendChild(tx); }); }
         else { const stepX=Math.max(1,Math.ceil(n/12)); for(let i=0;i<n;i+=stepX){ svg.appendChild(svgText(E,padL+step*i+step/2,padT+innerH+11,String(i),'middle')); } }
         wrap.appendChild(svg);
@@ -1511,16 +1516,24 @@ import { getThemes, syncThemes, getAuthor, ensureAuthor, isCloudEnabled } from '
       /* ---- Countries and suppliers: horizontal bars (size-aware) ---- */
       function hbars(wrap){
         const labelW=158, padR=34, padT=4, padB=22, rowH=20;
-        const W=Math.max(Math.round(wrap.clientWidth),300), H=RQ_BARS.length*rowH+padT+padB;
+        const W=Math.max(Math.round(wrap.clientWidth),300);
+        // Optional data-limit keeps the ranking inside its card instead of overflowing:
+        //   • an integer caps the list to the top-N rows
+        //   • "fit" shows as many top-ranked rows as the container height allows
+        const lim=(wrap.getAttribute('data-limit')||'').trim();
+        let rows=RQ_BARS;
+        if(lim==='fit'){ const avail=Math.round(wrap.clientHeight)-padT-padB; const n=Math.max(3,Math.floor(avail/rowH)); rows=RQ_BARS.slice(0,Math.min(n,RQ_BARS.length)); }
+        else if(/^\d+$/.test(lim)){ rows=RQ_BARS.slice(0,Math.max(1,Math.min(+lim,RQ_BARS.length))); }
+        const H=rows.length*rowH+padT+padB;
         const innerW=W-labelW-padR; const mx=50; const fill='var(--cstop-1a)';
         const svg=E('svg',{viewBox:`0 0 ${W} ${H}`,width:W,height:H});
         // override global .chart-wrap svg{height:100%} so bars keep natural height and top-align
         svg.style.height=H+'px'; svg.style.width='100%';
         // x gridlines + ticks at 0,20,40
-        [0,20,40].forEach(g=>{ const x=labelW+(g/mx)*innerW; svg.appendChild(E('line',{x1:x,x2:x,y1:padT,y2:padT+RQ_BARS.length*rowH,stroke:'rgba(128,128,128,0.16)','stroke-dasharray':'2 4'}));
+        [0,20,40].forEach(g=>{ const x=labelW+(g/mx)*innerW; svg.appendChild(E('line',{x1:x,x2:x,y1:padT,y2:padT+rows.length*rowH,stroke:'rgba(128,128,128,0.16)','stroke-dasharray':'2 4'}));
           const t=svgText(E,x,H-7,String(g),'middle'); t.setAttribute('class','rq-axis'); svg.appendChild(t); });
         const m3=chartMode(wrap), pat=usePattern(wrap), barCol=cssVar('--cstop-1a', wrap);
-        RQ_BARS.forEach((row,i)=>{ const cy=padT+rowH*i+rowH/2, by=cy-rowH*0.62/2;
+        rows.forEach((row,i)=>{ const cy=padT+rowH*i+rowH/2, by=cy-rowH*0.62/2;
           const lt=svgText(E,labelW-8,cy+4,row[0],'end'); lt.setAttribute('class','rq-bar-label'); svg.appendChild(lt);
           const bw=Math.max(2,(row[1]/mx)*innerW); const bh=rowH*0.62;
           if(m3){ bar3dH(svg,labelW,by,bw,bh,barCol,m3); }
@@ -1528,7 +1541,7 @@ import { getThemes, syncThemes, getAuthor, ensureAuthor, isCloudEnabled } from '
             if(pat) overlayRect(svg, labelW, by, bw, bh, 1, wrap, 2); }
           const vt=svgText(E,labelW+bw+(m3==='iso'?12:5),cy+4,String(row[1]),'start'); vt.setAttribute('class','rq-bar-val'); vt.style.fill=barCol; svg.appendChild(vt);
         });
-        RQ_BARS.forEach((row,i)=>{ hitRect(svg,0,padT+rowH*i,W,rowH,row[0],[['Count',String(row[1])]]); });
+        rows.forEach((row,i)=>{ hitRect(svg,0,padT+rowH*i,W,rowH,row[0],[['Count',String(row[1])]]); });
         wrap.appendChild(svg);
       }
 
