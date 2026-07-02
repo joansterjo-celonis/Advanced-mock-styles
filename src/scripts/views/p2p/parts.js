@@ -63,7 +63,8 @@ export function kpiCell(label, o = {}) {
 /* ---- rich KPI card (label · big value · target line · optional mini-viz · badge).
    Mini-viz is either a `bullet` spec ({value,target,max,bands,color,unit}) or any
    raw chart HTML via `viz` (e.g. a dotgrid waffle) — keeps the card open to creative
-   micro-charts, not just bullets. ---- */
+   micro-charts, not just bullets. Pass `span` (e.g. 'span-4') to reuse the exact
+   same component as a standalone bento card outside the compact KPI row. ---- */
 export function kpiCardBig(o = {}) {
   const val = o.text != null
     ? '<div class="p2p-kval">' + o.text + '</div>'
@@ -85,7 +86,7 @@ export function kpiCardBig(o = {}) {
             'p2p-kbullet')
         : '');
   const foot = o.badge ? '<div class="p2p-kfoot">' + badge(o.badge[0], o.badge[1]) + '</div>' : '';
-  return '<section class="card p2p-kcard" data-card>' +
+  return '<section class="card ' + (o.span ? o.span + ' ' : '') + 'p2p-kcard" data-card>' +
     '<span class="gloss"></span><span class="rim"></span>' +
     '<div class="p2p-klabel">' + o.label + (o.tip ? ' ' + info(o.tip) : '') + '</div>' +
     val + target + viz + foot + '</section>';

@@ -153,9 +153,9 @@ const dashboard =
 
 registerView({
   id: 'incident-management',
-  label: 'Incident Management',
+  label: 'Apollo views 1 - stock',
   icon,
-  html: buildAssetHeader({ title: 'Incident Management' }) + dashboard,
+  html: buildAssetHeader({ title: 'Apollo views 1 - stock' }) + dashboard,
 
   render(viewEl) {
     viewEl.classList.add('inc-mgmt-view');

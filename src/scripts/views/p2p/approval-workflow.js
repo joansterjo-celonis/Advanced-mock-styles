@@ -3,8 +3,11 @@
 // ============================================================
 // Composition/content from "Approval Workflow - Enhanced Visualization":
 // filters, a 4-cell summary strip, the stage progression (the source's bespoke
-// CSS "stage flow" rebuilt as the repo `funnel`), five analysis charts and two
-// operational tables. Styling is the project's own; visuals are repo builders.
+// CSS "stage flow" rebuilt as the repo `funnel`), analysis charts (drop-off,
+// retention, per-stage days, success rate), an activity calendar + trend combo,
+// a stage-bottleneck bar and two operational tables. Styling is the project's
+// own; visuals are repo builders (funnel / hbarcat / linechart / dotplot /
+// barcat / calheat).
 
 import { filterRow, kpiCell, card, cardTitle, chart, legend, table, badge } from './parts.js';
 
@@ -80,16 +83,47 @@ const successCard = card('span-6 metric',
     'data-ymax="100" data-unit="%" data-color="--success" data-bars=\'' + JSON.stringify(SUCCESS_BARS) + '\''),
   'min-height:300px;');
 
-/* ---- Chart 5: bottleneck intensity (single-row heatmap) ---- */
-const BN_COLS = ['PO Created', 'PO Approved', 'Invoice Received', 'Invoice Approved', 'Payment Executed'];
-const BN_ROWS = ['Items Stuck'];
-const BN_MATRIX = [[2, 8, 15, 6, 3]];
-const bottleneckCard = card('span-12 metric',
-  cardTitle('Bottleneck Intensity Heatmap', 'Darker cells indicate more items stuck (in days) at that stage.') +
-  chart('heatmap',
-    'data-vmax="15" data-unit="days" data-labelw="90" data-rows=\'' + JSON.stringify(BN_ROWS) + '\' data-cols=\'' + JSON.stringify(BN_COLS) + '\' data-matrix=\'' + JSON.stringify(BN_MATRIX) + '\'',
-    null, 'min-height:120px;'),
-  'min-height:200px;');
+/* ---- Chart 5a: bottleneck by stage. A heatmap needs two dimensions; with a
+   single "items stuck" series a ranked horizontal bar is the honest chart, and the
+   per-bar colour still carries the intensity read (worst stage = danger). ---- */
+const BN_BARS = [
+  ['PO Created', 2, '--success'],
+  ['PO Approved', 8, '--cstop-3a'],
+  ['Invoice Received', 15, '--danger'],
+  ['Invoice Approved', 6, '--cstop-3a'],
+  ['Payment Executed', 3, '--success'],
+];
+const bottleneckCard = card('span-4 metric',
+  cardTitle('Items Stuck by Stage', 'Where approvals pile up \u2014 longer bars are bigger bottlenecks.') +
+  chart('hbarcat',
+    'data-xmax="16" data-xticks="0,4,8,12,16" data-unit="items" data-labelw="118" data-bars=\'' + JSON.stringify(BN_BARS) + '\'') +
+  '<div class="dash-xlabel">Items waiting &rarr;</div>',
+  'min-height:300px;');
+
+/* ---- Chart 5b: approval activity — calendar + trend + KPI, a design-system rebuild
+   of the playground "Activity trend" combo. Adds the missing time dimension: how many
+   approvals clear each day across the last 6 months. ---- */
+const ACT_TREND = [{ c: '--cstop-1a', name: 'Approvals', pts: [118, 124, 131, 128, 139, 146] }];
+const activityCard = card('span-8 metric',
+  cardTitle('Approval Activity', 'Daily approval throughput; darker days clear more approvals.') +
+  '<div class="p2p-act">' +
+    '<div class="p2p-act-head">' +
+      '<div class="p2p-act-kpi">' +
+        '<div class="p2p-act-k">On-Time Approval Rate</div>' +
+        '<div class="p2p-act-vrow"><span class="p2p-act-v" data-counter data-to="96" data-suffix="%">0%</span>' +
+        '<span class="p2p-kdelta down">\u25b2 2 pts vs last period</span></div>' +
+      '</div>' +
+      '<div class="p2p-spark">' +
+        chart('linechart', 'data-ymax="160" data-series=\'' + JSON.stringify(ACT_TREND) + '\'') +
+      '</div>' +
+    '</div>' +
+    '<div class="p2p-act-sub">Daily approvals &middot; last 6 months</div>' +
+    chart('calheat', 'data-rows="7" data-months=\'' + JSON.stringify(['Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Apr']) + '\'', 'p2p-cal') +
+    '<div class="p2p-calscale"><span>Less</span>' +
+      '<i class="p2p-calsw l0"></i><i class="p2p-calsw l1"></i><i class="p2p-calsw l2"></i><i class="p2p-calsw l3"></i><i class="p2p-calsw l4"></i>' +
+      '<span>More</span></div>' +
+  '</div>',
+  'min-height:300px;');
 
 /* ---- Tables ---- */
 const pendingTable = card('span-12',
@@ -120,6 +154,6 @@ export const approvalWorkflowPanel =
     funnelCard +
     dropoffCard + retentionCard +
     daysCard + successCard +
-    bottleneckCard +
+    activityCard + bottleneckCard +
     pendingTable + rejectedTable +
   '</div>';

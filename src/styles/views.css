@@ -452,12 +452,26 @@
   .p2p-kpirow { grid-column:1 / -1; display:grid; grid-template-columns:repeat(5,1fr); gap:var(--gap); }
   @media (max-width:1180px){ .p2p-kpirow { grid-template-columns:repeat(3,1fr); } }
   @media (max-width:680px){ .p2p-kpirow { grid-template-columns:repeat(2,1fr); } }
-  .p2p-kcard { grid-column:auto; display:flex; flex-direction:column; }
-  .p2p-klabel { font-size:12px; font-weight:600; color:var(--text-dim); display:flex; align-items:center; gap:6px; }
-  .p2p-kval { font-size:30px; font-weight:700; letter-spacing:-0.02em; color:var(--text); margin-top:8px; line-height:1; font-variant-numeric:tabular-nums; }
-  .p2p-ktarget { display:flex; align-items:center; justify-content:space-between; gap:8px; font-size:11.5px; color:var(--text-dim); margin-top:10px; }
+  .p2p-kcard { display:flex; flex-direction:column; }
+  /* inside the compact 5-col row, reset .card's default 12-col span; a standalone
+     KPI card in the main bento keeps its own span-* (e.g. the span-4 goal card) */
+  .p2p-kpirow .p2p-kcard { grid-column:auto; }
+  /* metric sublabel — same hierarchy as .metric-sub / .kpi .k across the app:
+     regular weight + dim, so the big value stays the emphasis (not the label) */
+  .p2p-klabel { font-size:12.5px; font-weight:400; color:var(--text-dim); display:flex; align-items:center; gap:6px; }
+  .p2p-kval { font-size:30px; font-weight:700; letter-spacing:-0.02em; color:var(--text); margin-top:6px; line-height:1; font-variant-numeric:tabular-nums; }
+  /* target/delta stay on one line (delta nowrap + target ellipsis) so the row never
+     wraps to a second line and inflates the card height */
+  .p2p-ktarget { display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:nowrap; font-size:11px; color:var(--text-dim); margin-top:8px; }
+  .p2p-ktarget > span:first-child { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .p2p-kbullet { height:40px; margin-top:8px; }
-  .p2p-kfoot { margin-top:auto; padding-top:12px; }
+  /* donut ring mini-viz slot — centred; sized to sit level with the bullet cards so
+     the whole row stays compact instead of stretching to the ring's height */
+  .p2p-kring { height:52px; margin-top:8px; display:grid; place-items:center; }
+  /* mini-viz wraps are .chart-wrap (flex:1 by default) — pin them so they keep a
+     fixed height and the bar never stretches when the row grows to the tallest card */
+  .p2p-view .p2p-kbullet, .p2p-view .p2p-kring { flex:none; }
+  .p2p-kfoot { margin-top:auto; padding-top:8px; }
 
   /* summary statistics list (label + value rows in a 3-column grid) */
   .p2p-statlist { display:grid; grid-template-columns:repeat(3,1fr); gap:0 36px; margin-top:8px; }
@@ -465,6 +479,30 @@
   .p2p-statrow .l { font-size:12.5px; color:var(--text-dim); }
   .p2p-statrow .v { font-size:16px; font-weight:600; color:var(--text); font-variant-numeric:tabular-nums; }
   @media (max-width:760px){ .p2p-statlist { grid-template-columns:1fr; } }
+
+  /* approval activity combo (calendar + trend + KPI) — design-system rebuild of
+     the playground "Activity trend" widget, tokens only (no pg-* styles copied) */
+  .p2p-act { display:flex; flex-direction:column; gap:10px; flex:1; min-height:0; margin-top:6px; }
+  .p2p-act .chart-wrap { margin-top:0; }
+  .p2p-act-head { display:flex; align-items:center; gap:18px; padding-bottom:10px; border-bottom:1px solid var(--border); }
+  .p2p-act-kpi { flex:0 0 auto; }
+  .p2p-act-k { font-size:12px; font-weight:600; color:var(--text-dim); }
+  .p2p-act-vrow { display:flex; align-items:baseline; gap:8px; margin-top:3px; }
+  .p2p-act-v { font-size:26px; font-weight:700; letter-spacing:-0.02em; line-height:1; color:var(--text); font-variant-numeric:tabular-nums; }
+  .p2p-spark { flex:1; min-width:0; height:46px; display:flex; }
+  /* sparkline: drop axis text + gridlines + point dots, keep the trend path */
+  .p2p-spark .chart-wrap svg text, .p2p-spark .chart-wrap svg line, .p2p-spark .chart-wrap svg circle { display:none; }
+  .p2p-act-sub { font-size:11.5px; color:var(--text-dim); }
+  .p2p-cal { flex:1; min-height:150px; }
+  .p2p-calscale { display:flex; align-items:center; gap:4px; font-size:11px; color:var(--text-dim); }
+  .p2p-calscale span:first-child { margin-right:2px; }
+  .p2p-calscale span:last-child { margin-left:2px; }
+  .p2p-calsw { width:12px; height:12px; border-radius:3px; flex:0 0 auto; }
+  .p2p-calsw.l0 { background:rgba(128,128,128,0.16); }
+  .p2p-calsw.l1 { background:var(--cstop-1b); }
+  .p2p-calsw.l2 { background:var(--cstop-1a); }
+  .p2p-calsw.l3 { background:var(--cstop-2a); }
+  .p2p-calsw.l4 { background:var(--cstop-4a); }
 
   /* refresh-info footer line */
   .p2p-refresh { font-size:11.5px; color:var(--text-dim); text-align:center; padding:6px 4px; }

@@ -27,7 +27,7 @@ const SUBTABS = [
 ];
 
 const header = buildAssetHeader({
-  title: 'P2P Analytics',
+  title: 'Apollo views-revamped',
   pills: [
     { k: 'Predefined filter', v: 'FY 2024' },
     { k: 'Predefined filter', v: 'All Vendors' },
@@ -37,7 +37,7 @@ const header = buildAssetHeader({
 
 registerView({
   id: 'p2p-analytics',
-  label: 'P2P Analytics',
+  label: 'Apollo views-revamped',
   icon,
   html: header + kpiOverviewPanel + cycleTimePanel + approvalWorkflowPanel,
 
