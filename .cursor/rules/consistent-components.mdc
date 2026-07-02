@@ -1,0 +1,30 @@
+---
+description: A reused component must look identical everywhere it appears
+alwaysApply: true
+---
+
+# Consistent Components
+
+When the same component (chart builder, card, button, badge…) is reused across
+views, it must render with the same proportions, spacing and styling in every
+context. If it "looks different," treat it as a bug and fix the shared source, not
+the one instance.
+
+## SVG charts must not be squished
+
+The chart builders draw into a `viewBox` with `preserveAspectRatio="none"`, so if
+the `viewBox` is a different aspect ratio than the element box, the chart is
+stretched non-uniformly. Keep the `viewBox` tracking the real element size — never
+clamp its min width/height above the sizes real cards actually use.
+
+## Mini-charts: match the reference's inner geometry
+
+Size a mini-chart's wrapper so its *inner* drawing area equals the reference
+instance. Example — the bullet's inner area is `H - padT - padB`; the gallery
+bullet (labelled, 56px → 20px inner) and the KPI-card bullet (no label, so
+`8 + 20 + 18 = 46px`) both resolve to a 20px inner area, so bar/track/axis match.
+
+## When flagged more than once
+
+If the user points at the same inconsistency again, stop patching instances: find
+the shared builder/CSS and fix it there so every instance updates at once.

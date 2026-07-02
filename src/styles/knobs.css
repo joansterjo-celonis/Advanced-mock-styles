@@ -110,7 +110,7 @@
 
   /* ---- D · Composition ---- (scoped to .bento so custom-grid views stay intact)
      .bento[data-fixed] OPTS OUT: bespoke, pixel-faithful views keep their hand-designed grid.
-     The knob only re-composes the generic dashboards (order-management / purchase-order /
+     The knob only re-composes the generic dashboards (order-management /
      rework-quality / insights). */
   [data-composition="uniform"] .view.active .bento:not([data-fixed]) > .card:not(.kpi-strip):not(.span-12) { grid-column: span 6; }
   [data-composition="hero"] .view.active .bento:not([data-fixed]) > .card[data-hero] { grid-column: span 8; }

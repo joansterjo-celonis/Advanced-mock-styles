@@ -111,7 +111,7 @@ const activityCard = card('span-8 metric',
       '<div class="p2p-act-kpi">' +
         '<div class="p2p-act-k">On-Time Approval Rate</div>' +
         '<div class="p2p-act-vrow"><span class="p2p-act-v" data-counter data-to="96" data-suffix="%">0%</span>' +
-        '<span class="p2p-kdelta down">\u25b2 2 pts vs last period</span></div>' +
+        '<span class="p2p-kdelta down">\u2191 2 pts vs last period</span></div>' +
       '</div>' +
       '<div class="p2p-spark">' +
         chart('linechart', 'data-ymax="160" data-series=\'' + JSON.stringify(ACT_TREND) + '\'') +
@@ -151,9 +151,9 @@ export const approvalWorkflowPanel =
   '<div class="bento p2p-panel" data-p2p-panel="approval" data-fixed style="display:none;">' +
     filterRow(FILTERS) +
     summaryStrip +
+    activityCard + bottleneckCard +
     funnelCard +
     dropoffCard + retentionCard +
     daysCard + successCard +
-    activityCard + bottleneckCard +
     pendingTable + rejectedTable +
   '</div>';

@@ -237,6 +237,9 @@
 .pg-combo-dash .pg-plot { flex: 1; min-height: 130px; }
 
 /* KPI + bullet */
+/* Hug the content instead of the 300px floor + grid stretch (same pattern as
+   .pg-combo-mix) so the single-bullet variant isn't padded with empty space. */
+.pg-build .pg-cell.pg-combo-goal { min-height: 0; align-self: start; }
 .pg-combo-goal .pg-combo-bullets { flex: 0 0 auto; gap: 14px; }
 
 /* Clean mini "sparkline" trends: drop the axis labels + gridlines so the small
@@ -410,15 +413,10 @@
    animate and follow the weight/font knob.
    ============================================================ */
 .pg-build .pg-cell.pg-combo-kpi { min-height: 210px; }
-.pg-kpi-head { display: flex; align-items: center; gap: 10px; }
-.pg-kpi-head .pg-kpi-k { font-size: 12px; }
-.pg-kpi-chip {
-  width: 34px; height: 34px; border-radius: 10px; flex: 0 0 auto;
-  display: inline-flex; align-items: center; justify-content: center;
-  background: color-mix(in srgb, var(--accent) 12%, var(--card-strong));
-  border: 1px solid var(--border); color: color-mix(in srgb, var(--accent) 62%, var(--text));
-}
-.pg-kpi-chip svg { width: 18px; height: 18px; }
+/* head = just the metric sublabel now (icon chip removed), matching the app's
+   standard KPI label (.kpi .k): dim, regular weight, small, with a faded info glyph */
+.pg-kpi-head { display: flex; align-items: center; gap: 6px; }
+.pg-kpi-head .pg-kpi-k { font-size: 12.5px; }
 .pg-kpi-vrow { display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; }
 /* Oversize the headline so the number is the titular element of the tile. */
 .pg-combo-kpi .pg-kpi-v { font-size: 40px; letter-spacing: -0.03em; }
@@ -493,3 +491,6 @@
 .pg-cta-actions { display: flex; align-items: stretch; gap: 8px; margin-top: auto; }
 .pg-cta-actions .btn-validate { flex: 1; margin-top: 0; align-self: auto; }
 .pg-cta-actions .pg-focus-btn { margin-left: 0; align-self: stretch; flex: 0 0 auto; height: 34px; }
+/* CTA action buttons follow the gallery Corner-radius knob, like the chart bars/cells */
+.pg-cta-actions .btn-validate,
+.pg-cta-actions .pg-focus-btn { border-radius: var(--pg-bar-rx); }

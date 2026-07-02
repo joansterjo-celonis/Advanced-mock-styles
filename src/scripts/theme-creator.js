@@ -17,6 +17,11 @@ const DEFAULT_DRAFT = {
   surfaceRadius: 12,
   controlRadius: 9,
   density: 'spacious',
+  // advanced (decoupled) density is a proto-panel power feature; the creator only offers
+  // the 3 presets, so it just carries these through untouched to avoid a lossy round-trip.
+  densityAdv: false,
+  densityPad: null,
+  densityGap: null,
   composition: 'bento',
   tabs: 'filled',
   tabColor: null,
@@ -845,6 +850,9 @@ function draftFromState(state) {
   next.finish = has('surf-frost') ? 'frost' : 'flat';
   next.composition = 'bento';
   next.density = pick(['density-dense', 'density-compact', 'density-spacious'], 'density-spacious').replace('density-', '');
+  next.densityAdv = !!state.densityAdv;
+  next.densityPad = state.densityPad != null ? state.densityPad : null;
+  next.densityGap = state.densityGap != null ? state.densityGap : null;
   next.tabs = pick(['tabs-color', 'tabs-underline', 'tabs-filled'], 'tabs-filled').replace('tabs-', '');
   next.tabFx = has('tabfx-slide') ? 'slide' : 'flat';
   next.kpiFont = pick(['kf-serif', 'kf-mono', 'kf-sans'], 'kf-sans').replace('kf-', '');
@@ -914,6 +922,9 @@ function buildState(src) {
     glassAdv: glassAdvanced,
     glassOp: String(glassOp),
     glassBl: String(glassBl),
+    densityAdv: !!src.densityAdv,
+    densityPad: src.densityAdv ? String(src.densityPad) : null,
+    densityGap: src.densityAdv ? String(src.densityGap) : null,
     numFeats: Array.isArray(src.numFeats) ? [...src.numFeats] : [],
   };
 }
@@ -954,6 +965,12 @@ function applyChoiceSideEffects(key, value) {
   }
   if (key === 'charts' && value === 'flat') {
     draft.chartScope = 'accent';
+  }
+  // picking a curated density preset clears any decoupled (advanced) pad/gap carried in
+  if (key === 'density') {
+    draft.densityAdv = false;
+    draft.densityPad = null;
+    draft.densityGap = null;
   }
 }
 

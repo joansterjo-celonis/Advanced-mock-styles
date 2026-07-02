@@ -1,0 +1,31 @@
+---
+description: Reuse established icons/glyphs; never introduce random or inconsistent ones
+alwaysApply: true
+---
+
+# Consistent Iconography
+
+Do NOT invent or swap in new icons/glyphs for a concept that already has an
+established glyph in this codebase. Reuse what exists so the whole system stays
+cohesive. When adding a new UI element, first grep for an existing example of the
+same concept and match its glyph exactly.
+
+## Deltas / trend indicators
+
+Trend + status deltas use plain **arrows**, not triangles:
+
+- Up  → `↑` (`&#8593;` in HTML, `\u2191` in JS) — never `▲` / `&#9650;` / `\u25b2`
+- Down → `↓` (`&#8595;` in HTML, `\u2193` in JS) — never `▼` / `&#9660;` / `\u25bc`
+
+Applies to `.pg-delta` (playground) and `.p2p-kdelta` / `.p2p-delta` (P2P views).
+
+```html
+<!-- BAD -->  <span class="pg-delta up">&#9650; 8%</span>
+<!-- GOOD --> <span class="pg-delta up">&#8593; 8%</span>
+```
+
+## Delta styling
+
+KPI-card deltas render as a tinted rounded **pill** (`padding:3px 8px;
+border-radius:999px;` + a `color-mix` background), matching `.pg-delta`. Keep the
+P2P polarity: `.up` = danger (red), `.down` = success (green).

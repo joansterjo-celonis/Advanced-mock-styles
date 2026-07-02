@@ -21,7 +21,6 @@ import { getThemes, syncThemes, getAuthor, ensureAuthor, isCloudEnabled } from '
           { id:'process', label:'Process Explorer' },
           { id:'otd', label:'On-Time Delivery' },
         ]}},
-        'purchase-order': { title:'Purchase Order' },
         'rework-quality': { title:'Chart Playground', subtabs:{ attr:'data-rqsub', items:[
           { id:'charts', label:'Charts', on:true },
           { id:'more', label:'More charts' },
@@ -179,9 +178,17 @@ import { getThemes, syncThemes, getAuthor, ensureAuthor, isCloudEnabled } from '
         // (used inside CTA media so the viz reads as integrated, not a shrunken chart).
         const flush = wrap.dataset.flush==='1' || !!wrap.closest('.pg-cta-media');
         const padL=flush?0:30,padR=flush?0:10,padT=flush?6:8,padB=flush?0:18, innerW=W-padL-padR, innerH=H-padT-padB;
-        let pts; if(key==='po'){ pts=series(91,18,60,28,1.0); } else { pts=series(101,N,52,26,0.2); }
+        let pts;
+        if(wrap.dataset.seed!=null){ // explicit series shape (seed + optional base/amp/trend/n) — used for distinct KPI sparks
+          const sn=parseInt(wrap.dataset.n,10)||18;
+          pts=series(+wrap.dataset.seed, sn, +(wrap.dataset.base||58), +(wrap.dataset.amp||26), +(wrap.dataset.trend||0.6));
+        }
+        else if(key==='po'){ pts=series(91,18,60,28,1.0); }
+        else { pts=series(101,N,52,26,0.2); }
         const mx=Math.max(...pts)*1.15;
-        const tint=vividTint(key);
+        // data-tint forces an accent (token like "--legend-2" or a hex) regardless of theme; else vivid palette; else monochrome default.
+        const tintTok=wrap.dataset.tint, forcedTint=tintTok?(tintTok[0]==='#'?tintTok:cssVar(tintTok, wrap)):null;
+        const tint=forcedTint||vividTint(key);
         const svg=E('svg',{viewBox:`0 0 ${W} ${H}`,preserveAspectRatio:'none'});
         const defs=E('defs',{}); const gid='ar_'+key+'_'+nextGid(); const g=E('linearGradient',{id:gid,x1:0,x2:0,y1:0,y2:1});
         if(tint){ g.appendChild(E('stop',{offset:'0%','stop-color':tint,'stop-opacity':'0.5'})); g.appendChild(E('stop',{offset:'100%','stop-color':tint,'stop-opacity':'0'})); }
@@ -205,13 +212,13 @@ import { getThemes, syncThemes, getAuthor, ensureAuthor, isCloudEnabled } from '
           const areaD=d+`L${padL+innerW},${padT+innerH}L${padL},${padT+innerH}Z`;
           svg.appendChild(E('path',{d:areaD,fill:`url(#${gid})`}));
           if(usePattern(wrap)) overlayPath(svg, areaD, 1, wrap);   // single texture over the area fill
-          const lineCol = tint ? shade(tint,-0.1) : 'var(--text)';
+          const lineCol = tint ? shadeC(tint,-0.1) : 'var(--text)';
           const lp=E('path',{d:d,fill:'none','stroke-width':2,'stroke-linecap':'round','stroke-linejoin':'round','vector-effect':'non-scaling-stroke'}); lp.style.stroke=lineCol; svg.appendChild(lp);
           pts.forEach((v,i)=>{ if(i%2)return; const x=padL+step*i,y=padT+innerH-(v/mx)*innerH; const c=E('circle',{cx:x.toFixed(1),cy:y.toFixed(1),r:2.2}); c.style.fill=lineCol; svg.appendChild(c); });
         }
         const T=(x,y,s,a)=>svgText(E,x,y,s,a);
         if(!flush){
-          svg.appendChild(T(padL,padT+7,'50K','end'));
+          svg.appendChild(T(padL-4,padT+7,'50K','end'));
           svg.appendChild(T(padL,H-5,'2022-01','start')); svg.appendChild(T(padL+innerW,H-5,'2024-01','end'));
         }
         for(let i=0;i<pts.length;i++){ const cxp=padL+step*i, x0=Math.max(padL,cxp-step/2), x1=Math.min(padL+innerW,cxp+step/2); hitRect(svg,x0,padT,x1-x0,innerH,monthLabel(i),[['Value',fmt(pts[i])]]); }
@@ -221,7 +228,9 @@ import { getThemes, syncThemes, getAuthor, ensureAuthor, isCloudEnabled } from '
       /* ---- DOT PLOT — size-aware ---- */
       function dots(wrap){
         const W=Math.max(Math.round(wrap.clientWidth),220), H=Math.max(Math.round(wrap.clientHeight),100);
-        const padL=34,padR=10,padT=8,padB=22, innerW=W-padL-padR, innerH=H-padT-padB;
+        // "flush" mode drops the axis gutters so the scatter bleeds to the block edges (spark use)
+        const flush = wrap.dataset.flush==='1';
+        const padL=flush?0:34,padR=flush?0:10,padT=flush?6:8,padB=flush?4:22, innerW=W-padL-padR, innerH=H-padT-padB;
         const n=24, r=rng(7), vals=[]; for(let i=0;i<n;i++){ vals.push(i===6?19500:(r()*3000+300)); }
         const mx=20000; const tint=vividTint('dots'); const hi = tint || 'var(--text)';
         const svg=E('svg',{viewBox:`0 0 ${W} ${H}`,preserveAspectRatio:'none'});
@@ -231,9 +240,9 @@ import { getThemes, syncThemes, getAuthor, ensureAuthor, isCloudEnabled } from '
         vals.forEach((v,i)=>{ const x=+(padL+step*i+step/2).toFixed(1); const y=+(padT+innerH-(v/mx)*innerH).toFixed(1); const rad=i===6?4:2.6;
           if(m3){ sphere(svg,x,y, i===6?4.6:2.9, i===6?hiCol:'rgb(150,150,156)'); }
           else { const c=E('circle',{cx:x,cy:y,r:rad}); c.style.fill = i===6?hi:'rgba(128,128,128,0.7)'; svg.appendChild(c); } });
-        const T=(x,y,s,a)=>svgText(E,x,y,s,a);
-        svg.appendChild(T(padL-4,padT+7,'20000','end')); svg.appendChild(T(padL-4,padT+innerH*0.5,'10000','end')); svg.appendChild(T(padL-4,padT+innerH,'0','end'));
-        svg.appendChild(T(padL+innerW,H-5,'Country →','end'));
+        if(!flush){ const T=(x,y,s,a)=>svgText(E,x,y,s,a);
+          svg.appendChild(T(padL-4,padT+7,'20000','end')); svg.appendChild(T(padL-4,padT+innerH*0.5,'10000','end')); svg.appendChild(T(padL-4,padT+innerH,'0','end'));
+          svg.appendChild(T(padL+innerW,H-5,'Country →','end')); }
         for(let i=0;i<vals.length;i++){ hitRect(svg,padL+step*i,padT,step,innerH,'Country '+(i+1),[['Value',fmt(vals[i])]]); }
         wrap.appendChild(svg);
       }
@@ -535,6 +544,17 @@ import { getThemes, syncThemes, getAuthor, ensureAuthor, isCloudEnabled } from '
         [0,0.2,0.4,0.6,0.8,1].forEach(f=>{ const y=padT+innerH*(1-f); svg.appendChild(E('line',{x1:padL,x2:padL+innerW,y1:y,y2:y,stroke:'rgba(128,128,128,0.16)','stroke-dasharray':'2 4'})); svg.appendChild(svgText(E,padL-4,y+3,pct?(ymax*f).toFixed(1)+'%':fmt(ymax*f),'end')); });
         const n=Math.max(1,...series.map(s=>(s.pts||[]).length)), step=n>1?innerW/(n-1):innerW;
         const m3=chartMode(wrap), pat=usePattern(wrap);
+        if(wrap.dataset.fill==='1'){   // opt-in translucent area under each line — drawn first so every line/marker stays on top
+          let defs=svg.querySelector('defs'); if(!defs){ defs=E('defs',{}); svg.insertBefore(defs, svg.firstChild); }
+          const by=padT+innerH;
+          series.forEach((s,si)=>{ const pts=s.pts||[]; if(pts.length<2) return; const col=cssVar(s.c||'--cstop-1a', wrap);
+            let d=''; pts.forEach((v,i)=>{ const x=padL+step*i, y=padT+innerH-(Math.min(v,ymax)/ymax)*innerH; d+=(i?'L':'M')+x.toFixed(1)+','+y.toFixed(1); });
+            const gid='lcf_'+si+'_'+nextGid(), lg=E('linearGradient',{id:gid,x1:0,y1:0,x2:0,y2:1});
+            lg.appendChild(E('stop',{offset:'0%','stop-color':rgbaC(col,0.24)})); lg.appendChild(E('stop',{offset:'100%','stop-color':rgbaC(col,0.02)}));
+            defs.appendChild(lg);
+            const lastX=padL+step*(pts.length-1);
+            svg.appendChild(E('path',{d:d+`L${lastX.toFixed(1)},${by.toFixed(1)}L${padL.toFixed(1)},${by.toFixed(1)}Z`,fill:`url(#${gid})`,'pointer-events':'none'})); });
+        }
         series.forEach((s,si)=>{ const pts=s.pts||[], col=cssVar(s.c||'--cstop-1a', wrap);
           let d=''; pts.forEach((v,i)=>{ const x=padL+step*i, y=padT+innerH-(Math.min(v,ymax)/ymax)*innerH; d+=(i?'L':'M')+x.toFixed(1)+','+y.toFixed(1); });
           const lp=E('path',{d:d,fill:'none','stroke-width':2.2,'stroke-linecap':'round','stroke-linejoin':'round','vector-effect':'non-scaling-stroke'}); lp.style.stroke=col;
@@ -868,8 +888,15 @@ import { getThemes, syncThemes, getAuthor, ensureAuthor, isCloudEnabled } from '
         const value=parseFloat(wrap.dataset.value)||0, target=parseFloat(wrap.dataset.target), max=parseFloat(wrap.dataset.max)||(Math.max(value,target||0)*1.1)||1;
         let bands=[]; try{ bands=JSON.parse(wrap.dataset.bands||'[]'); }catch(e){ bands=[]; }
         const label=wrap.dataset.label||'', unit=wrap.dataset.unit||'', cvar=wrap.dataset.color||'--cstop-1a';
-        const W=Math.max(Math.round(wrap.clientWidth),200), H=Math.max(Math.round(wrap.clientHeight),54);
-        const padL=8,padR=10,padT=label?18:8,padB=18, innerW=W-padL-padR, innerH=H-padT-padB;
+        // viewBox must track the real element box: with preserveAspectRatio="none" a
+        // floor larger than the wrap (e.g. a narrow KPI-card bullet) squishes the chart
+        // non-uniformly and it stops looking like the wide gallery bullet. Keep only a
+        // small safety floor so the same component renders 1:1 at any size.
+        const W=Math.max(Math.round(wrap.clientWidth),100), H=Math.max(Math.round(wrap.clientHeight),40);
+        // padL=0 so the label / bar / "0" tick sit flush with the card's other text
+        // (title, value, target) — the bullet is always laid out inside a card whose
+        // copy starts at the content edge, so any left inset would misalign them.
+        const padL=0,padR=10,padT=label?18:8,padB=18, innerW=W-padL-padR, innerH=H-padT-padB;
         const sx=v=>padL+(Math.min(v,max)/max)*innerW;
         const svg=E('svg',{viewBox:`0 0 ${W} ${H}`,preserveAspectRatio:'none'});
         const m3=chartMode(wrap), col=cssVar(cvar, wrap);
@@ -1339,12 +1366,40 @@ import { getThemes, syncThemes, getAuthor, ensureAuthor, isCloudEnabled } from '
       if(brandInput) brandInput.addEventListener('input',()=>{ brandColor=brandInput.value; applyBrand(); });
       if(brandReset) brandReset.addEventListener('click',()=>{ brandColor=null; if(brandInput) brandInput.value='#000000'; applyBrand(); });
       const bSp=document.getElementById('density-spacious'),bCo=document.getElementById('density-compact'),bDn=document.getElementById('density-dense');
-      function setDensity(m){ root.setAttribute('data-density',m); const c=CONFIG[m];
-        root.style.setProperty('--gap',c.gap+'px'); root.style.setProperty('--pad',c.pad+'px');
-        root.style.setProperty('--row-metric',c.rowMetric+'px');
+      /* Density "Advanced" split: the three presets move inner padding (--pad) and outer gap
+         (--gap) together; Advanced decouples them into two px sliders (mirrors the Global-glass
+         single→advanced pattern). curPad/curGap are the single source of truth for the readouts,
+         so the exact px is visible at all times — a summary chip in simple mode, per-axis vals in
+         advanced. renderChartsIn re-measures charts whenever card geometry changes. */
+      const rPad=document.getElementById('r-pad'), rGap=document.getElementById('r-gap');
+      const densVal=document.getElementById('dens-val'), padV=document.getElementById('dens-pad-val'), gapV=document.getElementById('dens-gap-val');
+      const densAdv=document.getElementById('density-adv'), densGrp=document.getElementById('dens-grp');
+      const densSimple=document.getElementById('dens-simple'), densSplit=document.getElementById('dens-split');
+      let curDensity='spacious', curPad=CONFIG.spacious.pad, curGap=CONFIG.spacious.gap;
+      const showDens=()=>{ if(densVal) densVal.textContent=curPad+' \u00B7 '+curGap+'px'; if(padV) padV.textContent=curPad+'px'; if(gapV) gapV.textContent=curGap+'px'; };
+      const reflow=()=>renderChartsIn(document.querySelector('.view.active'));
+      function setPad(px){ curPad=Math.round(+px)||0; root.style.setProperty('--pad',curPad+'px'); if(rPad&&+rPad.value!==curPad) rPad.value=curPad; showDens(); reflow(); }
+      function setGap(px){ curGap=Math.round(+px)||0; root.style.setProperty('--gap',curGap+'px'); if(rGap&&+rGap.value!==curGap) rGap.value=curGap; showDens(); reflow(); }
+      function setDensity(m){ if(!CONFIG[m]) m='spacious'; curDensity=m; const c=CONFIG[m]; curPad=c.pad; curGap=c.gap;
+        root.setAttribute('data-density',m);
+        root.style.setProperty('--gap',c.gap+'px'); root.style.setProperty('--pad',c.pad+'px'); root.style.setProperty('--row-metric',c.rowMetric+'px');
+        if(rPad) rPad.value=c.pad; if(rGap) rGap.value=c.gap; showDens();
         bSp.classList.toggle('on',m==='spacious'); bCo.classList.toggle('on',m==='compact'); bDn.classList.toggle('on',m==='dense');
-        renderChartsIn(document.querySelector('.view.active'));
+        reflow();
       }
+      function setDensityMode(adv){
+        if(!densGrp) return; adv=!!adv;
+        densGrp.classList.toggle('gg-advanced',adv);
+        root.classList.toggle('dens-live',adv);              // crisp, transition-less tuning while decoupled
+        if(densSimple) densSimple.hidden=adv;
+        if(densSplit) densSplit.hidden=!adv;
+        if(densAdv){ densAdv.setAttribute('aria-pressed',adv?'true':'false'); densAdv.textContent=adv?'Simple':'Advanced'; }
+        if(adv){ if(rPad) rPad.value=curPad; if(rGap) rGap.value=curGap; showDens(); }   // seed sliders from the active preset
+        else { setDensity(curDensity); }                     // back to the preset (drops the custom overrides)
+      }
+      if(rPad) rPad.addEventListener('input',()=>setPad(rPad.value));
+      if(rGap) rGap.addEventListener('input',()=>setGap(rGap.value));
+      if(densAdv) densAdv.addEventListener('click',()=>setDensityMode(densAdv.getAttribute('aria-pressed')!=='true'));
       var _ap=document.querySelector('.app')||document.getElementById('app'); if(_ap)_ap.style.borderRadius=CONFIG.appRadius+'px';
       bSp.onclick=()=>setDensity('spacious'); bCo.onclick=()=>setDensity('compact'); bDn.onclick=()=>setDensity('dense'); setDensity('spacious');
 
@@ -1446,6 +1501,9 @@ import { getThemes, syncThemes, getAuthor, ensureAuthor, isCloudEnabled } from '
       // Flat sub-variant: Classic (colour only) vs Patterns (colour + monochrome textures / markers / dashes).
       // re-render so the active view's charts pick up / drop the texture overlays.
       wireKnob('data-chartfill',  [{id:'cfill-classic',val:null},{id:'cfill-pattern',val:'pattern'}], true);
+      // Global chart corner radius. Soft = default (no attribute → each renderer keeps its baked rx and the
+      // playground's own knob stays live); Sharp / Round override every chart's bar/cell rects via CSS (charts.css).
+      wireKnob('data-chartradius',[{id:'radius-sharp',val:'sharp'},{id:'radius-soft',val:null},{id:'radius-round',val:'round'}], false);
       root.setAttribute('data-3dscope','accent');   // default: reserve 3D for the hero card
       root.setAttribute('data-coloruse','strategic'); // default intensity: balanced in-between
 
@@ -1480,7 +1538,7 @@ import { getThemes, syncThemes, getAuthor, ensureAuthor, isCloudEnabled } from '
           const toggles = Array.from(document.querySelectorAll('.proto .toggle button[id]'));
           const orphanControls = toggles.filter(b => !BTN_ACTIONS[b.id]).map(b => b.id);
           const cssAttrs = ['data-mode','data-theme','data-density','data-layout','data-charts3d','data-coloruse',
-            'data-shell','data-pkgpos','data-composition','data-tabmodel','data-tables','data-tabs','data-surfacefx'];
+            'data-shell','data-pkgpos','data-composition','data-tabmodel','data-tables','data-tabs','data-surfacefx','data-chartradius'];
           const jsAttrs = ['data-3dscope','data-tabfx','data-l0reveal','data-chartfill']; // consumed in chartMode() / chart builders / view-switch / shell, not CSS
           let cssText = '';
           for (const s of Array.from(document.styleSheets)) {
@@ -1891,6 +1949,8 @@ import { getThemes, syncThemes, getAuthor, ensureAuthor, isCloudEnabled } from '
             vividPalette: vividCombo,
             glassAdv: ggAdv ? ggAdv.getAttribute('aria-pressed')==='true' : false,
             glassOp: gOp ? gOp.value : null, glassBl: gBl ? gBl.value : null,
+            densityAdv: densAdv ? densAdv.getAttribute('aria-pressed')==='true' : false,
+            densityPad: rPad ? rPad.value : null, densityGap: rGap ? rGap.value : null,
             numFeats: [...numFeats]
           };
         }
@@ -1907,6 +1967,7 @@ import { getThemes, syncThemes, getAuthor, ensureAuthor, isCloudEnabled } from '
           if(!btns.some(id=>id==='pkg-l1'||id==='pkg-status')) BTN_ACTIONS['pkg-l1']();
           if(!btns.some(id=>id==='l0-hover'||id==='l0-click')) BTN_ACTIONS['l0-hover']();
           if(!btns.some(id=>id==='cfill-classic'||id==='cfill-pattern')) BTN_ACTIONS['cfill-classic']();   // presets predating the fill-style knob default to Classic
+          if(!btns.some(id=>id==='radius-sharp'||id==='radius-soft'||id==='radius-round')) BTN_ACTIONS['radius-soft']();   // presets predating the corner-radius knob default to Soft
 
           btns.forEach(id=>{ const fn=BTN_ACTIONS[id]; if(fn) fn(); });
           if(st.sliders) for(const id in st.sliders){ const el=$(id); if(el){ el.value=st.sliders[id]; el.dispatchEvent(new Event('input')); } }
@@ -1914,6 +1975,12 @@ import { getThemes, syncThemes, getAuthor, ensureAuthor, isCloudEnabled } from '
           if(typeof setGlassMode==='function'){
             setGlassMode(!!st.glassAdv);
             if(st.glassAdv){ if(gOp&&st.glassOp!=null){ gOp.value=st.glassOp; setGlassOp(+st.glassOp); } if(gBl&&st.glassBl!=null){ gBl.value=st.glassBl; setGlassBl(+st.glassBl); } }
+          }
+          // density split: honor the stored advanced state (else force simple so the preset governs pad/gap).
+          // Runs after the density preset button already set the base pad/gap, so custom values win.
+          if(typeof setDensityMode==='function'){
+            setDensityMode(!!st.densityAdv);
+            if(st.densityAdv){ if(rPad&&st.densityPad!=null){ rPad.value=st.densityPad; setPad(+st.densityPad); } if(rGap&&st.densityGap!=null){ rGap.value=st.densityGap; setGap(+st.densityGap); } }
           }
           // Explicit set (clears features absent from the preset, so switching presets never leaves stale ones on).
           applyNumFeats(st.numFeats||[]);
@@ -1938,6 +2005,7 @@ import { getThemes, syncThemes, getAuthor, ensureAuthor, isCloudEnabled } from '
           return JSON.stringify({ b:[...(st.buttons||[])].sort(), s:keys.map(k=>String(sl[k]==null?'':sl[k])),
             hue:st.hueActive?st.hue:null, tab:st.tab||null, brand:st.brandActive?st.brand:null, vivid,
             ga:!!st.glassAdv, go:st.glassAdv?String(st.glassOp):null, gb:st.glassAdv?String(st.glassBl):null,
+            da:!!st.densityAdv, dp:st.densityAdv?String(st.densityPad):null, dg:st.densityAdv?String(st.densityGap):null,
             nf:[...(st.numFeats||[])].sort() }); }
         function snap(){ lastSnap=sig(captureState()); }   // record the baseline right after apply/save
 
@@ -2072,6 +2140,58 @@ import { getThemes, syncThemes, getAuthor, ensureAuthor, isCloudEnabled } from '
         }
         function exportFigmaNow(){ return runExport((mod,onProgress)=> mod.exportPresetToFigma(exportPreset(), { includeSubtabs:true, onProgress })); }
         function exportScreenshotsNow(){ return runExport((mod,onProgress)=> mod.exportAllScreenshots(exportPreset(), { scale:1, onProgress })); }
+
+        /* ---- Settings report: a human-readable JSON of every proto control and the option picked ----
+           Walks the live #proto panel in document order so the report always matches the visible UI
+           (labels + the highlighted option), auto-including any knob added later. Colour/vivid/feature
+           semantics the DOM can't infer are read from captureState(). _state carries the raw payload so
+           the report can still be re-imported. */
+        function buildSettingsReport(p){
+          const proto=document.getElementById('proto');
+          const st=captureState();
+          const has=id=>(st.buttons||[]).includes(id);
+          const settings={};
+          let section='General';
+          const put=(sec,knob,val)=>{ if(!knob||val==null||val==='') return; (settings[sec]=settings[sec]||{})[knob]=val; };
+          // bare visible text of an element minus icons / hints / readouts / nested buttons
+          const clean=el=>{ const c=el.cloneNode(true); c.querySelectorAll('svg,.icon,.sw,.hint-i,.val,button').forEach(n=>n.remove()); return c.textContent.replace(/\s+/g,' ').trim(); };
+          const labelInfo=el=>{ const h=el.querySelector('.hint-i'), v=el.querySelector('.val'); return { name: clean(el)+(h?' ('+h.textContent.trim()+')':''), val: v?v.textContent.trim():'' }; };
+          let cur=null;
+          proto.querySelectorAll('.proto-sec, .label, .toggle, input[type="range"]').forEach(el=>{
+            if(el.classList.contains('proto-sec')){ const c=el.cloneNode(true); c.querySelectorAll('button').forEach(n=>n.remove()); section=c.textContent.replace(/\s+/g,' ').trim(); return; }
+            if(el.closest('[hidden]')) return;                       // skip collapsed advanced blocks
+            if(el.classList.contains('label')){ cur=labelInfo(el); return; }
+            if(el.classList.contains('toggle')){ const on=el.querySelector('button.on'); if(on&&cur){ let t=clean(on)||on.getAttribute('aria-label')||on.title||''; put(section,cur.name,t); } return; }
+            if(el.matches('input[type="range"]')){ if(cur) put(section,cur.name, cur.val||el.value); return; }
+          });
+          // semantics the walk can't read from the DOM alone
+          if(st.hueActive && st.hue) put('Mode & color','Single hue', st.hue);
+          if(st.brandActive && st.brand) put('Mode & color','Brand color', st.brand);
+          if(has('theme-vivid') && st.vividPalette) put('Mode & color','Vivid combo', st.vividPalette);
+          if(has('tabs-color') && st.tab) put('Tabs','Active tab color', st.tab);
+          if(Array.isArray(st.numFeats) && st.numFeats.length) put('Typography','Inter features', st.numFeats.join(', '));
+
+          return {
+            report: 'Prototype configuration',
+            preset: p ? p.name : 'Custom (unsaved)',
+            modified: p ? (sig(captureState())!==sig(p.state)) : true,
+            exportedAt: new Date().toISOString(),
+            settings,
+            _state: st
+          };
+        }
+        function exportReportNow(){
+          closeExportMenu();
+          try{
+            const p=current(), report=buildSettingsReport(p);
+            const slug=(p?p.name:'custom').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'')||'custom';
+            const blob=new Blob([JSON.stringify(report,null,2)],{type:'application/json'});
+            const url=URL.createObjectURL(blob), a=document.createElement('a');
+            a.href=url; a.download='ia-theme-report-'+slug+'.json'; document.body.appendChild(a); a.click(); a.remove();
+            setTimeout(()=>URL.revokeObjectURL(url),1000);
+            setExportLabel('Downloaded'); setTimeout(()=>{ if(!exporting) setExportLabel('Export'); },1400);
+          }catch(e){ console.error('[report-export] failed', e); setExportLabel('Export failed'); setTimeout(()=>{ if(!exporting) setExportLabel('Export'); },1600); }
+        }
 
         /* One-time upload of presets that were created before cloud sync existed.
            Runs after the shared pull so we never clobber the server. */
@@ -2255,6 +2375,7 @@ import { getThemes, syncThemes, getAuthor, ensureAuthor, isCloudEnabled } from '
         { const exMenu=$('preset-export-menu'); if(exMenu) exMenu.addEventListener('click', e=>e.stopPropagation()); }
         { const figmaBtn=$('preset-export-figma'); if(figmaBtn) figmaBtn.onclick=(e)=>{ e.stopPropagation(); closeExportMenu(); exportFigmaNow(); }; }
         { const shotsBtn=$('preset-export-shots'); if(shotsBtn) shotsBtn.onclick=(e)=>{ e.stopPropagation(); closeExportMenu(); exportScreenshotsNow(); }; }
+        { const reportBtn=$('preset-export-report'); if(reportBtn) reportBtn.onclick=(e)=>{ e.stopPropagation(); closeExportMenu(); exportReportNow(); }; }
         document.addEventListener('click', closeExportMenu);
         document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeExportMenu(); });
         $('preset-del').onclick=()=>{ const p=current(); if(!p) return; openConfirm('Delete \u201C'+p.name+'\u201D?'); };

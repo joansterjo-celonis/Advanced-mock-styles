@@ -441,12 +441,17 @@
   .p2p-badge.warn { background:color-mix(in srgb, #f59e0b 20%, transparent); color:#f59e0b; }
   .p2p-badge.crit { background:color-mix(in srgb, var(--danger) 16%, transparent); color:var(--danger); }
 
-  /* delta subtext under kpi-strip cells + rich KPI cards (semantic direction colour) */
+  /* kpi-strip delta = plain coloured subtext */
   .p2p-delta { display:block; font-size:11.5px; margin-top:8px; }
-  .p2p-kdelta { font-weight:600; white-space:nowrap; }
-  .p2p-delta.up, .p2p-kdelta.up { color:var(--danger); }
-  .p2p-delta.down, .p2p-kdelta.down { color:var(--success); }
-  .p2p-delta.flat, .p2p-kdelta.flat { color:var(--text-dim); }
+  .p2p-delta.up { color:var(--danger); }
+  .p2p-delta.down { color:var(--success); }
+  .p2p-delta.flat { color:var(--text-dim); }
+  /* KPI-card delta = a status pill (same treatment as the playground .pg-delta):
+     tinted rounded chip; P2P polarity keeps up = danger, down = success */
+  .p2p-kdelta { font-weight:600; white-space:nowrap; font-size:11px; padding:3px 8px; border-radius:999px; }
+  .p2p-kdelta.up { color:var(--danger); background:color-mix(in srgb, var(--danger) 15%, transparent); }
+  .p2p-kdelta.down { color:var(--success); background:color-mix(in srgb, var(--success) 15%, transparent); }
+  .p2p-kdelta.flat { color:var(--text-dim); background:color-mix(in srgb, var(--text-dim) 14%, transparent); }
 
   /* rich KPI card row (5 across; internal grid so .card's default span-4 must be reset) */
   .p2p-kpirow { grid-column:1 / -1; display:grid; grid-template-columns:repeat(5,1fr); gap:var(--gap); }
@@ -464,13 +469,19 @@
      wraps to a second line and inflates the card height */
   .p2p-ktarget { display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:nowrap; font-size:11px; color:var(--text-dim); margin-top:8px; }
   .p2p-ktarget > span:first-child { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .p2p-kbullet { height:40px; margin-top:8px; }
+  /* 46px = the playground bullet's inner chart area (20px) + its top/bottom pads
+     (8 + 18), so this label-less card bullet renders with the exact same track / bar
+     thickness and axis spacing as the gallery's labelled bullet */
+  .p2p-kbullet { height:46px; margin-top:8px; }
+  /* waffle slot — its own height so it clears the dotgrid's 50px min viewBox (no
+     letterboxing/side gaps) and the dots fill the full card width */
+  .p2p-kwaffle { height:52px; margin-top:8px; }
   /* donut ring mini-viz slot — centred; sized to sit level with the bullet cards so
      the whole row stays compact instead of stretching to the ring's height */
   .p2p-kring { height:52px; margin-top:8px; display:grid; place-items:center; }
   /* mini-viz wraps are .chart-wrap (flex:1 by default) — pin them so they keep a
      fixed height and the bar never stretches when the row grows to the tallest card */
-  .p2p-view .p2p-kbullet, .p2p-view .p2p-kring { flex:none; }
+  .p2p-view .p2p-kbullet, .p2p-view .p2p-kring, .p2p-view .p2p-kwaffle { flex:none; }
   .p2p-kfoot { margin-top:auto; padding-top:8px; }
 
   /* summary statistics list (label + value rows in a 3-column grid) */
@@ -509,4 +520,37 @@
 
   /* tables: trailing kebab column + first-column truncation (match the other views) */
   .p2p-view .ptable th.tr-kebab, .p2p-view .ptable td.tr-kebab { width:24px; text-align:center; color:var(--text-faint); }
+
+  /* ===== Showcase views 2.0 — High density: KPI + micro-chart tiles =====
+     Rebuilt from the app's own primitives (.card / .metric / .chart-wrap); the
+     playground's pg-combo-kpi styling is scoped to .pg-build and can't be reused here.
+     Each tile pairs a metric headline + delta pill with a DISTINCT micro-chart
+     (area trend / bullet vs-target / waffle rate / dot scatter) so the row reads as a
+     varied dashboard rather than four identical sparks. */
+  .card.ins-kpi { min-height:210px; }
+  .ins-kpi-k { font-size:12.5px; color:var(--text-dim); }
+  .ins-kpi-row { display:flex; align-items:baseline; gap:10px; margin-top:6px; }
+  .ins-kpi-v { font-size:30px; font-weight:600; letter-spacing:-0.025em; color:var(--text); }
+  /* delta pill — arrows (per consistent-iconography) + tinted chip. Polarity is NORMAL
+     here (good = green), unlike the inverted p2p cost deltas, so it uses explicit
+     .pos / .neg instead of .up / .down. */
+  .ins-delta { font-weight:600; font-size:11px; padding:3px 8px; border-radius:999px; white-space:nowrap; }
+  .ins-delta.pos { color:var(--success); background:color-mix(in srgb, var(--success) 15%, transparent); }
+  .ins-delta.neg { color:var(--danger);  background:color-mix(in srgb, var(--danger) 15%, transparent); }
+  /* neutral status chip (e.g. "on track") — no polarity, just a dim tinted pill */
+  .ins-delta.flat { color:var(--text-dim); background:color-mix(in srgb, var(--text-dim) 14%, transparent); }
+  /* micro-chart pinned to the card bottom; hide only axis tick TEXT (keep the faint
+     grid and the bullet's target line, which is an <svg> line). */
+  .ins-spark { flex:0 0 auto; margin-top:auto; }
+  .ins-spark svg text { display:none; }
+
+  /* ===== Showcase views 2.0 — Low density: KPI+chart hero row, KPI strip, 2 charts =====
+     Reuses the .ins-kpi tile, the shared .kpi-strip and the vanilla chart builders. */
+  /* taller variant of the KPI tile: value/delta headline + a full-size chart that fills
+     (labels kept — it's a hero chart, not a spark) */
+  .card.ins-kpi.ins-kpi-lg { min-height:280px; }
+  .ins-kpi-lg .metric-sub { margin-top:4px; }
+  /* KPI-strip cell trimmings: the delta pill + a dim caption line under the value */
+  .kpi .ins-kpi-meta { margin-top:10px; }
+  .kpi .ins-kpi-sub { font-size:11.5px; color:var(--text-dim); margin-top:6px; }
 

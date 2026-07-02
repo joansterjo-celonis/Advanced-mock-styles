@@ -411,7 +411,7 @@ import { icons } from './icons.js';
     // L1 leaves + overview rows open (and reopen) the editor on the right dashboard.
     // Delegated (not per-element) so leaves added after boot by registerView() — i.e.
     // every dynamically registered view — open exactly like the built-in ones.
-    var map={'operations view':'order-management','order management':'order-management','purchase order':'purchase-order','rework and quality':'rework-quality','chart playground':'rework-quality','insights':'insights'};
+    var map={'operations view':'order-management','order management':'order-management','rework and quality':'rework-quality','chart playground':'rework-quality','insights':'insights'};
     document.addEventListener('click',function(e){
       var el=e.target.closest('.l1-leaf, .ctx-overview .ovrow, .ctx-overview .sp-card, #route-context .ia-ov-card');
       if(!el) return;
